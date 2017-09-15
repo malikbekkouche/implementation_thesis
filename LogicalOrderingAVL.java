@@ -34,6 +34,8 @@ import contention.abstractions.CompositionalMap;
  * 
  * @author Dana Drachsler
  */
+ 
+ //Logical Ordering AVL
 public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements ConcurrentMap<K,V>, CompositionalMap<K, V> {
 
 	/** The tree's root */

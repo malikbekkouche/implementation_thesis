@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+// Non -blocking BST
 public class StaticDictionary5<K extends Comparable<? super K>, V> {
 
     //--------------------------------------------------------------------------------

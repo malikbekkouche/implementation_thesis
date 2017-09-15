@@ -87,6 +87,8 @@ import java.util.concurrent.ConcurrentNavigableMap;
  *
  *  @author Nathan Bronson
  */
+ 
+ //Relaxed Balance AVL
 public class SnapTreeMap<K,V> extends AbstractMap<K,V> implements ConcurrentNavigableMap<K,V>, Cloneable, Serializable {
     private static final long serialVersionUID = 9052695062720473599L;
     
