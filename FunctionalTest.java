@@ -1,10 +1,11 @@
 import java.util.Random;
 import java.util.concurrent.atomic.*;
+import java.util.*;
 class FunctionalTest {
 	
 	public static void main(String [] args){
-		int nbrThreads=10,nbrOp=1000,min=0,max=1000;
-		LogicalOrderingAVL<Integer,Integer> tree=new LogicalOrderingAVL<Integer,Integer>();
+		int nbrThreads=10,nbrOp=100000,min=0,max=1000;
+		LogicalOrderingAVL<Integer,Integer> tree=new LogicalOrderingAVL<Integer,Integer>(Integer.MIN_VALUE,Integer.MAX_VALUE);
 		/*tree.put(5,1);
 		tree.put(4,6);
 		System.out.println(tree.remove(5));
@@ -29,7 +30,16 @@ class FunctionalTest {
 			}
 		}
 		
-		//for(Integer i : )
+		//for(Integer i : 
+		Iterator<java.util.Map.Entry<Integer, Integer>> itr=tree.entrySet().iterator();
+		int total1=0,total2=0;
+		int[] count2=new int[nbrThreads];
+		while(itr.hasNext()){
+			count2[itr.next().getValue()]++;
+		}
+		for(int i=0;i<nbrThreads;i++)
+			System.out.println(count.get(i)+" == "+count2[i]);
+			
 		
 		
 	}
@@ -56,7 +66,7 @@ class FunctionalTest {
 
 class LocalCounter implements Runnable {
     private  AtomicIntegerArray counter;
-	private int nbrOp; // static ?
+	private int nbrOp; 
 	private LogicalOrderingAVL<Integer,Integer> tree;
 	private int id;
     
