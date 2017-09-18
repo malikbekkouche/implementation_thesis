@@ -1,5 +1,3 @@
-//package trees.lockbased;
-
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Comparator;
@@ -9,8 +7,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import contention.abstractions.CompositionalMap;
 
 /**
  * Implementation of concurrent AVL tree based on the paper 
@@ -34,9 +30,7 @@ import contention.abstractions.CompositionalMap;
  * 
  * @author Dana Drachsler
  */
- 
- //Logical Ordering AVL
-public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements ConcurrentMap<K,V>, CompositionalMap<K, V> {
+public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements ConcurrentMap<K,V> {
 
 	/** The tree's root */
 	private AVLMapNode<K,V> root;
@@ -47,15 +41,6 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 	/** A constant object for the use of the {@code insert} method.  */
 	private final static Object EMPTY_ITEM = new Object();
 
-	
-	public LogicalOrderingAVL() {
-		AVLMapNode parent = new AVLMapNode(Integer.MIN_VALUE);
-		root = new AVLMapNode(Integer.MAX_VALUE, null, parent, parent, parent);
-		root.parent = parent;
-		parent.right = root;
-		parent.succ = root;
-	}
-	
 	/**
 	 * Constructor, initialize the tree and the logical ordering layouts.
 	 * The logical ordering is initialized by creating two nodes, where their 
