@@ -147,6 +147,24 @@ public class StaticDictionary5<K extends Comparable<? super K>, V> {
         }
         return (l.key != null && key.compareTo(l.key) == 0) ? l.value : null;
     }
+	
+	// attempt to do an iteratorish
+	
+	public final ArrayList<K> iterator(){
+		ArrayList<K> list=new ArrayList();
+		Node<K,V> l=root.left;
+		itrRecursive(list,root);
+		return list;
+	}
+	
+	private final void itrRecursive(ArrayList<K> list,Node<K,V> n){
+		if(n.left==null)
+			list.add(n.key);
+		else{
+			itrRecursive(list,n.left);
+			itrRecursive(list,n.right);
+		}
+	}
 
     // Insert key to dictionary, returns the previous value associated with the specified key,
     // or null if there was no mapping for the key

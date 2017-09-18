@@ -5,7 +5,8 @@ class FunctionalTest {
 	
 	public static void main(String [] args){
 		int nbrThreads=10,nbrOp=100000,min=0,max=1000;
-		LogicalOrderingAVL<Integer,Integer> tree=new LogicalOrderingAVL<Integer,Integer>(Integer.MIN_VALUE,Integer.MAX_VALUE);
+		//LogicalOrderingAVL<Integer,Integer> tree=new LogicalOrderingAVL<Integer,Integer>(Integer.MIN_VALUE,Integer.MAX_VALUE);
+		SnapTreeMap<Integer,Integer> tree=new SnapTreeMap();
 		/*tree.put(5,1);
 		tree.put(4,6);
 		System.out.println(tree.remove(5));
@@ -67,10 +68,10 @@ class FunctionalTest {
 class LocalCounter implements Runnable {
     private  AtomicIntegerArray counter;
 	private int nbrOp; 
-	private LogicalOrderingAVL<Integer,Integer> tree;
+	private SnapTreeMap<Integer,Integer> tree;
 	private int id;
     
-    public LocalCounter(AtomicIntegerArray arr,int nbrOp, LogicalOrderingAVL<Integer,Integer> tree,int id){
+    public LocalCounter(AtomicIntegerArray arr,int nbrOp, SnapTreeMap<Integer,Integer> tree,int id){
         this.counter = arr;
 		this.nbrOp=nbrOp;
 		this.tree=tree;
