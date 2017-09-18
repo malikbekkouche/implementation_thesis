@@ -1,0 +1,90 @@
+import java.util.Random;
+import java.util.concurrent.atomic.*;
+class FunctionalTest {
+	
+	public static void main(String [] args){
+		int nbrThreads=10,nbrOp=1000,min=0,max=1000;
+		LogicalOrderingAVL<Integer,Integer> tree=new LogicalOrderingAVL<Integer,Integer>();
+		/*tree.put(5,1);
+		tree.put(4,6);
+		System.out.println(tree.remove(5));
+		System.out.println(tree.put(4,7));
+		System.out.println(tree.remove(4));*/
+		
+		Thread[] threads=new Thread[nbrThreads];
+		AtomicIntegerArray count=new AtomicIntegerArray(nbrThreads);
+		for(int i=0;i<nbrThreads;i++){
+			threads[i]=new Thread(new LocalCounter(count,nbrOp,tree,i));
+		}
+		
+		for(int i=0;i<nbrThreads;i++){
+			threads[i].start();
+		}
+		
+		for(int i=0;i<nbrThreads;i++){
+			try{
+			threads[i].join();
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		
+		//for(Integer i : )
+		
+		
+	}
+	
+	
+		
+		/*threads=new Thread[nbrThreads];
+		for(int i=0;i<nbrThreads;i++){
+			threads[i]=new Thread(new Runnable(){
+				public void run(){
+					final int index=i;
+					Random r=new Random();
+					for(int j=0;j<(nbrOp/10);j++)
+						tree.put(r.nextInt(max-min+1),""+index);
+					//for(int j=0;j<(nbrOp/10);j++)
+					//	tree.remove(r.nextInt(max-min+1));
+				}
+				
+			});
+		}
+		*/
+		
+}
+
+class LocalCounter implements Runnable {
+    private  AtomicIntegerArray counter;
+	private int nbrOp; // static ?
+	private LogicalOrderingAVL<Integer,Integer> tree;
+	private int id;
+    
+    public LocalCounter(AtomicIntegerArray arr,int nbrOp, LogicalOrderingAVL<Integer,Integer> tree,int id){
+        this.counter = arr;
+		this.nbrOp=nbrOp;
+		this.tree=tree;
+		this.id=id;
+    }
+
+    @Override
+    public void run() {
+        count();
+    }
+
+    private void count() {
+        Random r=new Random();
+		for(int i=0;i<nbrOp;i++){
+			Integer result=tree.put(r.nextInt(),id);
+			if(result==null)
+				counter.getAndIncrement(id);
+			else{
+				counter.getAndIncrement(id);
+				counter.getAndDecrement((result));
+			}
+			
+		}
+		
+    }
+
+}
