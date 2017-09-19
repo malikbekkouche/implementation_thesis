@@ -93,7 +93,7 @@ class LocalCounter implements Runnable {
 
     private void count() {
         Random r=new Random();
-		for(int i=0;i<nbrOp;i++){
+		for(int i=0;i<nbrOp/2;i++){
 			Integer result=tree.put(r.nextInt(),id);
 			if(result==null)
 				counter.getAndIncrement(id);
@@ -102,6 +102,11 @@ class LocalCounter implements Runnable {
 				counter.getAndDecrement((result));
 			}
 			
+		}
+		for(int i=0;i<nbrOp/2;i++){
+			Integer result=tree.remove(r.nextInt());
+			if(result!=null)
+				counter.getAndDecrement(result);
 		}
 		
     }
