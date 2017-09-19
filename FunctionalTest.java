@@ -6,7 +6,8 @@ class FunctionalTest {
 	public static void main(String [] args){
 		int nbrThreads=10,nbrOp=100000,min=0,max=1000;
 		//LogicalOrderingAVL<Integer,Integer> tree=new LogicalOrderingAVL<Integer,Integer>(Integer.MIN_VALUE,Integer.MAX_VALUE);
-		SnapTreeMap<Integer,Integer> tree=new SnapTreeMap();
+		//SnapTreeMap<Integer,Integer> tree=new SnapTreeMap();
+		StaticDictionary5<Integer,Integer> tree=new StaticDictionary5();
 		/*tree.put(5,1);
 		tree.put(4,6);
 		System.out.println(tree.remove(5));
@@ -31,17 +32,24 @@ class FunctionalTest {
 			}
 		}
 		
-		//for(Integer i : 
-		Iterator<java.util.Map.Entry<Integer, Integer>> itr=tree.entrySet().iterator();
+		//for snaptree
+		/*Iterator<java.util.Map.Entry<Integer, Integer>> itr=tree.entrySet().iterator();
 		int total1=0,total2=0;
 		int[] count2=new int[nbrThreads];
 		while(itr.hasNext()){
 			count2[itr.next().getValue()]++;
 		}
 		for(int i=0;i<nbrThreads;i++)
-			System.out.println(count.get(i)+" == "+count2[i]);
+			System.out.println(count.get(i)+" == "+count2[i]); */
 			
-		
+		//for Staticdictionary
+		ArrayList<Integer> list=tree.iterator();
+		int[] count2=new int[nbrThreads];
+		for(int i: list){
+			count2[i]++;
+		}
+		for(int i=0;i<nbrThreads;i++)
+			System.out.println(count.get(i)+" == "+count2[i]);
 		
 	}
 	
@@ -68,10 +76,10 @@ class FunctionalTest {
 class LocalCounter implements Runnable {
     private  AtomicIntegerArray counter;
 	private int nbrOp; 
-	private SnapTreeMap<Integer,Integer> tree;
+	private StaticDictionary5<Integer,Integer> tree;
 	private int id;
     
-    public LocalCounter(AtomicIntegerArray arr,int nbrOp, SnapTreeMap<Integer,Integer> tree,int id){
+    public LocalCounter(AtomicIntegerArray arr,int nbrOp, StaticDictionary5<Integer,Integer> tree,int id){
         this.counter = arr;
 		this.nbrOp=nbrOp;
 		this.tree=tree;

@@ -150,20 +150,24 @@ public class StaticDictionary5<K extends Comparable<? super K>, V> {
 	
 	// attempt to do an iteratorish
 	
-	public final ArrayList<K> iterator(){
-		ArrayList<K> list=new ArrayList();
+	public final ArrayList<V> iterator(){
+		ArrayList<V> list=new ArrayList();
 		Node<K,V> l=root.left;
-		itrRecursive(list,root);
+		itrRecursive(list,l);
 		return list;
 	}
 	
-	private final void itrRecursive(ArrayList<K> list,Node<K,V> n){
-		if(n.left==null)
-			list.add(n.key);
+	private final void itrRecursive(ArrayList<V> list,Node<K,V> n){
+		if(n.left==null && n.right==null && n.key!=null)
+			list.add(n.value);
 		else{
+			if(n.left!=null)
 			itrRecursive(list,n.left);
+		if(n.right!=null)
 			itrRecursive(list,n.right);
 		}
+		
+		
 	}
 
     // Insert key to dictionary, returns the previous value associated with the specified key,
