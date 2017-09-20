@@ -7,7 +7,8 @@ class FunctionalTest {
 		int nbrThreads=10,nbrOp=100000,min=0,max=1000;
 		//LogicalOrderingAVL<Integer,Integer> tree=new LogicalOrderingAVL<Integer,Integer>(Integer.MIN_VALUE,Integer.MAX_VALUE);
 		//SnapTreeMap<Integer,Integer> tree=new SnapTreeMap();
-		StaticDictionary5<Integer,Integer> tree=new StaticDictionary5();
+		//StaticDictionary5<Integer,Integer> tree=new StaticDictionary5();
+		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
 		/*tree.put(5,1);
 		tree.put(4,6);
 		System.out.println(tree.remove(5));
@@ -32,7 +33,7 @@ class FunctionalTest {
 			}
 		}
 		
-		//for snaptree
+		//for snaptree 
 		/*Iterator<java.util.Map.Entry<Integer, Integer>> itr=tree.entrySet().iterator();
 		int total1=0,total2=0;
 		int[] count2=new int[nbrThreads];
@@ -76,10 +77,10 @@ class FunctionalTest {
 class LocalCounter implements Runnable {
     private  AtomicIntegerArray counter;
 	private int nbrOp; 
-	private StaticDictionary5<Integer,Integer> tree;
+	private ConcurrentChromaticTreeMap<Integer,Integer> tree;
 	private int id;
     
-    public LocalCounter(AtomicIntegerArray arr,int nbrOp, StaticDictionary5<Integer,Integer> tree,int id){
+    public LocalCounter(AtomicIntegerArray arr,int nbrOp, ConcurrentChromaticTreeMap<Integer,Integer> tree,int id){
         this.counter = arr;
 		this.nbrOp=nbrOp;
 		this.tree=tree;
