@@ -3,7 +3,7 @@ class MalikTest {
 	public static void main(String[] args){
 		int[] nbrThreads={1,2,4,8,16,32,64};
 		int nbrTries=10;
-		int nbrOp=Math.pow(2,18);
+		int nbrOp=new Double(Math.pow(2,32)).intValue();
 
 		for(int i=0;i<nbrThreads.length;i++){
 			ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
@@ -25,13 +25,13 @@ class MalikTest {
 				}
 			}catch(Exception e){}
 
-			double time=t.check();
+			double time=t.check()*1e6;
 			times[k]=time;
+			System.out.println(times[k]);
 		} //tries
 		double total=0.0;
 		System.out.println("Threads : "+nbrThreads[i]);
 		for (int k=0;k<nbrTries ;k++ ) {
-			System.out.println(times[k]);
 			total+=times[k];
 		}
 		double average=total/nbrTries;
@@ -45,10 +45,12 @@ class TestThread extends Thread {
 	private ConcurrentChromaticTreeMap<Integer,Integer> tree;
 	int range=1000;
 	int put=5,remove=10;
+	int nbrOp;
 
 
-	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree){
+	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree,int nbrOp){
 		this.tree=tree;
+		this.nbrOp=nbrOp;
 	}
 
 	public void run(){
