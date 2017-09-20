@@ -53,14 +53,15 @@
  */
 
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-
-//non blocking chromatic tree
 public class ConcurrentChromaticTreeMap<K,V> {
     private final int d; // this is the number of violations to allow on a search path before we fix everything on it. if d is zero, then each update fixes any violation it created before returning.
     private static final int DEFAULT_d = 6; // experimentally determined to yield good performance for both random workloads, and operations on sorted sequences
-    private final Node root;
+    //private final Node root;
+    public final Node root;
     private final Operation dummy;
     private final Comparator<? super K> comparator;
     private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Operation> updateOp;
@@ -98,6 +99,18 @@ public class ConcurrentChromaticTreeMap<K,V> {
         if (node == null) return 0;
         if (node.left == null && node.key != null) return 1;
         return sequentialSize(node.left) + sequentialSize(node.right);
+    }
+    
+    public final int transformToList(List<K> list){
+    	return  transformTreeToList(root, list);
+    }
+    public int transformTreeToList(final Node node, List<K> list){
+    	if (node == null) return 0;
+        if (node.left == null && node.key != null){
+        	list.add((K) node.key);        	
+        	return 1;        
+        }
+        return transformTreeToList(node.left, list) + transformTreeToList(node.right, list);
     }
 
     public final boolean containsKey(final K key) {
