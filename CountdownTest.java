@@ -5,7 +5,7 @@ class CountdownTest{
 
   public static void main(String[] args) {
 
-    int currentNbrThreads=0;
+    int currentNbrThreads=1;
 
 		//int nbrOp=new Double(Math.pow(2,32)).intValue();
 
@@ -19,12 +19,17 @@ class CountdownTest{
     int[] nbrThreads={1,2,4,8,16,32,64};
     TestThread[] threads=new TestThread[nbrThreads[currentNbrThreads]];
     MyCountdown task=new MyCountdown(lock,timer,tree,results,threads,currentNbrThreads,nbrThreads);
-    timer.scheduleAtFixedRate(task, 1000, 1000); // =  timer.scheduleAtFixedRate(task, delay, period);
-    try {
-      lock.wait();
-    }catch (Exception e) {
+    timer.scheduleAtFixedRate(task, 1000, 100); // =  timer.scheduleAtFixedRate(task, delay, period);
+    synchronized(lock){
+      try {
+        System.out.println("waiting ...");
+        lock.wait();
+        System.out.println("waited");
+      }catch (Exception e) {
 
+      }
     }
+
 
     for(AtomicLong l : results){
       System.out.println(l.get());
@@ -76,7 +81,8 @@ class MyCountdown extends TimerTask{
         threads[j].stopIt();
       }
       synchronized (lock){
-        lock.notify();
+        System.out.println("notify");
+        lock.notifyAll();
       }
 
     }
@@ -105,6 +111,7 @@ class TestThread extends Thread {
 
   public void stopIt(){
     keepRunning=false;
+    System.out.println("s");
   }
 
 
@@ -127,6 +134,7 @@ class TestThread extends Thread {
 			tree.remove(r.nextInt(range+1));
     counter.addAndGet(remove);
   }
+  System.out.println(keepRunning);
 	}
 
 	// public int put(){
