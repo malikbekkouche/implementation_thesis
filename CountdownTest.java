@@ -5,6 +5,7 @@ class CountdownTest{
 
   public static void main(String[] args) {
 
+    int currentNbrThreads=0;
 
 		//int nbrOp=new Double(Math.pow(2,32)).intValue();
 
@@ -15,7 +16,9 @@ class CountdownTest{
 
     Object lock=new Object();
     Timer timer = new Timer(); //new timer
-    MyCountdown task=new MyCountdown(lock,timer,tree,results);
+    int[] nbrThreads={1,2,4,8,16,32,64};
+    TestThread[] threads=new TestThread[nbrThreads[currentNbrThreads]];
+    MyCountdown task=new MyCountdown(lock,timer,tree,results,threads,currentNbrThreads,nbrThreads);
     timer.scheduleAtFixedRate(task, 1000, 1000); // =  timer.scheduleAtFixedRate(task, delay, period);
     try {
       lock.wait();
@@ -39,37 +42,50 @@ class MyCountdown extends TimerTask{
   private Timer timer;
   private ConcurrentChromaticTreeMap<Integer,Integer> tree;
   private ArrayList<AtomicLong> results;
-  int[] nbrThreads={1,2,4,8,16,32,64};
-  int nbrTries=10;
-  int currentNbrThreads=0;
+  private TestThread[] threads;
+  private int cnt;
+  private int[] nbrThreads;
 
-  public MyCountdown(Object l,Timer timer,ConcurrentChromaticTreeMap<Integer,Integer> tree,ArrayList<AtomicLong> results){
+  int nbrTries=10;
+
+
+
+  public MyCountdown(Object l,Timer timer,ConcurrentChromaticTreeMap<Integer,Integer> tree,ArrayList<AtomicLong> results,TestThread[] threads,
+  int cnt,int[] nbrThreads){
     lock=l;
     this.timer=timer;
     this.tree=tree;
     this.results=results;
+    this.threads=threads;
+    this.cnt=cnt;
+    this.nbrThreads=nbrThreads;
   }
 
   public void run() {
+
+
+
+      //for (int k=0; k<nbrTries ; k++) {
+
     System.out.println(nbrTries);
     nbrTries--;
-    if (nbrTries == -1){
+    if (nbrTries == 0){
       timer.cancel();
       timer.purge();
+      for (int j=0;j<nbrThreads[cnt] ;j++ ) {
+        threads[j].stopIt();
+      }
       synchronized (lock){
         lock.notify();
       }
 
     }
-    AtomicLong counter=new AtomicLong(0);
-    results.add(counter);
-    TestThread[] threads=new TestThread[nbrThreads[currentNbrThreads]];
-
-      //for (int k=0; k<nbrTries ; k++) {
-    for (int j=0;j<nbrThreads[currentNbrThreads] ;j++ ) {
-        threads[j]=new TestThread(tree,counter);
-    }
-    for (int j=0;j<nbrThreads[currentNbrThreads] ;j++ ) {
+      AtomicLong counter=new AtomicLong(0);
+      results.add(counter);
+      for (int j=0;j<nbrThreads[cnt] ;j++ ) {
+          threads[j]=new TestThread(tree,counter);
+      }
+    for (int j=0;j<nbrThreads[cnt] ;j++ ) {
       threads[j].start();
     }
 
@@ -85,6 +101,11 @@ class TestThread extends Thread {
 	int range=1000;
 	int put=5,remove=10,get=100-put-remove;
 	int nbrOp;
+  private volatile boolean keepRunning=true;
+
+  public void stopIt(){
+    keepRunning=false;
+  }
 
 
 	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree,AtomicLong count){
@@ -94,7 +115,8 @@ class TestThread extends Thread {
 
 	public void run(){ // may not count all the operations but will make counter less of a bottleneck
 		Random r=new Random();
-    while(true){
+
+    while(keepRunning){
 		for(int i=0;i<put;i++)
 			tree.put(r.nextInt(range+1),r.nextInt(range+1));
     counter.addAndGet(put);
