@@ -1,12 +1,14 @@
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ThreadLocalRandom;
 class ExecutorTest{
 
   public static void main(String[] args) {
@@ -23,17 +25,18 @@ class ExecutorTest{
 
     AtomicLong al=new AtomicLong();
     AtomicBoolean keepRunning=new AtomicBoolean(true);
+    IdCreator id=new IdCreator();
     ExecutorService es=Executors.newSingleThreadExecutor();
-    Future<Void> ft=es.submit(new Task());
+    Future<Void> ft=es.submit(new Task(id));
 
 
-    for (int i=0;i<nbrThreads[currentNbrThreads] ;i++ ) {
+  for (int i=0;i<nbrThreads[currentNbrThreads] ;i++ ) {
       AtomicLong counter=new AtomicLong(0);
       results.add(counter);
     }
 
-    for (int j=0;j<nbrThreads[currentNbrThreads] ;j++ ) {
-        threads[j]=new TestThread(tree,results.get(j),keepRunning,ft);
+  for (int j=0;j<nbrThreads[currentNbrThreads] ;j++ ) {
+        threads[j]=new TestThread(tree,results.get(j),keepRunning,id);
     }
   for (int j=0;j<nbrThreads[currentNbrThreads] ;j++ ) {
     threads[j].start();
@@ -59,21 +62,36 @@ class ExecutorTest{
   }
 }
 
-class Task implements Callable<Void>{
-  private AtomicInteger id=new Atomic Integer(0);
+class IdCreator {
+  private static int range=500;
+  private AtomicInteger id=new AtomicInteger(0);
 
-  public int get(){
+  public int getId(){
     return id.get();
   }
 
-  private void increment(){
+  public void increment(){
     id.addAndGet(1);
+  }
+
+  public int[] getRange(){
+    int newId=id.get();
+    return new int[]{newId-range,newId+(range/4)};
+  }
+
+}
+
+class Task implements Callable<Void>{
+  IdCreator id;
+
+  public Task(IdCreator id){
+    this.id=id;
   }
 
   public Void call(){
     boolean t=true;
     while(t){
-      increment();
+      id.increment();
     }
     return null;
   }
@@ -88,12 +106,13 @@ class TestThread extends Thread {
 	int put=5,remove=10,get=100-put-remove;
   private AtomicBoolean keepRunning;
   private Future<Void> ft;
+  private IdCreator id;
 
-	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree,AtomicLong count,AtomicBoolean run. Future<Void> ft){
+	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree,AtomicLong count,AtomicBoolean run, IdCreator id){
 		this.tree=tree;
     this.counter=count;
     keepRunning=run;
-    this.ft=ft;
+    this.id=id;
 	}
 
 	public void run(){ // may not count all the operations but will make counter less of a bottleneck
@@ -101,17 +120,20 @@ class TestThread extends Thread {
 
     while(keepRunning.get()){
 		for(int i=0;i<put;i++)
-			tree.put(ft.get(),r.nextInt(range+1));
+			tree.put(id.getId(),r.nextInt(range+1));
     counter.addAndGet(put);
+    int[] range=id.getRange();
 		for(int i=0;i<get;i++)
-			tree.get(r.nextInt(range+1));
+			tree.get(ThreadLocalRandom.current().nextInt(range[0], range[1] + 1));
     counter.addAndGet(get);
+    range=id.getRange();
 		for(int i=0;i<remove;i++)
-			tree.remove(r.nextInt(range+1));
+			tree.remove(ThreadLocalRandom.current().nextInt(range[0], range[1] + 1));
     counter.addAndGet(remove);
   }
   System.out.println(keepRunning.get());
 	}
+
 
 
 }
