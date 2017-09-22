@@ -64,19 +64,19 @@ class ExecutorTest{
 
 class IdCreator {
   private static int range=500;
-  private AtomicInteger id=new AtomicInteger(0);
+  private volatile int id=0;
 
   public int getId(){
-    return id.get();
+    return id;
   }
 
   public void increment(){
-    id.addAndGet(1);
+    id++;
   }
 
   public int[] getRange(){
-    int newId=id.get();
-    return new int[]{newId-range,newId+(range/4)};
+    AtomicInteger newId=new AtomicInteger(id);
+    return new int[]{newId.get()-range,newId.get()+(range/4)};
   }
 
 }
