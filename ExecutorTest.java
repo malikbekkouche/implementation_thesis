@@ -33,7 +33,7 @@ class ExecutorTest{
     }
 
     for (int j=0;j<nbrThreads[currentNbrThreads] ;j++ ) {
-        threads[j]=new TestThread(tree,results.get(j),keepRunning);
+        threads[j]=new TestThread(tree,results.get(j),keepRunning,ft);
     }
   for (int j=0;j<nbrThreads[currentNbrThreads] ;j++ ) {
     threads[j].start();
@@ -60,12 +60,20 @@ class ExecutorTest{
 }
 
 class Task implements Callable<Void>{
+  private AtomicInteger id=new Atomic Integer(0);
 
+  public int get(){
+    return id.get();
+  }
+
+  private void increment(){
+    id.addAndGet(1);
+  }
 
   public Void call(){
     boolean t=true;
     while(t){
-
+      increment();
     }
     return null;
   }
@@ -79,11 +87,13 @@ class TestThread extends Thread {
 	int range=1000;
 	int put=5,remove=10,get=100-put-remove;
   private AtomicBoolean keepRunning;
+  private Future<Void> ft;
 
-	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree,AtomicLong count,AtomicBoolean run){
+	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree,AtomicLong count,AtomicBoolean run. Future<Void> ft){
 		this.tree=tree;
     this.counter=count;
     keepRunning=run;
+    this.ft=ft;
 	}
 
 	public void run(){ // may not count all the operations but will make counter less of a bottleneck
@@ -91,7 +101,7 @@ class TestThread extends Thread {
 
     while(keepRunning.get()){
 		for(int i=0;i<put;i++)
-			tree.put(r.nextInt(range+1),r.nextInt(range+1));
+			tree.put(ft.get(),r.nextInt(range+1));
     counter.addAndGet(put);
 		for(int i=0;i<get;i++)
 			tree.get(r.nextInt(range+1));
