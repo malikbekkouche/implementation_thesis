@@ -54,6 +54,7 @@ class ExecutorTest{
   for(AtomicLong l : results){
     System.out.println(l.get());
   }
+  System.out.println(id.getId());
 
 
 
@@ -65,13 +66,20 @@ class ExecutorTest{
 class IdCreator {
   private static int range=500;
   private volatile int id=0;
+  int x=10;
 
   public int getId(){
     return id;
   }
 
   public void increment(){
-    id++;
+    for(int i=0;i<x;i++)
+      id++;
+    try{
+      Thread.sleep(0);
+    }catch(Exception e){
+
+    }
   }
 
   public int[] getRange(){
