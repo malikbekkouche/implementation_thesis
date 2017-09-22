@@ -19,7 +19,7 @@ class CountdownTest{
     int[] nbrThreads={1,2,4,8,16,32,64};
     TestThread[] threads=new TestThread[nbrThreads[currentNbrThreads]];
     MyCountdown task=new MyCountdown(lock,timer,tree,results,threads,currentNbrThreads,nbrThreads);
-    timer.scheduleAtFixedRate(task, 1000, 100); // =  timer.scheduleAtFixedRate(task, delay, period);
+    timer.scheduleAtFixedRate(task, 1000, 10000); // =  timer.scheduleAtFixedRate(task, delay, period);
     synchronized(lock){
       try {
         System.out.println("waiting ...");
@@ -51,8 +51,8 @@ class MyCountdown extends TimerTask{
   private int cnt;
   private int[] nbrThreads;
 
-  int nbrTries=10;
-
+  int nbrTries=2;
+  int initNbrTries=nbrTries;
 
 
   public MyCountdown(Object l,Timer timer,ConcurrentChromaticTreeMap<Integer,Integer> tree,ArrayList<AtomicLong> results,TestThread[] threads,
@@ -85,6 +85,11 @@ class MyCountdown extends TimerTask{
         lock.notifyAll();
       }
 
+    }
+    if(initNbrTries!=nbrTries){
+      for (int j=0;j<nbrThreads[cnt] ;j++ ) {
+        threads[j].stopIt();
+      }
     }
       AtomicLong counter=new AtomicLong(0);
       results.add(counter);
