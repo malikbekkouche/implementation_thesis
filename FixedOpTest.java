@@ -1,26 +1,27 @@
 import java.util.*;
-class MalikTest {
+class FixedOpTest {
 	public static void main(String[] args){
 		int[] nbrThreads={1,2,4,8,16,32,64};
 		int nbrTries=10;
 		int nbrOp=new Double(Math.pow(2,32)).intValue();
+		int cnt=0;
 
-		for(int i=0;i<nbrThreads.length;i++){
+		//for(int i=0;i<nbrThreads.length;i++){
 			ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
-			TestThread[] threads=new TestThread[nbrThreads[i]];
+			TestThread[] threads=new TestThread[nbrThreads[cnt]];
 
 			double[] times=new double[nbrTries];
 			for (int k=0; k<nbrTries ; k++) {
-				for (int j=0;j<nbrThreads[i] ;j++ ) {
-					threads[j]=new TestThread(tree,nbrOp/nbrThreads[i]);
+				for (int j=0;j<nbrThreads[cnt] ;j++ ) {
+					threads[j]=new TestThread(tree,nbrOp/nbrThreads[cnt]);
 				}
 				Timer t=new Timer();
 
-			for (int j=0;j<nbrThreads[i] ;j++ ) {
+			for (int j=0;j<nbrThreads[cnt] ;j++ ) {
 				threads[j].start();
 			}
 			try{
-				for (int j=0;j<nbrThreads[i] ;j++ ) {
+				for (int j=0;j<nbrThreads[cnt] ;j++ ) {
 					threads[j].join();
 				}
 			}catch(Exception e){}
@@ -30,13 +31,13 @@ class MalikTest {
 			System.out.println(times[k]);
 		} //tries
 		double total=0.0;
-		System.out.println("Threads : "+nbrThreads[i]);
+		System.out.println("Threads : "+nbrThreads[cnt]);
 		for (int k=0;k<nbrTries ;k++ ) {
 			total+=times[k];
 		}
 		double average=total/nbrTries;
 		System.out.println("\n"+" average : "+average);
-	} //for trheads
+	//} //for trheads
 
 	}
 }
