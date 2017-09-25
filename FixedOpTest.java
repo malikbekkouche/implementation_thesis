@@ -3,8 +3,8 @@ class FixedOpTest {
 	public static void main(String[] args){
 		int[] nbrThreads={1,2,4,8,16,32,64};
 		int nbrTries=10;
-		int nbrOp=new Double(Math.pow(2,32)).intValue();
-		int cnt=1;
+		int nbrOp=new Double(Math.pow(2,25)).intValue();
+		int cnt=0;
 
 		//for(int i=0;i<nbrThreads.length;i++){
 			ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
@@ -45,7 +45,7 @@ class FixedOpTest {
 class TestThread extends Thread {
 	private ConcurrentChromaticTreeMap<Integer,Integer> tree;
 	int range=1000;
-	int put=10,remove=5;
+	int put=10,remove=5,get=100-put-remove;
 	int nbrOp;
 
 
@@ -56,7 +56,7 @@ class TestThread extends Thread {
 
 	public void run(){
 		Random r=new Random();
-		for (int j=0;j<nbrOp ;j++ ) {
+		for (int j=0;j<nbrOp/100 ;j++ ) {
 			for(int i=0;i<put;i++)
 				tree.put(r.nextInt(range+1),0);
 			for(int i=0;i<get;i++)
