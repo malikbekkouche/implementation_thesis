@@ -66,7 +66,7 @@ class ExecutorTest{
 class IdCreator {
   private static int range=500;
   private volatile int id=0;
-  int x=10;
+  int x=10000;
 
   public int getId(){
     return id;
@@ -111,7 +111,7 @@ class TestThread extends Thread {
   private AtomicLong counter;
 	private ConcurrentChromaticTreeMap<Integer,Integer> tree;
 	int range=1000;
-	int put=5,remove=10,get=100-put-remove;
+	int put=10,remove=5,get=100-put-remove;
   private AtomicBoolean keepRunning;
   private Future<Void> ft;
   private IdCreator id;
