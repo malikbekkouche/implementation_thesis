@@ -1,0 +1,21 @@
+threads : 1
+30804
+id : 1288
+threads : 2
+42605
+id : 1288
+threads : 4
+60573
+id : 1286
+threads : 8
+55349
+id : 1286
+threads : 16
+57543
+id : 1288
+threads : 32
+57420
+id : 1288
+threads : 64
+57178
+id : 1288

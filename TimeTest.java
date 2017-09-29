@@ -9,9 +9,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.ThreadLocalRandom;
-class FixedOpTest {
+import java.util.concurrent.CyclicBarrier;
+class TimeTest {
 	public static void main(String[] args){
-		int[] nbrThreads={1,2,4,8,16,32,64};
+		int[] nbrThreads={1,2,4,8,16,24,32,48,64,96,128};
 		int nbrTries=6;
 		//int nbrOp=new Double(Math.pow(2,25)).intValue();
 		int cnt=0;
@@ -22,20 +23,28 @@ class FixedOpTest {
 			long[] times=new long[nbrTries];
 			AtomicBoolean keepRunning=new AtomicBoolean(true);
 			ArrayList<AtomicLong> results=new ArrayList<AtomicLong>();
+			CyclicBarrier barrier=new CyclicBarrier(nbrThreads[i]+1);
 			for (int k=0; k<nbrTries ; k++) {
 				for (int j=0;j<nbrThreads[i] ;j++ ) {
 					AtomicLong operations=new AtomicLong(0);
 					results.add(operations);
-					threads[j]=new TestThread(tree,keepRunning,operations);
+					threads[j]=new TestThread(tree,keepRunning,operations,barrier);
 				}
 
-
-				ExecutorService es=Executors.newSingleThreadExecutor();
-		    Future<Void> ft=es.submit(new Task());
-
-			for (int j=0;j<nbrThreads[i] ;j++ ) {
+				for (int j=0;j<threads.length ;j++ ) {
 				threads[j].start();
-			}
+				}	
+				ExecutorService es=Executors.newSingleThreadExecutor();
+				Future<Void> ft=es.submit(new Task());
+				try{
+			barrier.wait();
+		}catch(Exception e){
+			
+		}
+				
+				
+
+			
 			try{
 		      ft.get(10, TimeUnit.SECONDS);
 		  }catch(Exception e){
@@ -66,11 +75,13 @@ class FixedOpTest {
 }
 
 class Task implements Callable<Void> {
+	
 	public Void call(){
 		boolean t=true;
+		
 		while(t){
 			try {
-				Thread.sleep(10);
+				Thread.sleep(100);
 
 			}catch(Exception e){
 				//System.out.println("error");
@@ -87,15 +98,22 @@ class TestThread extends Thread {
 	int nbrOp;
 	AtomicBoolean keepRunning;
 	AtomicLong result;
+	CyclicBarrier barrier;
 
 
-	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree,AtomicBoolean kr,AtomicLong r){
+	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree,AtomicBoolean kr,AtomicLong r,CyclicBarrier b){
 		this.tree=tree;
 		keepRunning=kr;
 		result=r;
+		barrier=b;
 	}
 
 	public void run(){
+		try{
+			barrier.wait();
+		}catch(Exception e){
+			
+		}
 		Random r=new Random();
 		while(keepRunning.get()){
 			for(int i=0;i<put;i++)
