@@ -36,10 +36,6 @@ class IdTest{
 
 
   for (int j=0;j<nbrThreads[i] ;j++ ) {
-      
-    }
-
-  for (int j=0;j<nbrThreads[i] ;j++ ) {
 	  AtomicLong counter=new AtomicLong(0);
       results.add(counter);
         threads[j]=new TestThread(tree,counter,keepRunning,id,barrier);
@@ -71,7 +67,7 @@ class IdTest{
   System.out.println(result/10/1000);
   System.out.println("id : "+id.getId());
 	tries[k]=result/10/1000;
-			}
+			} //tries
 			long r=0;
 			for(long l : tries)
 				r+=l;

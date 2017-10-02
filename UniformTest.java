@@ -18,13 +18,14 @@ class UniformTest {
 		int cnt=0;
 
 		  for(int i=0;i<nbrThreads.length;i++){
-			ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
-			TestThread[] threads=new TestThread[nbrThreads[i]];
 			long[] times=new long[nbrTries];
-			AtomicBoolean keepRunning=new AtomicBoolean(true);
-			ArrayList<AtomicLong> results=new ArrayList<AtomicLong>();
 			CyclicBarrier barrier=new CyclicBarrier(nbrThreads[i]+1);
 			for (int k=0; k<nbrTries ; k++) {
+				ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
+			TestThread[] threads=new TestThread[nbrThreads[i]];
+			
+			AtomicBoolean keepRunning=new AtomicBoolean(true);
+			ArrayList<AtomicLong> results=new ArrayList<AtomicLong>();
 				for (int j=0;j<nbrThreads[i] ;j++ ) {
 					AtomicLong operations=new AtomicLong(0);
 					results.add(operations);
