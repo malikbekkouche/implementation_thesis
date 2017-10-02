@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.CyclicBarrier;
-class ExecutorTest{
+class IdTest{
 
   public static void main(String[] args) {
 
@@ -18,8 +18,12 @@ class ExecutorTest{
 
 		//int nbrOp=new Double(Math.pow(2,32)).intValue();
     int[] nbrThreads={1,2,4,8,16,32,64};
+	int nbrTries=6;
+	
 
 		for(int i=0;i<nbrThreads.length;i++){
+			long[] tries=new long[nbrTries];
+			for(int k=0;k<nbrTries;k++){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
   	ArrayList<AtomicLong> results=new ArrayList<AtomicLong>();
     TestThread[] threads=new TestThread[nbrThreads[i]];
@@ -63,11 +67,16 @@ class ExecutorTest{
   for(AtomicLong l : results){
     result+=l.get();
   }
-  System.out.println("threads : " + nbrThreads[i]);
+  
   System.out.println(result/10/1000);
   System.out.println("id : "+id.getId());
-
-
+	tries[k]=result/10/1000;
+			}
+			long r=0;
+			for(long l : tries)
+				r+=l;
+		System.out.println("threads : " + nbrThreads[i]);
+		System.out.println("average : "+r/nbrTries);
 
 	} //for trheads
 
@@ -82,11 +91,20 @@ class IdCreator {
   public int getId(){
     return id;
   }
+  
+  	public int[] rangePut(){
+		AtomicInteger newId=new AtomicInteger(id);
+		return new int[]{newId.get()-(newId.get()/10),newId.get()+(newId.get()/10)};
+	}
+	
+	public int[] rangeGet(){
+		AtomicInteger newId=new AtomicInteger(id);
+		return new int[]{newId.get()-(newId.get()/30),newId.get()+(newId.get()/10)};
+	}
 
   public void increment(){
     //for(int i=0;i<x;i++)
       id++;
-		id++;
     try{
       Thread.sleep(10);
     }catch(Exception e){
@@ -94,10 +112,7 @@ class IdCreator {
     }
   }
 
-  public int[] getRange(){
-    AtomicInteger newId=new AtomicInteger(id);
-    return new int[]{newId.get()-range,newId.get()+(range/4)};
-  }
+  
 
 }
 
@@ -107,6 +122,8 @@ class Task implements Callable<Void>{
   public Task(IdCreator id){
     this.id=id;
   }
+  
+  
 
   public Void call(){
     boolean t=true;
@@ -136,6 +153,8 @@ class TestThread extends Thread {
     this.id=id;
 	this.barrier=barrier;
 	}
+	
+
 
 	public void run(){ // may not count all the operations but will make counter less of a bottleneck
 		Random r=new Random();
@@ -144,14 +163,15 @@ class TestThread extends Thread {
 	}catch(Exception e){}
 
     while(keepRunning.get()){
+		int[] range= id.rangePut();
 		for(int i=0;i<put;i++)
-			tree.put(id.getId()+r.nextInt(25),0);
+			tree.put(ThreadLocalRandom.current().nextInt(range[0], range[1] + 1),0);
     counter.addAndGet(put);
-    int[] range=id.getRange();
+		range=id.rangeGet();
 		for(int i=0;i<get;i++)
 			tree.get(ThreadLocalRandom.current().nextInt(range[0], range[1] + 1));
     counter.addAndGet(get);
-    range=id.getRange();
+    range=id.rangeGet();
 		for(int i=0;i<remove;i++)
 			tree.remove(ThreadLocalRandom.current().nextInt(range[0], range[1] + 1));
     counter.addAndGet(remove);

@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.CyclicBarrier;
-class TimeTest {
+class UniformTest {
 	public static void main(String[] args){
 		int[] nbrThreads={1,2,4,8,16,24,32,48,64,96,128};
 		int nbrTries=6;
