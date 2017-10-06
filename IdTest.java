@@ -24,7 +24,7 @@ class IdTest{
 		for(int i=0;i<nbrThreads.length;i++){
 			long[] tries=new long[nbrTries];
 			for(int k=0;k<nbrTries;k++){
-		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
+		StaticDictionary5<Integer,Integer> tree=new StaticDictionary5();
   	ArrayList<AtomicLong> results=new ArrayList<AtomicLong>();
     TestThread[] threads=new TestThread[nbrThreads[i]];
 	CyclicBarrier barrier=new CyclicBarrier(nbrThreads[i]+1);
@@ -134,7 +134,7 @@ class Task implements Callable<Void>{
 
 class TestThread extends Thread {
   private AtomicLong counter;
-	private ConcurrentChromaticTreeMap<Integer,Integer> tree;
+	private StaticDictionary5<Integer,Integer> tree;
 	int range=1000;
 	int put=10,remove=5,get=100-put-remove;
   private AtomicBoolean keepRunning;
@@ -142,7 +142,7 @@ class TestThread extends Thread {
   private IdCreator id;
   CyclicBarrier barrier;
 
-	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree,AtomicLong count,AtomicBoolean run, IdCreator id,CyclicBarrier barrier){
+	public TestThread(StaticDictionary5<Integer,Integer> tree,AtomicLong count,AtomicBoolean run, IdCreator id,CyclicBarrier barrier){
 		this.tree=tree;
     this.counter=count;
     keepRunning=run;

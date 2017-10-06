@@ -1,6 +1,0 @@
-ConcurrentChromaticTree - cct.txt
-SnapTreeMap - snap.txt
-LogicalOrderingAVL - avl.txt
-StaticDictionaryTree - dict.txt
-LockBasedFriendlyTreeMap - lckb.txt
-
