@@ -8,7 +8,7 @@ class FunctionalTest {
 		//LogicalOrderingAVL<Integer,Integer> tree=new LogicalOrderingAVL<Integer,Integer>(Integer.MIN_VALUE,Integer.MAX_VALUE);
 		//SnapTreeMap<Integer,Integer> tree=new SnapTreeMap();
 		//StaticDictionary5<Integer,Integer> tree=new StaticDictionary5();
-		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
+		SyncTree<Integer,Integer> tree=new SyncTree();
 		/*tree.put(5,1);
 		tree.put(4,6);
 		System.out.println(tree.remove(5));
@@ -44,11 +44,16 @@ class FunctionalTest {
 			System.out.println(count.get(i)+" == "+count2[i]); */
 			
 		//for Staticdictionary
-		ArrayList<Integer> list=tree.iterator();
+		
+		Set<Integer> set=tree.keySet();
+		int[] count2=new int[nbrThreads];
+		for(Integer i : set)
+			count2[tree.get1(i)]++;
+		/* ArrayList<Integer> list=tree.iterator();
 		int[] count2=new int[nbrThreads];
 		for(int i: list){
 			count2[i]++;
-		}
+		} */
 		for(int i=0;i<nbrThreads;i++)
 			System.out.println(count.get(i)+" == "+count2[i]);
 		
@@ -77,10 +82,10 @@ class FunctionalTest {
 class LocalCounter implements Runnable {
     private  AtomicIntegerArray counter;
 	private int nbrOp; 
-	private ConcurrentChromaticTreeMap<Integer,Integer> tree;
+	private SyncTree<Integer,Integer> tree;
 	private int id;
     
-    public LocalCounter(AtomicIntegerArray arr,int nbrOp, ConcurrentChromaticTreeMap<Integer,Integer> tree,int id){
+    public LocalCounter(AtomicIntegerArray arr,int nbrOp, SyncTree<Integer,Integer> tree,int id){
         this.counter = arr;
 		this.nbrOp=nbrOp;
 		this.tree=tree;
@@ -105,7 +110,7 @@ class LocalCounter implements Runnable {
 			
 		}
 		for(int i=0;i<nbrOp/2;i++){
-			Integer result=tree.remove(r.nextInt());
+			Integer result=tree.remove1(r.nextInt());
 			if(result!=null)
 				counter.getAndDecrement(result);
 		}

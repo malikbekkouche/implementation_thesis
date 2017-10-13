@@ -21,7 +21,7 @@ class UniformTest {
 			long[] times=new long[nbrTries];
 			CyclicBarrier barrier=new CyclicBarrier(nbrThreads[i]+1);
 			for (int k=0; k<nbrTries ; k++) {
-				ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
+				SyncTree<Integer,Integer> tree=new SyncTree();
 			TestThread[] threads=new TestThread[nbrThreads[i]];
 			
 			AtomicBoolean keepRunning=new AtomicBoolean(true);
@@ -93,7 +93,7 @@ class Task implements Callable<Void> {
 }
 
 class TestThread extends Thread {
-	private ConcurrentChromaticTreeMap<Integer,Integer> tree;
+	private SyncTree<Integer,Integer> tree;
 	int range=1000;
 	int put=10,remove=5,get=100-put-remove;
 	int nbrOp;
@@ -102,7 +102,7 @@ class TestThread extends Thread {
 	CyclicBarrier barrier;
 
 
-	public TestThread(ConcurrentChromaticTreeMap<Integer,Integer> tree,AtomicBoolean kr,AtomicLong r,CyclicBarrier b){
+	public TestThread(SyncTree<Integer,Integer> tree,AtomicBoolean kr,AtomicLong r,CyclicBarrier b){
 		this.tree=tree;
 		keepRunning=kr;
 		result=r;
@@ -121,10 +121,10 @@ class TestThread extends Thread {
 				tree.put(r.nextInt(range+1),0);
 			result.addAndGet(put);
 			for(int i=0;i<get;i++)
-				tree.get(r.nextInt(range+1));
+				tree.get1(r.nextInt(range+1));
 			result.addAndGet(get);
 			for(int i=0;i<remove;i++)
-				tree.remove(r.nextInt(range+1));
+				tree.remove1(r.nextInt(range+1));
 			result.addAndGet(remove);
 
 			}
