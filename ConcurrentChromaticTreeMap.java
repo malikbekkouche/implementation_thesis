@@ -55,7 +55,9 @@
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 
 public class ConcurrentChromaticTreeMap<K,V> {
     private final int d; // this is the number of violations to allow on a search path before we fix everything on it. if d is zero, then each update fixes any violation it created before returning.
@@ -100,6 +102,42 @@ public class ConcurrentChromaticTreeMap<K,V> {
         if (node.left == null && node.key != null) return 1;
         return sequentialSize(node.left) + sequentialSize(node.right);
     }
+    
+    public boolean checkOrderTree(){
+		return checkOrderOfTree(root.left.left);
+	}
+    
+    public int transformTreeToMap(Map<K,V> map){
+		return transformTreeToMap_(root.left.left,map);
+	}
+	
+	public int transformTreeToMap_(final Node node, Map<K,V> map){
+		if(node == null) return 0;
+		if(node != null && node.left == null && node.right == null){
+			map.put((K)node.key, (V)node.value);			
+		}
+		return transformTreeToMap_(node.left, map) + transformTreeToMap_(node.right, map);			
+	}
+
+	public boolean checkOrderOfTree(final Node node){		
+		if(node == null) return true;
+		else{
+			//Comparable<K> k = (Comparable<K>) comparable(node.key);
+			final Comparable<? super K> k = comparable(node.key);
+			if(node.left!=null && node.right!=null){				
+				if(k.compareTo((K) node.left.key) < 0 || k.compareTo((K) node.right.key) > 0){
+					return false;
+				}
+			}else if(node.left!=null){
+				if(k.compareTo((K) node.left.key) < 0)
+					return false;
+			}else if(node.right!=null){
+				if(k.compareTo((K) node.right.key) > 0)
+					return false;
+			}
+		}		
+		return checkOrderOfTree(node.left) && checkOrderOfTree(node.right);
+	}
     
     public final int transformToList(List<K> list){
     	return  transformTreeToList(root, list);
@@ -153,7 +191,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
                     while (l.left != null) {
                         if (d > 0 && (l.weight > 1 || l.weight == 0 && p.weight == 0)) ++count;
                         p = l;
-                        l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
+                        //l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
+                        l = (k.compareTo((K) l.key) < 0) ? l.right : l.left;//**MUTATION
                     }
                 }
                 
@@ -302,7 +341,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
         // so, we return.
         if (op.state != Operation.STATE_INPROGRESS) return true;
         
-        // freeze sub-tree
+        // freeze sub-tree -- vlx
         for (; i<ops.length; ++i) {
             if (!updateOp.compareAndSet(nodes[i], ops[i], op) && nodes[i].op != op) { // if work was not done
                 if (op.allFrozen) {
