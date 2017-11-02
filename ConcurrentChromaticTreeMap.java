@@ -293,7 +293,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return oldValue == null ? false : true;
 	}
 
-	// C5
+	// C5 --
 	// return true if k is present, false otherwise
 	// returns the value in holder
 	public final boolean find(final K key, Holder<V> oldValue){
