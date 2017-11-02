@@ -58,6 +58,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+//added
+import javax.xml.ws.Holder;
+
 
 public class ConcurrentChromaticTreeMap<K,V> {
     private final int d; // this is the number of violations to allow on a search path before we fix everything on it. if d is zero, then each update fixes any violation it created before returning.
@@ -164,6 +167,117 @@ public class ConcurrentChromaticTreeMap<K,V> {
         }
         return (k.compareTo((K) l.key) == 0) ? (V) l.value : null;
     }
+	
+	// only adds if element not in the tree
+	// return true if element added, false otherwise
+	
+	public final boolean add(final K key,final V value){ 
+		return doPut(key,value,true) != null ? false : true;
+	}
+	
+	// returns true if the element was updated
+	// returns false if the key was not in the tree
+	// copy-pasted the do put method and changed some parts
+	// mostly commented out a few lines
+	public final boolean update(final K key,final V value){
+		 final Comparable<? super K> k = comparable(key);
+        boolean found = false;
+        Operation op = null;
+        Node p = null, l = null;
+        int count = 0;
+        
+        while (true) {
+            while (op == null) {
+                p = root;
+                l = root.left;
+                if (l.left != null) {
+                    count = 0;
+                    p = l;
+                    l = l.left; // note: before executing this line, l must have key infinity, and l.left must not.
+                    while (l.left != null) {
+                        if (d > 0 && (l.weight > 1 || l.weight == 0 && p.weight == 0)) ++count;
+                        p = l;
+                        l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
+                        //l = (k.compareTo((K) l.key) < 0) ? l.right : l.left;//**MUTATION
+                    }
+                }
+                
+                // if we find the key in the tree already
+                if (l.key != null && k.compareTo((K) l.key) == 0) {
+                    found = true;
+                    //if (onlyIfAbsent) return (V) l.value;
+                    op = createReplaceOp(p, l, key, value);
+                } else {
+                    found = false;
+					return found;
+                    //op = createInsertOp(p, l, key, value, k);
+                }
+            }
+            if (helpSCX(op, 0)) {
+                // clean up violations if necessary
+                if (d == 0) {
+                    if (!found && p.weight == 0 && l.weight == 1) fixToKey(k);
+                } else {
+                    if (count >= d) fixToKey(k);
+                }
+                // we may have found the key and replaced its value (and, if so, the old value is stored in the old node)
+                //return (found ? (V) l.value : null);
+				return found;
+            }
+            op = null;
+        }
+	}
+	
+	public final boolean update(final K key,final V value, Holder<V> oldValue){
+		 final Comparable<? super K> k = comparable(key);
+        boolean found = false;
+        Operation op = null;
+        Node p = null, l = null;
+        int count = 0;
+        
+        while (true) {
+            while (op == null) {
+                p = root;
+                l = root.left;
+                if (l.left != null) {
+                    count = 0;
+                    p = l;
+                    l = l.left; // note: before executing this line, l must have key infinity, and l.left must not.
+                    while (l.left != null) {
+                        if (d > 0 && (l.weight > 1 || l.weight == 0 && p.weight == 0)) ++count;
+                        p = l;
+                        l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
+                        //l = (k.compareTo((K) l.key) < 0) ? l.right : l.left;//**MUTATION
+                    }
+                }
+                
+                // if we find the key in the tree already
+                if (l.key != null && k.compareTo((K) l.key) == 0) {
+                    found = true;
+                    //if (onlyIfAbsent) return (V) l.value;
+					oldValue.value=(V)l.value;
+					System.out.println("old "+oldValue.value);
+                    op = createReplaceOp(p, l, key, value);
+                } else {
+                    found = false;
+					return found;
+                    //op = createInsertOp(p, l, key, value, k);
+                }
+            }
+            if (helpSCX(op, 0)) {
+                // clean up violations if necessary
+                if (d == 0) {
+                    if (!found && p.weight == 0 && l.weight == 1) fixToKey(k);
+                } else {
+                    if (count >= d) fixToKey(k);
+                }
+                // we may have found the key and replaced its value (and, if so, the old value is stored in the old node)
+                //return (found ? (V) l.value : null);
+				return found;
+            }
+            op = null;
+        }
+	}
 
     public final V put(final K key, final V value) {
         return doPut(key, value, false);
@@ -191,8 +305,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
                     while (l.left != null) {
                         if (d > 0 && (l.weight > 1 || l.weight == 0 && p.weight == 0)) ++count;
                         p = l;
-                        //l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
-                        l = (k.compareTo((K) l.key) < 0) ? l.right : l.left;//**MUTATION
+                        l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
+                        //l = (k.compareTo((K) l.key) < 0) ? l.right : l.left;//**MUTATION
                     }
                 }
                 
