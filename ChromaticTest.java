@@ -1,8 +1,10 @@
 import javax.xml.ws.Holder;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 class ChromaticTest {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
-		testFind(tree);
+		testAddAll(tree);
 	}
 	
 	public static void testAdd(ConcurrentChromaticTreeMap tree){
@@ -46,6 +48,17 @@ class ChromaticTest {
 		Holder<Integer> i=new Holder(new Integer(0));
 		System.out.println(tree.find(5,i));
 		System.out.println("int "+i.value);
+		System.out.println(tree.get(5));
+	}
+	
+	public static void testAddAll(ConcurrentChromaticTreeMap tree){
+		ArrayList<SimpleEntry<Integer,Integer>> list=new ArrayList();
+		list.add(new SimpleEntry(4,4));
+		list.add(new SimpleEntry(5,5));
+		list.add(new SimpleEntry(6,6));
+		tree.addAll(list);
+		
+		
 		System.out.println(tree.get(5));
 	}
 }
