@@ -98,21 +98,21 @@ public class LockbasedAVLTreeMap<K, V> {
 				return null;
 			}
 		}  	
-		
+
 	}
 	public final int transformToList(List<K> list){
 		return  transformTreeToList(root, list);
 	}
 
-//	public int transformTreeToList(final Node node, List<K> list){
-//		if (node == null) return 0;
-//		if (node.left == null && node.key != null){
-//			list.add((K) node.key);        	
-//			return 1;        
-//		}
-//		return transformTreeToList(node.left, list) + transformTreeToList(node.right, list);
-//	}
-	
+	//	public int transformTreeToList(final Node node, List<K> list){
+	//		if (node == null) return 0;
+	//		if (node.left == null && node.key != null){
+	//			list.add((K) node.key);        	
+	//			return 1;        
+	//		}
+	//		return transformTreeToList(node.left, list) + transformTreeToList(node.right, list);
+	//	}
+
 	public int transformTreeToList(final Node node, List<K> list){
 		if(node == null) return 0;
 		if(node != null){
@@ -121,7 +121,31 @@ public class LockbasedAVLTreeMap<K, V> {
 		return transformTreeToList(node.left, list) + transformTreeToList(node.right, list);			
 	}
 	
-	
+	public boolean checkOrderTree(){
+		return checkOrderOfTree(root);
+	}
+
+	public boolean checkOrderOfTree(final Node node){		
+		if(node == null) return true;
+		else{
+			
+			Comparable<K> k = (Comparable<K>) comparable(node.key);
+			if(node.left!=null && node.right!=null){						
+				if(k.compareTo((K) node.left.key) < 0 || k.compareTo((K) node.right.key) > 0){
+					return false;
+				}
+			}else if(node.left!=null){
+				if(k.compareTo((K) node.left.key) < 0)
+					return false;
+			}else if(node.right!=null){
+				if(k.compareTo((K) node.right.key) > 0)
+					return false;
+			}
+		}		
+		return checkOrderOfTree(node.left) && checkOrderOfTree(node.right);
+	}
+
+
 
 	private void delete(Node node) {
 		if (node.left == null && node.right == null) {
