@@ -228,6 +228,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
         }
 	}
 	
+	// the same as the previous one but returns the value in the Holder
 	public final boolean update(final K key,final V value, Holder<V> oldValue){
 		 final Comparable<? super K> k = comparable(key);
         boolean found = false;
@@ -278,6 +279,25 @@ public class ConcurrentChromaticTreeMap<K,V> {
             op = null;
         }
 	}
+	
+	// return true if the key was in the tree 
+	// replace the keys value with value
+	// return false otherwise and adds k,v
+	public final boolean updateOrAdd(final K key,final V value){
+		 return doPut(key,value,false) == null ? false : true;
+	}
+	
+	// same as previous method but returns the old value
+	public final boolean updateOrAdd(final K key,final V value, Holder<V> oldValue){
+		oldValue.value=doPut(key,value,false);
+		return oldValue == null ? false : true;
+	}
+	
+	public final boolean find(final K key, Holder<V> oldValue){
+		oldValue.value=get(key);
+		return oldValue == null ? false : true;
+	}
+	
 
     public final V put(final K key, final V value) {
         return doPut(key, value, false);
