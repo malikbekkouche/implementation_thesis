@@ -60,6 +60,9 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 //added
 import javax.xml.ws.Holder;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Iterator;
+import java.util.Collection;
 
 
 public class ConcurrentChromaticTreeMap<K,V> {
@@ -330,6 +333,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
             return false;
     }
 	
+	public final void addAll(Collection<SimpleEntry<K,V>> col){
+		Iterator<SimpleEntry<K,V>> itr=col.iterator();
+		while(itr.hasNext()){
+			SimpleEntry<K,V> entry =itr.next();
+			add(entry.getKey(),entry.getValue());
+		}
+			
+	}
+	
 
     public final V put(final K key, final V value) {
         return doPut(key, value, false);
@@ -386,7 +398,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
         }
     }
 
-    public final V remove(final K key) {
+    public final V remove(final K key,int n) {
         final Comparable<? super K> k = comparable(key);
         Node gp, p = null, l = null;
         Operation op = null;
