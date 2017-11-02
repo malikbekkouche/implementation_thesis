@@ -2,11 +2,13 @@ import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 
 /**
  * Implementation of concurrent AVL tree based on the paper 
@@ -34,10 +36,10 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 
 	/** The tree's root */
 	private AVLMapNode<K,V> root;
-	
+
 	/** The keys' comparator */
 	private Comparator<? super K> comparator;
-	
+
 	/** A constant object for the use of the {@code insert} method.  */
 	private final static Object EMPTY_ITEM = new Object();
 
@@ -59,6 +61,76 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 		parent.succ = root;
 	}
 
+
+	public boolean checkOrderTree(){
+		return checkOrderOfTree(root);
+	}
+
+	public boolean checkOrderOfTree(final AVLMapNode<K,V> node){		
+		if(node == null) return true;
+		else{
+			Comparable<K> k = (Comparable<K>) comparable(node.key);
+			if(node.left!=null && node.right!=null){				
+				if(k.compareTo((K) node.left.key) < 0 || k.compareTo((K) node.right.key) > 0){
+					return false;
+				}
+			}else if(node.left!=null){
+				if(k.compareTo((K) node.left.key) <= 0)
+					return false;
+			}else if(node.right!=null){
+				if(k.compareTo((K) node.right.key) > 0)
+					return false;
+			}
+		}		
+		return checkOrderOfTree(node.left) && checkOrderOfTree(node.right);
+	}
+
+	public final int transformToList(List<K> list){
+		return  transformTreeToList(root.left, list);
+	}	
+	public int transformTreeToList(final AVLMapNode<K,V> node, List<K> list){
+		if(node == null) return 0;
+		if(node != null){
+			list.add((K)node.key);			
+		}
+		return transformTreeToList(node.left, list) + transformTreeToList(node.right, list);			
+	}
+
+	/*
+	 * public int transformTreeToList(final Node<K,V> node, List<K> list){		
+		Iterator<java.util.Map.Entry<K, V>> itr= this.entrySet().iterator();
+		while(itr.hasNext()){
+			list.add(itr.next().getKey());
+		}
+		return 0;
+	}
+	 */
+
+
+	public int transformTreeToMap(Map<K,V> map){
+		return transformTreeToMap_(root.left, map);
+	}
+
+	public int transformTreeToMap_(final AVLMapNode<K,V> node, Map<K,V> map){
+		Iterator<java.util.Map.Entry<K, V>> itr = this.entrySet().iterator();
+		while(itr.hasNext()){
+			Entry<K,V> temp = itr.next();
+			map.put(temp.getKey(), temp.getValue());
+		}
+		return 0;
+	}
+
+
+	//	public int transformTreeToMap_(final AVLMapNode<K,V> node, Map<K,V> map){
+	//		if(node == null) return 0;
+	//		if(node != null && node.left == null && node.right == null){
+	//			map.put((K)node.key, (V)node.item);			
+	//		}
+	//		return transformTreeToMap_(node.left, map) + transformTreeToMap_(node.right, map);			
+	//	}
+
+
+
 	/**
 	 * Constructor, initialize the tree and the logical ordering layouts.
 	 * The logical ordering is initialized by creating two nodes, where their 
@@ -74,7 +146,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 		this(min, max);
 		this.comparator = comparator;
 	}
-	
+
 	/**
 	 * Given some object, returns an appropriate {@link Comparable} object.
 	 * If the comparator was initialized upon creating the tree, the 
@@ -99,7 +171,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 			}
 		};
 	}
-	
+
 	/**
 	 * Traverses the tree to find a node with the given key.
 	 * 
@@ -139,7 +211,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Traverses the tree to find a node with the given key.
 	 * 
@@ -177,7 +249,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 		} 
 		return (res == 0 && node.valid);
 	}
-	
+
 	/**
 	 * @see java.util.Map#put(java.lang.Object, java.lang.Object)
 	 */
@@ -185,7 +257,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 	public V put(K key, V value) {
 		return insert(key, value, false, false, null);
 	}
-	
+
 	/**
 	 * @see java.util.concurrent.ConcurrentMap#putIfAbsent(java.lang.Object, java.lang.Object)
 	 */
@@ -193,7 +265,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 	public V putIfAbsent(K key, V value) {
 		return insert(key, value, true, false, null);
 	}
-	
+
 	/**
 	 * @see java.util.concurrent.ConcurrentMap#replace(java.lang.Object, java.lang.Object)
 	 */
@@ -240,16 +312,16 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 			while (true) {
 				if (res == 0) break;
 				if (res > 0) {
-					child = node.right;
+					child = node.right;									
 				} else {
-					child = node.left;
+					child = node.left;					
 				}
 				if (child == null) break;
 				node = child;
 				nodeValue = node.key;
 				res = value.compareTo(nodeValue);
 			}
-			final AVLMapNode<K,V> pred = res > 0 ? node : node.pred;
+			final AVLMapNode<K,V> pred = res > 0 ? node : node.pred;		
 			pred.lockSuccLock();
 			if (pred.valid) {
 				final K predVal = pred.key;
@@ -282,10 +354,10 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 					}
 				}
 			}
-			pred.unlockSuccLock();
+			pred.unlockSuccLock();//MUTATION
 		}
 	}
-	
+
 	/**
 	 * Choose and lock the correct parent, given the new node's predecessor, 
 	 * successor, and the node returned from the traversal.
@@ -333,6 +405,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 			parent.left = newNode;
 			parent.leftHeight = 1;
 		}
+
 		if (parent != root) {
 			AVLMapNode<K, V> grandParent = lockParent(parent);
 			rebalance(grandParent, parent, grandParent.left == parent);
@@ -372,7 +445,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 	final public V remove(final Object key) {
 		return remove(key, false, null);
 	}
-	
+
 	/**
 	 * @see java.util.concurrent.ConcurrentMap#remove(java.lang.Object, java.lang.Object)
 	 */
@@ -380,7 +453,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 	final public boolean remove(final Object key, final Object item) {
 		return remove(key, true, item) != null;
 	}
-	
+
 	/**
 	 * Remove the given key from the tree. 
 	 * If the flag {@code compareItem} equals true, remove the key only if the
@@ -446,7 +519,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 			pred.unlockSuccLock();
 		}
 	}
-	
+
 	/**
 	 * Acquire the treeLocks of the following nodes: 
 	 * <ul>
@@ -480,7 +553,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 			}
 
 			final AVLMapNode<K,V> successor = node.succ;
-			
+
 			final AVLMapNode<K, V> parent = successor.parent;
 			if (parent != node) {
 				if (!parent.tryLockTreeLock()) {
@@ -562,7 +635,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 		node.unlockTreeLock();
 		parent.unlockTreeLock();
 		rebalance(oldParent, oldRight, isLeft);
-		
+
 		if (violated) {
 			succ.lockTreeLock();
 			int bf = succ.getBalanceFactor();
@@ -771,7 +844,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 			child.rightHeight = Math.max(node.leftHeight, node.rightHeight) + 1;
 		}
 	}
-	
+
 	/**
 	 * @see java.util.AbstractMap#clear()
 	 */
@@ -827,7 +900,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 		int lMax = size(node.left);
 		return rMax+lMax + 1;
 	}
-	
+
 	/**
 	 * The tree is empty if the root's left child is empty
 	 * @see java.util.AbstractMap#isEmpty()
@@ -836,7 +909,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 	public boolean isEmpty() {
 		return root.left == null;
 	}
-	
+
 	/**
 	 * @see java.util.Map#entrySet()
 	 */
@@ -871,7 +944,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 				if (v == null) return false;
 				return v.equals(((Entry) o).getValue());
 			}
-			
+
 			/**
 			 * @see java.util.AbstractCollection#add(java.lang.Object)
 			 */
@@ -879,7 +952,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 			public boolean add(java.util.Map.Entry<K, V> e) {
 				return put(e.getKey(), e.getValue()) != e.getValue();
 			}
-			
+
 			/**
 			 * @see java.util.AbstractCollection#remove(java.lang.Object)
 			 */
@@ -887,17 +960,17 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 			public boolean remove(Object o) {
 				return LogicalOrderingAVL.this.remove(((Entry) o).getKey(), ((Entry) o).getValue());
 			}
-			
+
 			/**
 			 * @see java.util.AbstractCollection#iterator()
 			 */
 			@Override
 			public Iterator<java.util.Map.Entry<K, V>> iterator() {
 				return new Iterator<Map.Entry<K,V>>() {
-					
+
 					private AVLMapNode<K, V> curr = root.parent;
 					private AVLMapNode<K, V> currNext = curr;
-					
+
 					@Override
 					public boolean hasNext() {
 						getNext();
@@ -921,15 +994,15 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 					@Override
 					public void remove() {
 						if (curr != root && curr != root.parent)
-						LogicalOrderingAVL.this.remove(curr.key, curr.item);
+							LogicalOrderingAVL.this.remove(curr.key, curr.item);
 					}
-					
+
 				};
 			}
-			
+
 		};
 	}
-	
+
 	/**
 	 * A tree node
 	 * 
@@ -942,34 +1015,34 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 
 		/** The node's key. */
 		public final K key;
-		
+
 		/** The node's item. */
 		public volatile Object item;
-		
+
 		/** Is the node valid? i.e. it was not marked as removed. */
 		public volatile boolean valid;
-		
+
 		/** The predecessor of the node (with respect to the ordering layout). */
 		public volatile AVLMapNode<K, V> pred;
-		
+
 		/** The successor of the node (with respect to the ordering layout). */
 		public volatile AVLMapNode<K, V> succ;
-		
+
 		/** The lock that protects the node's {@code succ} field and the {@code pred} field of the node pointed by {@code succ}. */
 		final public Lock succLock;
 
 		/** The parent of the node (with respect to the tree layout). */
 		public volatile AVLMapNode<K, V> parent;
-		
+
 		/** The left child of the node (with respect to the tree layout). */
 		public volatile AVLMapNode<K, V> left;
-		
+
 		/** The right child of the node (with respect to the tree layout). */
 		public volatile AVLMapNode<K, V> right;
-		
+
 		/** The height of the sub-tree rooted at {@code left}. */
 		public int leftHeight;
-		
+
 		/** The height of the sub-tree rooted at {@code right}. */
 		public int rightHeight;
 
@@ -993,7 +1066,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 			this.pred = pred;
 			this.succ = succ;
 			succLock = new ReentrantLock();
-			
+
 			this.parent = parent;
 			right = null;
 			left = null;
@@ -1001,7 +1074,7 @@ public class LogicalOrderingAVL<K, V> extends AbstractMap<K,V> implements Concur
 			rightHeight = 0;
 			treeLock = new ReentrantLock();
 		}
-		
+
 		/**
 		 * Constructor, create a new node with the given key.
 		 *  

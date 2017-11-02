@@ -191,8 +191,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
                     while (l.left != null) {
                         if (d > 0 && (l.weight > 1 || l.weight == 0 && p.weight == 0)) ++count;
                         p = l;
-                        //l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
-                        l = (k.compareTo((K) l.key) < 0) ? l.right : l.left;//**MUTATION
+                        l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
+                        //l = (k.compareTo((K) l.key) < 0) ? l.right : l.left;//**MUTATION
                     }
                 }
                 
