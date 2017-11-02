@@ -349,6 +349,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return true;
 		return false;
 	}
+	
+		public final void addAll(Collection<SimpleEntry<K,V>> col){
+		Iterator<SimpleEntry<K,V>> itr=col.iterator();
+		while(itr.hasNext()){
+			SimpleEntry<K,V> entry =itr.next();
+			add(entry.getKey(),entry.getValue());
+		}
+			
+	}
+	
+	// this is to test
 
 
 	public final V put(final K key, final V value) {
