@@ -64,8 +64,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 //added
 import javax.xml.ws.Holder;
 
-import ConcurrentChromaticTreeMap.Node;
-
 
 public class ConcurrentChromaticTreeMap<K,V> {
 	private final int d; // this is the number of violations to allow on a search path before we fix everything on it. if d is zero, then each update fixes any violation it created before returning.
