@@ -552,7 +552,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	//C5
 	// returns the entry with maximal key from the sorted dictionary, if any.
 	public SimpleEntry<K,V> findMax(){
-		Node temp = root;
+		Node temp = root.left.left;
 		if(temp == null)
 			return null;
 		while(temp.right!=null){
