@@ -60,6 +60,10 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 //added
 import javax.xml.ws.Holder;
+import java.util.Collection;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 
 public class ConcurrentChromaticTreeMap<K,V> {
@@ -357,6 +361,55 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			add(entry.getKey(),entry.getValue());
 		}
 			
+	}
+	
+	// returns pred if key is largest
+	public final Node successor(K key){
+		final Comparable<? super K> comp = comparable(key);
+		while(true){
+		ArrayList<Node> nodes=new ArrayList();
+		ArrayList<Operation> ops=new ArrayList();
+		Node lastLeft=root.left.left;
+		Node n=root.left.left;
+		while(!n.isLeaf()){  
+			if(comp.compareTo((K)n.key)<0){//key<n.key
+				lastLeft=n;
+				n=n.left;
+				nodes=new ArrayList();
+				nodes.add(lastLeft);
+				ops=new ArrayList();
+				ops.add(lastLeft.op);
+			}else{
+				n=n.right;
+				nodes.add(n);
+				ops.add(n.op);
+			}
+		}
+		if( comp.compareTo((K)n.key)<0 ){//key<n.key
+			return n;
+		}else{
+			Node succ=lastLeft.right;
+			while(!succ.isLeaf()){
+				nodes.add(succ);
+				ops.add(succ.op);
+				succ=succ.left;
+			}
+			if(vlx(nodes,ops))
+				return succ;
+			else
+				continue;
+			
+		}
+		}
+		
+	}
+	
+	private boolean vlx(ArrayList<Node> nodes,ArrayList<Operation> ops){
+		for (int i=0; i<ops.size(); ++i) {
+			if(!ops.get(i).equals(nodes.get(i).op))
+				return false;
+		}
+		return true;
 	}
 	
 	// this is to test
@@ -806,6 +859,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		public final boolean hasChild(final Node node) {
 			return node == left || node == right;
+		}
+		
+		public boolean isLeaf(){
+			return left==null && right==null;
 		}
 	}
 
