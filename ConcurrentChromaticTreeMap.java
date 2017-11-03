@@ -379,94 +379,95 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 	}
 
-	
+
 	// returns pred if key is largest
 	public final Node successor(K key){
 		final Comparable<? super K> comp = comparable(key);
 		while(true){
-		ArrayList<Node> nodes=new ArrayList();
-		ArrayList<Operation> ops=new ArrayList();
-		Node lastLeft=root.left.left;
-		Node n=root.left.left;
-		while(!n.isLeaf()){  
-			if(comp.compareTo((K)n.key)<0){//key<n.key
-				lastLeft=n;
-				n=n.left;
-				nodes=new ArrayList();
-				nodes.add(lastLeft);
-				ops=new ArrayList();
-				ops.add(lastLeft.op);
+			ArrayList<Node> nodes=new ArrayList();
+			ArrayList<Operation> ops=new ArrayList();
+			Node lastLeft=root.left.left;
+			Node n=root.left.left;
+			while(!n.isLeaf()){  
+				if(comp.compareTo((K)n.key)<0){//key<n.key
+					lastLeft=n;
+					n=n.left;
+					nodes=new ArrayList();
+					nodes.add(lastLeft);
+					ops=new ArrayList();
+					ops.add(lastLeft.op);
+				}else{
+					n=n.right;
+					nodes.add(n);
+					ops.add(n.op);
+				}
+			}
+			if( comp.compareTo((K)n.key)<0 ){//key<n.key
+				return n;
 			}else{
-				n=n.right;
-				nodes.add(n);
-				ops.add(n.op);
-			}
-		}
-		if( comp.compareTo((K)n.key)<0 ){//key<n.key
-			return n;
-		}else{
-			Node succ=lastLeft.right;
-			while(!succ.isLeaf()){
-				nodes.add(succ);
-				ops.add(succ.op);
-				succ=succ.left;
-			}
-			if(vlx(nodes,ops))
-				if(comp.compareTo((K)succ.key)<0)
-					return succ;
+				Node succ=lastLeft.right;
+				while(!succ.isLeaf()){
+					nodes.add(succ);
+					ops.add(succ.op);
+					succ=succ.left;
+				}
+				if(vlx(nodes,ops))
+					if(comp.compareTo((K)succ.key)<0)
+						return succ;
+					else
+						return null;
 				else
-					return null;
-			else
-				continue;
-			
+					continue;
+
+			}
+
 		}
-		}
-		
+
 	}
-	
+
 	public final Node predecessor(K key){
 		final Comparable<? super K> comp = comparable(key);
 		while(true){
-		ArrayList<Node> nodes=new ArrayList();
-		ArrayList<Operation> ops=new ArrayList();
-		Node lastRight=root.left.left;
-		Node n=root.left.left;
-		while(!n.isLeaf()){  
-			if(comp.compareTo((K)n.key)>0){//key<n.key
-				lastRight=n;
-				n=n.right;
-				nodes=new ArrayList();
-				nodes.add(lastRight);
-				ops=new ArrayList();
-				ops.add(lastRight.op);
+			ArrayList<Node> nodes=new ArrayList();
+			ArrayList<Operation> ops=new ArrayList();
+			Node lastRight=root.left.left;
+			Node n=root.left.left;
+			while(!n.isLeaf()){  
+				if(comp.compareTo((K)n.key)>0){//key<n.key
+					lastRight=n;
+					n=n.right;
+					nodes=new ArrayList();
+					nodes.add(lastRight);
+					ops=new ArrayList();
+					ops.add(lastRight.op);
+				}else{
+					n=n.left;
+					nodes.add(n);
+					ops.add(n.op);
+				}
+			}
+			if( comp.compareTo((K)n.key)>0 ){//key<n.key
+				return n;
 			}else{
-				n=n.left;
-				nodes.add(n);
-				ops.add(n.op);
-			}
-		}
-		if( comp.compareTo((K)n.key)>0 ){//key<n.key
-			return n;
-		}else{
-			Node succ=lastRight.left;
-			while(!succ.isLeaf()){
-				nodes.add(succ);
-				ops.add(succ.op);
-				succ=succ.left;
-			}
-			if(vlx(nodes,ops))
-				if(comp.compareTo((K)succ.key)>0)
-					return succ;
+				Node succ=lastRight.left;
+				while(!succ.isLeaf()){
+					nodes.add(succ);
+					ops.add(succ.op);
+					succ=succ.left;
+				}
+				if(vlx(nodes,ops))
+					if(comp.compareTo((K)succ.key)>0)
+						return succ;
+					else
+						return null;
 				else
-					return null;
-			else
-				continue;
-			
+					continue;
+
+			}
 		}
-		}
-		
+
 	}
-	
+
 	private boolean vlx(ArrayList<Node> nodes,ArrayList<Operation> ops){
 		for (int i=0; i<ops.size(); ++i) {
 			if(!ops.get(i).equals(nodes.get(i).op))
@@ -474,7 +475,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 		return true;
 	}
-	
+
+	// should be more generic and return collection
 	public final ArrayList rangeFrom(K key){
 		ArrayList<SimpleEntry<K,V>> list=new ArrayList();
 		Node from=getNode(key);
@@ -490,8 +492,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 	
 
+
 	// this is to test
-	
+
 	//C5
 	// returns the entry with minimal key from the
 	// sorted dictionary, if any
@@ -516,7 +519,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 		return null;		
 	}
-	
+
 	//C5
 	// returns the entry with maximal key from the sorted dictionary, if any.
 	public SimpleEntry<K,V> findMax(){
@@ -529,7 +532,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		SimpleEntry<K,V> pair = new SimpleEntry<K,V>((K)temp.key, (V)temp.value);
 		return pair;
 	}
-	
+
 	//C5
 	// removes and returns the entry with maximal key from the sorted dictionary, if any.
 	public SimpleEntry<K,V> deleteMax(){
@@ -987,7 +990,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		public final boolean hasChild(final Node node) {
 			return node == left || node == right;
 		}
-		
+
 		public boolean isLeaf(){
 			return left==null && right==null;
 		}
