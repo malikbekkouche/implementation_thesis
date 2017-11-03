@@ -528,7 +528,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	// returns the entry with minimal key from the
 	// sorted dictionary, if any
 	public SimpleEntry<K,V> findMin(){
-		Node temp = root;
+		Node temp = root.left.left;
 		if(temp == null)
 			return null;
 		while(temp.left!=null){
@@ -552,7 +552,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	//C5
 	// returns the entry with maximal key from the sorted dictionary, if any.
 	public SimpleEntry<K,V> findMax(){
-		Node temp = root;
+		Node temp = root.left.left;
 		if(temp == null)
 			return null;
 		while(temp.right!=null){
