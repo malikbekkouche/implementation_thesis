@@ -517,6 +517,160 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return null;	
 	}
 
+	
+	//C5
+	// returns true if there is a successor of k and in that case binds the successor to res; otherwise returns
+	// false and binds the default value of KeyValuePair<K,V> to res.
+	// set default value to out ???
+	public boolean trySuccessor(K key, Holder<SimpleEntry<K,V>> out){
+		Node temp = successor(key);
+		if(temp != null){
+			SimpleEntry<K,V> entry = new SimpleEntry<K,V>((K)temp.key, (V)temp.value);
+			out.value = entry;
+			return true;
+		}
+		out = null;
+		return false;
+	}
+	
+	
+	//C5
+	public final Node weakSuccessor(K key){
+		final Comparable<? super K> comp = comparable(key);
+		while(true){
+			ArrayList<Node> nodes=new ArrayList();
+			ArrayList<Operation> ops=new ArrayList();
+			Node lastLeft=root.left.left;
+			Node n=root.left.left;
+			while(!n.isLeaf()){  
+				if(comp.compareTo((K)n.key) <= 0){//key<n.key
+					lastLeft=n;
+					n=n.left;
+					nodes=new ArrayList();
+					nodes.add(lastLeft);
+					ops=new ArrayList();
+					ops.add(lastLeft.op);
+				}else{
+					n=n.right;
+					nodes.add(n);
+					ops.add(n.op);
+				}
+			}
+			if( comp.compareTo((K)n.key) <= 0 ){//key<n.key
+				return n;
+			}else{
+				Node succ=lastLeft.right;
+				while(!succ.isLeaf()){
+					nodes.add(succ);
+					ops.add(succ.op);
+					succ=succ.left;
+				}
+				if(vlx(nodes,ops))
+					if(comp.compareTo((K)succ.key) <= 0)
+						return succ;
+					else
+						return null;
+				else
+					continue;
+
+			}
+
+		}
+
+	}
+	
+	
+	
+	//C5
+	// returns true if there is a weak successor of k and in that case binds the weak successor to res;
+	// otherwise returns false and binds the default value of KeyValuePair<K,V> to res.
+	// set default value to out ???
+	public boolean tryWeakSuccessor(K key, Holder<SimpleEntry<K,V>> out){
+		Node temp = weakSuccessor(key);
+		if(temp != null){
+			SimpleEntry<K,V> entry = new SimpleEntry<K,V>((K)temp.key, (V)temp.value);
+			out.value = entry;
+			return true;
+		}
+		out.value = null;
+		return false;
+	}
+	
+	
+	
+	//C5
+	public final Node weakPredecessor(K key){
+		final Comparable<? super K> comp = comparable(key);
+		while(true){
+			ArrayList<Node> nodes=new ArrayList();
+			ArrayList<Operation> ops=new ArrayList();
+			Node lastRight=root.left.left;
+			Node n=root.left.left;
+			while(!n.isLeaf()){  
+				if(comp.compareTo((K)n.key) >= 0){//key<n.key
+					lastRight=n;
+					n=n.right;
+					nodes=new ArrayList();
+					nodes.add(lastRight);
+					ops=new ArrayList();
+					ops.add(lastRight.op);
+				}else{
+					n=n.left;
+					nodes.add(n);
+					ops.add(n.op);
+				}
+			}
+			if( comp.compareTo((K)n.key) >= 0 ){//key<n.key
+				return n;
+			}else{
+				Node succ=lastRight.left;
+				while(!succ.isLeaf()){
+					nodes.add(succ);
+					ops.add(succ.op);
+					succ=succ.left;
+				}
+				if(vlx(nodes,ops))
+					if(comp.compareTo((K)succ.key) >= 0)
+						return succ;
+					else
+						return null;
+				else
+					continue;
+
+			}
+		}
+	}
+	
+	//C5
+	// returns true if there is a precedessor of k and in that case binds the predecessor to res; otherwise
+	// returns false and binds the default value of KeyValuePair<K,V> to res
+	// set default value to out ???
+	public boolean tryPredecessor(K key, Holder<SimpleEntry<K,V>> out){
+		Node temp = predecessor(key);
+		if(temp != null){
+			SimpleEntry<K,V> entry = new SimpleEntry<K,V>((K)temp.key, (V)temp.value);
+			out.value = entry;
+			return true;
+		}
+		out.value = null;
+		return false;
+	}
+		
+	//C5
+	// eturns true if there is a weak precedessor of k and in that case binds the weak prede-
+	// cessor to res; otherwise returns false and binds the default value of Key-
+	// ValuePair<K,V> to res
+	// set default value to out ???
+	public boolean tryWeakPredecessor(K key, Holder<SimpleEntry<K,V>> out){
+		Node temp = weakPredecessor(key);
+		if(temp != null){
+			SimpleEntry<K,V> entry = new SimpleEntry<K,V>((K)temp.key, (V)temp.value);
+			out.value = entry;
+			return true;
+		}
+		out.value = null;
+		return false;
+	}
 
 	public final V put(final K key, final V value) {
 		return doPut(key, value, false);
