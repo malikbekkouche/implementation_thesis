@@ -4,8 +4,89 @@ import java.util.ArrayList;
 class ChromaticTest {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
+
 		//testRangeTo(tree);
 		testFindMin(tree);
+
+		testContains(tree);
+	}
+	
+	public static void testContains(ConcurrentChromaticTreeMap tree){
+		System.out.println(tree.contains(0));
+		tree.add(0,7);
+		System.out.println(tree.contains(0));
+		System.out.println(tree.contains(7));
+	}
+	
+	public static void testFindOrAdd(ConcurrentChromaticTreeMap tree){
+		System.out.println(tree.findOrAdd(0,0));
+		System.out.println(tree.findOrAdd(0,7));
+		System.out.println(tree.findOrAdd(1,7));
+	}
+	
+	public static void testRemove(ConcurrentChromaticTreeMap tree){
+		tree.put(5,5);
+		tree.put(9,7);
+		tree.put(7,5);
+		tree.put(1,7);
+		tree.put(77,5);
+		tree.put(0,9);
+		tree.put(4,5);
+		tree.put(11,7);
+		System.out.println(tree.remove(0));
+		System.out.println(tree.remove(12));
+	}
+
+	
+	public static void testFindMin(ConcurrentChromaticTreeMap tree){
+		tree.put(5,5);
+		tree.put(9,7);
+		tree.put(7,5);
+		tree.put(1,7);
+		tree.put(77,5);
+		tree.put(0,9);
+		tree.put(4,5);
+		tree.put(11,7);
+		System.out.println(tree.findMin());
+	}
+	
+	public static void testDeleteMin(ConcurrentChromaticTreeMap tree){
+		tree.put(5,5);
+		tree.put(9,7);
+		tree.put(7,5);
+		tree.put(1,7);
+		tree.put(77,5);
+		//tree.put(0,9);
+		tree.put(4,5);
+		tree.put(11,7);
+		System.out.println(tree.deleteMin());
+	}
+	
+	public static void testFindMax(ConcurrentChromaticTreeMap tree){
+		tree.put(5,5);
+		tree.put(9,7);
+		tree.put(7,5);
+		tree.put(1,7);
+		tree.put(77,5);
+		tree.put(0,9);
+		tree.put(4,5);
+		tree.put(11,7);
+		System.out.println(tree.findMax());
+	}
+	
+	public static void testDeleteMax(ConcurrentChromaticTreeMap tree){
+		/* tree.put(5,5);
+		tree.put(9,7);
+		tree.put(7,5);
+		tree.put(1,7);
+		tree.put(77,5);
+		tree.put(0,9); */
+		tree.put(4,5);
+		tree.put(11,7);
+		System.out.println(tree.deleteMax());
+		System.out.println(tree.deleteMax());
+		System.out.println(tree.deleteMax());
+
 	}
 	
 	public static void testAdd(ConcurrentChromaticTreeMap tree){
@@ -128,7 +209,7 @@ class ChromaticTest {
 		
 	}
 
-	public static void testFindMin(ConcurrentChromaticTreeMap tree){
+	public static void testFindMin1(ConcurrentChromaticTreeMap tree){
 		System.out.println(tree.add(11,11));
 		System.out.println(tree.add(23,23));
 		System.out.println(tree.add(3,3));
