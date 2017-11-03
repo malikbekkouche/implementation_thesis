@@ -4,7 +4,7 @@ import java.util.ArrayList;
 class ChromaticTest {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
-		testSucc(tree);
+		testRangeFrom(tree);
 	}
 	
 	public static void testAdd(ConcurrentChromaticTreeMap tree){
@@ -83,6 +83,17 @@ class ChromaticTest {
 		System.out.println(tree.predecessor(6).key);
 		System.out.println(tree.predecessor(8).key);
 		System.out.println(tree.predecessor(10).key);
+		
+	}
+	
+	
+	public static void testRangeFrom(ConcurrentChromaticTreeMap tree){
+		System.out.println(tree.add(5,6));
+		System.out.println(tree.add(8,7));
+		System.out.println(tree.add(7,7));
+		ArrayList<SimpleEntry<Integer,Integer>> list=tree.rangeFrom(6);
+		for(SimpleEntry<Integer,Integer> i : list)
+			System.out.println("key : "+i.getKey()+" - "+i.getValue());
 		
 	}
 }

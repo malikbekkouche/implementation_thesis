@@ -183,6 +183,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	public final boolean add(final K key,final V value){ 
 		return doPut(key,value,true) != null ? false : true;
 	}
+	
+	
+	private final Node getNode(final K key) {
+		final Comparable<? super K> k = comparable(key);
+		Node l = root.left.left;
+		if (l == null) return null; // no keys in data structure
+		while (l.left != null) {
+			l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
+		}
+		return (k.compareTo((K) l.key) == 0) ?  l : null;
+	}
 
 	// returns true if the element was updated
 	// returns false if the key was not in the tree
@@ -462,6 +473,20 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				return false;
 		}
 		return true;
+	}
+	
+	public final ArrayList rangeFrom(K key){
+		ArrayList<SimpleEntry<K,V>> list=new ArrayList();
+		Node from=getNode(key);
+		if (from == null){
+			from=successor(key);
+		}
+		list.add(new SimpleEntry<K,V>((K)from.key,(V)from.value));
+		while((from=successor((K)from.key))!=null){
+			list.add(new SimpleEntry<K,V>((K)from.key,(V)from.value));
+		}
+		
+		return list;
 	}
 	
 
