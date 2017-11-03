@@ -52,7 +52,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +67,8 @@ import java.util.Collection;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Iterator;
+
+
 
 
 public class ConcurrentChromaticTreeMap<K,V> {
@@ -353,15 +358,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return true;
 		return false;
 	}
-	
-		public final void addAll(Collection<SimpleEntry<K,V>> col){
+
+	public final void addAll(Collection<SimpleEntry<K,V>> col){
 		Iterator<SimpleEntry<K,V>> itr=col.iterator();
 		while(itr.hasNext()){
 			SimpleEntry<K,V> entry =itr.next();
 			add(entry.getKey(),entry.getValue());
 		}
-			
+
 	}
+
 	
 	// returns pred if key is largest
 	public final Node successor(K key){
@@ -412,7 +418,57 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return true;
 	}
 	
+
 	// this is to test
+	
+	//C5
+	// returns the entry with minimal key from the
+	// sorted dictionary, if any
+	public SimpleEntry<K,V> findMin(){
+		Node temp = root;
+		if(temp == null)
+			return null;
+		while(temp.left!=null){
+			temp = temp.left;
+		}
+		SimpleEntry<K,V> pair = new SimpleEntry<K,V>((K)temp.key, (V)temp.value);
+		return pair;
+	}
+
+	//C5
+	// removes and returns the entry with minimal key from the sorted dictionary, if any
+	public SimpleEntry<K,V> deleteMin(){
+		SimpleEntry<K,V> temp = findMin();
+		if(temp != null){
+			if(remove(temp.getKey(), 0) != null)
+				return temp;
+		}
+		return null;		
+	}
+	
+	//C5
+	// returns the entry with maximal key from the sorted dictionary, if any.
+	public SimpleEntry<K,V> findMax(){
+		Node temp = root;
+		if(temp == null)
+			return null;
+		while(temp.right!=null){
+			temp = temp.right;
+		}
+		SimpleEntry<K,V> pair = new SimpleEntry<K,V>((K)temp.key, (V)temp.value);
+		return pair;
+	}
+	
+	//C5
+	// removes and returns the entry with maximal key from the sorted dictionary, if any.
+	public SimpleEntry<K,V> deleteMax(){
+		SimpleEntry<K,V> temp = findMax();
+		if(temp != null){
+			if(remove(temp.getKey(), 0) != null)
+				return temp;
+		}
+		return null;	
+	}
 
 
 	public final V put(final K key, final V value) {
@@ -947,26 +1003,26 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					return createRb2Op(new Node[] {fX, fXX, fXXL, fXXLR},
 							new Operation[] {opfX, opfXX, opfXXL, opfXXLR});
 				} else { // assert: fXXLR.weight == 1
-						final Node fXXLRL = fXXLR.left;
-						if (fXXLRL == null) return null;
-						if (fXXLRL.weight == 0) {
-							final Operation opfXXLRL = weakLLX(fXXLRL);
-							if (opfXXLRL == null) return null;
-							return createW4SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR, fXXLRL},
-									new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR, opfXXLRL});
-						} else { // assert: fXXLRL.weight > 0
-							final Node fXXLRR = fXXLR.right;
-							if (fXXLRR == null) return null;
-							if (fXXLRR.weight == 0) {
-								final Operation opfXXLRR = weakLLX(fXXLRR);
-								if (opfXXLRR == null) return null;
-								return createW3SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR, fXXLRR},
-										new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR, opfXXLRR});
-							} else { // assert: fXXLRR.weight > 0
-								return createW2SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR},
-										new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR});
-							}
+					final Node fXXLRL = fXXLR.left;
+					if (fXXLRL == null) return null;
+					if (fXXLRL.weight == 0) {
+						final Operation opfXXLRL = weakLLX(fXXLRL);
+						if (opfXXLRL == null) return null;
+						return createW4SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR, fXXLRL},
+								new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR, opfXXLRL});
+					} else { // assert: fXXLRL.weight > 0
+						final Node fXXLRR = fXXLR.right;
+						if (fXXLRR == null) return null;
+						if (fXXLRR.weight == 0) {
+							final Operation opfXXLRR = weakLLX(fXXLRR);
+							if (opfXXLRR == null) return null;
+							return createW3SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR, fXXLRR},
+									new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR, opfXXLRR});
+						} else { // assert: fXXLRR.weight > 0
+							return createW2SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR},
+									new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR});
 						}
+					}
 				}
 			}
 		} else if (fXXL.weight == 1) {
