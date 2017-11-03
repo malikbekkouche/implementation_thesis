@@ -73,4 +73,16 @@ class ChromaticTest {
 		System.out.println(tree.successor(10).key);
 		
 	}
+	
+	public static void testPred(ConcurrentChromaticTreeMap tree){
+		System.out.println(tree.add(5,6));
+		System.out.println(tree.add(8,7));
+		//System.out.println(tree.predecessor(4).key);
+		//System.out.println(tree.predecessor(5).key);
+		System.out.println(tree.add(7,7));
+		System.out.println(tree.predecessor(6).key);
+		System.out.println(tree.predecessor(8).key);
+		System.out.println(tree.predecessor(10).key);
+		
+	}
 }

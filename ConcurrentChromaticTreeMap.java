@@ -401,7 +401,53 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				succ=succ.left;
 			}
 			if(vlx(nodes,ops))
-				return succ;
+				if(comp.compareTo((K)succ.key)<0)
+					return succ;
+				else
+					return null;
+			else
+				continue;
+			
+		}
+		}
+		
+	}
+	
+	public final Node predecessor(K key){
+		final Comparable<? super K> comp = comparable(key);
+		while(true){
+		ArrayList<Node> nodes=new ArrayList();
+		ArrayList<Operation> ops=new ArrayList();
+		Node lastRight=root.left.left;
+		Node n=root.left.left;
+		while(!n.isLeaf()){  
+			if(comp.compareTo((K)n.key)>0){//key<n.key
+				lastRight=n;
+				n=n.right;
+				nodes=new ArrayList();
+				nodes.add(lastRight);
+				ops=new ArrayList();
+				ops.add(lastRight.op);
+			}else{
+				n=n.left;
+				nodes.add(n);
+				ops.add(n.op);
+			}
+		}
+		if( comp.compareTo((K)n.key)>0 ){//key<n.key
+			return n;
+		}else{
+			Node succ=lastRight.left;
+			while(!succ.isLeaf()){
+				nodes.add(succ);
+				ops.add(succ.op);
+				succ=succ.left;
+			}
+			if(vlx(nodes,ops))
+				if(comp.compareTo((K)succ.key)>0)
+					return succ;
+				else
+					return null;
 			else
 				continue;
 			
