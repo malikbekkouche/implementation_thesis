@@ -491,6 +491,35 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return list;
 	}
 	
+	public final ArrayList rangeFromTo(K k1,K k2){
+		final Comparable<? super K> comp = comparable(k2);
+		ArrayList<SimpleEntry<K,V>> list=new ArrayList();
+		Node from=getNode(k1);
+		if (from == null){
+			from=successor(k1);
+		}
+		list.add(new SimpleEntry<K,V>((K)from.key,(V)from.value));
+		while((from=successor((K)from.key))!=null && comp.compareTo((K)from.key)>0){
+			list.add(new SimpleEntry<K,V>((K)from.key,(V)from.value));
+		}
+		
+		return list;
+	}
+	
+	public final ArrayList rangeTo(K key){
+		final Comparable<? super K> comp = comparable(key);
+		ArrayList<SimpleEntry<K,V>> list=new ArrayList();
+		SimpleEntry<K,V> min=findMin();
+		Node from=getNode((K)min.getKey());
+		
+		list.add(new SimpleEntry<K,V>((K)from.key,(V)from.value));
+		while((from=successor((K)from.key))!=null && comp.compareTo((K)from.key)>0){
+			list.add(new SimpleEntry<K,V>((K)from.key,(V)from.value));
+		}
+		
+		return list;
+	}
+	
 
 
 	// this is to test
