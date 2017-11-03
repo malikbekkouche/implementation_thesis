@@ -4,7 +4,8 @@ import java.util.ArrayList;
 class ChromaticTest {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
-		testRangeTo(tree);
+		//testRangeTo(tree);
+		testFindMin(tree);
 	}
 	
 	public static void testAdd(ConcurrentChromaticTreeMap tree){
@@ -124,6 +125,37 @@ class ChromaticTest {
 		ArrayList<SimpleEntry<Integer,Integer>> list=tree.rangeTo(16);
 		for(SimpleEntry<Integer,Integer> i : list)
 			System.out.println("key : "+i.getKey()+" - "+i.getValue());
+		
+	}
+
+	public static void testFindMin(ConcurrentChromaticTreeMap tree){
+		System.out.println(tree.add(11,11));
+		System.out.println(tree.add(23,23));
+		System.out.println(tree.add(3,3));
+		System.out.println(tree.add(4,4));
+		System.out.println(tree.add(5,5));
+		System.out.println(tree.add(63,6));
+		System.out.println(tree.add(7,1));
+//		System.out.println(tree.findMin().getKey());
+//		System.out.println(tree.findMin().getValue());
+//		System.out.println(tree.findMax().getKey());
+//		System.out.println(tree.findMax().getValue());
+//		System.out.println(tree.deleteMin().getKey());
+//		System.out.println(tree.deleteMax().getKey());
+//		
+//		System.out.println(tree.findMin().getValue());
+//		System.out.println(tree.findMax().getKey());
+		Holder<Integer> out = new Holder<Integer>();
+		System.out.println(tree.trySuccessor(5, out));
+		System.out.println(out.value);
+		System.out.println(tree.tryWeakSuccessor(5, out));
+		System.out.println(out.value);
+		System.out.println(tree.tryPredecessor(5, out));
+		System.out.println(out.value);
+		System.out.println(tree.tryWeakPredecessor(7, out));
+		System.out.println(out.value);
+		
+		
 		
 	}
 }
