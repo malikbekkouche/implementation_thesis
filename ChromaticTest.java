@@ -28,6 +28,13 @@ class ChromaticTest {
 		t.start();
 		tree.successor(10,barrier);
 		
+
+
+		//testRangeTo(tree);
+		testFindMin(tree);
+
+		testContains(tree);
+
 	}
 	
 	public static void testContains(ConcurrentChromaticTreeMap tree){
@@ -105,6 +112,7 @@ class ChromaticTest {
 		System.out.println(tree.deleteMax());
 		System.out.println(tree.deleteMax());
 		System.out.println(tree.deleteMax());
+
 	}
 	
 	public static void testAdd(ConcurrentChromaticTreeMap tree){
@@ -224,6 +232,37 @@ class ChromaticTest {
 		ArrayList<SimpleEntry<Integer,Integer>> list=tree.rangeTo(16);
 		for(SimpleEntry<Integer,Integer> i : list)
 			System.out.println("key : "+i.getKey()+" - "+i.getValue());
+		
+	}
+
+	public static void testFindMin1(ConcurrentChromaticTreeMap tree){
+		System.out.println(tree.add(11,11));
+		System.out.println(tree.add(23,23));
+		System.out.println(tree.add(3,3));
+		System.out.println(tree.add(4,4));
+		System.out.println(tree.add(5,5));
+		System.out.println(tree.add(63,6));
+		System.out.println(tree.add(7,1));
+//		System.out.println(tree.findMin().getKey());
+//		System.out.println(tree.findMin().getValue());
+//		System.out.println(tree.findMax().getKey());
+//		System.out.println(tree.findMax().getValue());
+//		System.out.println(tree.deleteMin().getKey());
+//		System.out.println(tree.deleteMax().getKey());
+//		
+//		System.out.println(tree.findMin().getValue());
+//		System.out.println(tree.findMax().getKey());
+		Holder<Integer> out = new Holder<Integer>();
+		System.out.println(tree.trySuccessor(5, out));
+		System.out.println(out.value);
+		System.out.println(tree.tryWeakSuccessor(5, out));
+		System.out.println(out.value);
+		System.out.println(tree.tryPredecessor(5, out));
+		System.out.println(out.value);
+		System.out.println(tree.tryWeakPredecessor(7, out));
+		System.out.println(out.value);
+		
+		
 		
 	}
 }
