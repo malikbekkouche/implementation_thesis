@@ -66,7 +66,9 @@ import javax.xml.ws.Holder;
 import java.util.Collection;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.concurrent.CyclicBarrier;
 
 
 
@@ -80,6 +82,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private final Comparator<? super K> comparator;
 	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Operation> updateOp;
 	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Node> updateLeft, updateRight;
+	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Node> updatePrev;
+	// added for gcas
+	private final char LEFT='L';
+	private final char RIGHT='R';
 
 	public ConcurrentChromaticTreeMap() {
 		this(DEFAULT_d, null); 
@@ -98,6 +104,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		updateOp = AtomicReferenceFieldUpdater.newUpdater(Node.class, Operation.class, "op");
 		updateLeft = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "left");
 		updateRight = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "right");
+		updatePrev = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "prev");
 	}
 
 	/**
@@ -381,6 +388,63 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 
 	// returns pred if key is largest
+	public final Node successor(K key,CyclicBarrier b){
+		final Comparable<? super K> comp = comparable(key);
+		boolean bool=false;
+		while(true){
+			System.out.println("start");
+			ArrayList<Node> nodes=new ArrayList();
+			ArrayList<Operation> ops=new ArrayList();
+			Node lastLeft=root.left.left;
+			Node n=root.left.left;
+			while(!n.isLeaf()){  
+				if(comp.compareTo((K)n.key)<0){//key<n.key
+					lastLeft=n;
+					n=n.left;
+					nodes=new ArrayList();
+					nodes.add(lastLeft);
+					ops=new ArrayList();
+					ops.add(lastLeft.op);
+				}else{
+					n=n.right;
+					nodes.add(n);
+					ops.add(n.op);
+				}
+			}
+			if( comp.compareTo((K)n.key)<0 ){//key<n.key
+				return n;
+			}else{
+				Node succ=lastLeft.right;
+				while(!succ.isLeaf()){
+					nodes.add(succ);
+					ops.add(succ.op);
+					succ=succ.left;
+				}
+				if(bool==false){
+				try{
+				System.out.println("wait");
+				b.await();}catch(Exception e){System.out.println("tree");}
+				}
+				if(vlx(nodes,ops))
+					if(comp.compareTo((K)succ.key)<0){
+						System.out.println("vlx succeeded");
+						return succ;
+					}
+						
+					else
+						return null;
+				else{
+					System.out.println("vlx failed");
+					bool=true;
+					//continue;
+				}
+
+			}
+
+		}
+
+	}
+	
 	public final Node successor(K key){
 		final Comparable<? super K> comp = comparable(key);
 		while(true){
@@ -418,6 +482,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return null;
 				else
 					continue;
+					
 
 			}
 
@@ -462,6 +527,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return null;
 				else
 					continue;
+				
+					
 
 			}
 		}
@@ -727,6 +794,56 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		out.value = null;
 		return false;
 	}
+	
+	private boolean gcas(Node in, Node old, Node n,char dir){
+		n.prev=old;
+		boolean casResult;
+		casResult = (dir == LEFT) ? updateLeft.compareAndSet(in,old,n) : updateRight.compareAndSet(in,old,n);
+		if(casResult){
+			gcasCommit(in,n,dir);
+			return n.prev==null;
+		}else
+			return false;
+			
+	}
+	
+	private Node gcasCommit(Node in, Node m, char dir){
+		Node p=m.prev;
+		Node r=root;// should be abbortable_read
+		boolean casResult;
+		if(p==null)
+			return m;
+		if(p.failed){
+			casResult = (dir == LEFT) ? updateLeft.compareAndSet(in,m,p.prev) : updateRight.compareAndSet(in,m,p.prev);
+			if(casResult)
+				return p.prev;
+			else
+				return dir == LEFT ? gcasCommit(in,in.left,dir) : gcasCommit(in,in.right,dir);
+		}else{
+			if(r.gen==in.gen){//skipped read-only for now
+				if(updatePrev.compareAndSet(m,p,null))
+					return m;
+				else
+					return gcasCommit(in,m,dir);
+			}else{
+				updatePrev.compareAndSet(m,p,new Node(p));
+				return dir == LEFT ? gcasCommit(in,in.left,dir) : gcasCommit(in,in.right,dir);
+			}	
+		
+		}
+	}
+	
+	private Node gcasRead(Node in,char dir){
+		Node m = dir == LEFT ? in.left : in.right ;
+		if(m.prev==null)
+			return m;
+		else
+			return gcasCommit(in,m,dir);
+	}
+	
+	
+	//--------------------------------------------------------------------------
+	//-------------------------end of our contribution--------------------------
 
 	public final V put(final K key, final V value) {
 		return doPut(key, value, false);
@@ -1160,6 +1277,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		public volatile Operation op;
 		public final Object key;
 		public volatile Node left, right;
+		// added for snapshot
+		public volatile Node prev;
+		public volatile boolean failed;
+		public volatile int gen;
 
 		public Node(final Object key, final Object value, final int weight, final Node left, final Node right, final Operation op) {
 			this.key = key;
@@ -1168,6 +1289,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.left = left;
 			this.right = right;
 			this.op = op;
+		}
+		
+		public Node(Node n) { // only use when failed
+			this.key = n.key;
+			this.value = n.value;
+			this.weight = n.weight;
+			this.left = n.left;
+			this.right = n.right;
+			this.op = n.op;
+			this.prev=n.prev;
+			this.failed=true;
 		}
 
 		public final boolean hasChild(final Node node) {
