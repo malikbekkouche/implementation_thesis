@@ -841,6 +841,55 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return gcasCommit(in,m,dir);
 	}
 	
+	private boolean gcasCopy(Node p,Node n,char dir,int gen){//needs to be implemented
+		return true;
+	}
+	
+	public SearchRecord search(K key){ // readOnly maybe
+		while(true){
+			final Comparable<? super K> comp = comparable(key);
+			Node ggp=null,gp=null,p=null,n=null;
+			boolean retry;
+			//Node root=;//=RDCSSRead();
+			int gen=root.gen;
+			char dir=LEFT;
+			Node sentinel=gcasRead(root,dir);
+			if(sentinel.gen==gen){
+				if(sentinel.left==null)
+					return new SearchRecord(null,null,root,sentinel,gen);
+				gp=root;
+				p=sentinel;
+				int violations=0;
+				while(true){
+					n=gcasRead(p,dir);
+					while(!n.isLeaf()){
+						if(n.gen==gen){
+							if(n.weight>1 || (n.left.weight==0 && p.weight==0)) // was originally only l
+								violations++;
+							ggp=gp;
+							gp=p;
+							p=n;
+							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
+							n=gcasRead(n,dir);
+						}else{
+							break;
+						}
+					}
+					if(n.gen==gen){
+						return new SearchRecord(ggp,gp,p,n,gen,violations);
+					}else{
+						if(!gcasCopy(root,sentinel,dir,gen))
+							retry=true;//continue;//return RETRY; or continue maybe??
+					}
+				}
+			}else{
+				gcasCopy(root,sentinel,dir,gen);
+				retry=true;//continue;//return retry;
+			}
+			
+		}
+	}
+	
 	
 	
 	
@@ -1329,6 +1378,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.n=n;
 			startGen=gen;
 			violations=viol;
+		}
+		
+		public SearchRecord(Node ggp,Node gp,Node p,Node n,int gen){
+			greatGrandParent=ggp;
+			grandParent=gp;
+			parent=p;
+			this.n=n;
+			startGen=gen;
+			violations=0;
 		}
 		
 	}
