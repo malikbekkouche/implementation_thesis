@@ -1,14 +1,16 @@
 import javax.xml.ws.Holder;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.concurrent.CyclicBarrier;
 class ChromaticTest {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
 
 		//testRangeTo(tree);
-		testFindMin(tree);
+		//testFindMin(tree);
 
-		testContains(tree);
+		//testContains(tree);
+		testRangeTo(tree);
 	}
 	
 	public static void testContains(ConcurrentChromaticTreeMap tree){
@@ -203,13 +205,15 @@ class ChromaticTest {
 		System.out.println(tree.add(17,7));
 		System.out.println(tree.add(99,0));
 		System.out.println(tree.add(15,4));
+		System.out.println(tree.add(16,4));
 		ArrayList<SimpleEntry<Integer,Integer>> list=tree.rangeTo(16);
 		for(SimpleEntry<Integer,Integer> i : list)
 			System.out.println("key : "+i.getKey()+" - "+i.getValue());
+		CyclicBarrier bcc = new CyclicBarrier(10);
 		
 	}
 
-	public static void testFindMin1(ConcurrentChromaticTreeMap tree){
+	public static void testSuccessor(ConcurrentChromaticTreeMap tree){
 		System.out.println(tree.add(11,11));
 		System.out.println(tree.add(23,23));
 		System.out.println(tree.add(3,3));
