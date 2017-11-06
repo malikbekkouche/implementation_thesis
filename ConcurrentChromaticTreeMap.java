@@ -842,6 +842,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 	
 	
+	
+	
 	//--------------------------------------------------------------------------
 	//-------------------------end of our contribution--------------------------
 
@@ -1305,10 +1307,30 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		public final boolean hasChild(final Node node) {
 			return node == left || node == right;
 		}
-
+		
+		//added by us
 		public boolean isLeaf(){
 			return left==null && right==null;
 		}
+	}
+	
+	public static final class SearchRecord {
+		public Node greatGrandParent;
+		public Node grandParent;
+		public Node parent;
+		public Node n;
+		public int startGen;
+		public int violations;
+		
+		public SearchRecord(Node ggp,Node gp,Node p,Node n,int gen,int viol){
+			greatGrandParent=ggp;
+			grandParent=gp;
+			parent=p;
+			this.n=n;
+			startGen=gen;
+			violations=viol;
+		}
+		
 	}
 
 	public static final class Operation {
