@@ -1,10 +1,33 @@
 import javax.xml.ws.Holder;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.concurrent.CyclicBarrier;
 class ChromaticTest {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
-		testContains(tree);
+		testConcurrentRange(tree);
+	}
+	
+	public static void testConcurrentRange(ConcurrentChromaticTreeMap tree){
+		tree.put(7,5);
+		tree.put(1,66);
+		tree.put(22,11);
+		CyclicBarrier barrier=new CyclicBarrier(2);
+		Thread t=new Thread(()-> {
+			try{
+			final ConcurrentChromaticTreeMap arbre=tree;
+			
+			for(int i=0;i<10000;i++){
+				arbre.put(15,15);
+				//System.out.println("print");
+			}
+			
+			barrier.await();}catch(Exception e){System.out.println("thread");}
+		}
+		);
+		t.start();
+		tree.successor(10,barrier);
+		
 	}
 	
 	public static void testContains(ConcurrentChromaticTreeMap tree){
@@ -139,7 +162,7 @@ class ChromaticTest {
 		System.out.println(tree.get(5));
 	}
 	
-	public static void testSucc(ConcurrentChromaticTreeMap tree){
+	/* public static void testSucc(ConcurrentChromaticTreeMap tree){
 		System.out.println(tree.add(5,6));
 		System.out.println(tree.add(8,7));
 		System.out.println(tree.successor(4).key);
@@ -149,7 +172,7 @@ class ChromaticTest {
 		System.out.println(tree.successor(5).key);
 		System.out.println(tree.successor(10).key);
 		
-	}
+	} */
 	
 	public static void testPred(ConcurrentChromaticTreeMap tree){
 		System.out.println(tree.add(5,6));
