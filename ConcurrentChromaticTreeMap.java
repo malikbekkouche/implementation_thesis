@@ -953,6 +953,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	
 	
 	
+	
 	//--------------------------------------------------------------------------
 	//-------------------------end of our contribution--------------------------
 
@@ -1392,6 +1393,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		public volatile Node prev;
 		public volatile boolean failed;
 		public volatile int gen;
+		public volatile Node extra;
+		public volatile char extraDir;
 
 		public Node(final Object key, final Object value, final int weight, final Node left, final Node right, final Operation op) {
 			this.key = key;
