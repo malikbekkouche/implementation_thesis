@@ -190,8 +190,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	public final boolean add(final K key,final V value){ 
 		return doPut(key,value,true) != null ? false : true;
 	}
-	
-	
+
+
 	private final Node getNode(final K key) {
 		final Comparable<? super K> k = comparable(key);
 		Node l = root.left.left;
@@ -421,16 +421,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					succ=succ.left;
 				}
 				if(bool==false){
-				try{
-				System.out.println("wait");
-				b.await();}catch(Exception e){System.out.println("tree");}
+					try{
+						System.out.println("wait");
+						b.await();}catch(Exception e){System.out.println("tree");}
 				}
 				if(vlx(nodes,ops))
 					if(comp.compareTo((K)succ.key)<0){
 						System.out.println("vlx succeeded");
 						return succ;
 					}
-						
+
 					else
 						return null;
 				else{
@@ -444,7 +444,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 
 	}
-	
+
 	public final Node successor(K key){
 		final Comparable<? super K> comp = comparable(key);
 		while(true){
@@ -482,7 +482,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return null;
 				else
 					continue;
-					
+
 
 			}
 
@@ -527,8 +527,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return null;
 				else
 					continue;
-				
-					
+
+
 
 			}
 		}
@@ -554,10 +554,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		while((from=successor((K)from.key))!=null){
 			list.add(new SimpleEntry<K,V>((K)from.key,(V)from.value));
 		}
-		
+
 		return list;
 	}
-	
+
 	public final ArrayList rangeFromTo(K k1,K k2){
 		final Comparable<? super K> comp = comparable(k2);
 		ArrayList<SimpleEntry<K,V>> list=new ArrayList();
@@ -569,24 +569,24 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		while((from=successor((K)from.key))!=null && comp.compareTo((K)from.key)>0){
 			list.add(new SimpleEntry<K,V>((K)from.key,(V)from.value));
 		}
-		
+
 		return list;
 	}
-	
+
 	public final ArrayList rangeTo(K key){
 		final Comparable<? super K> comp = comparable(key);
 		ArrayList<SimpleEntry<K,V>> list=new ArrayList();
 		SimpleEntry<K,V> min=findMin();
 		Node from=getNode((K)min.getKey());
-		
+
 		list.add(new SimpleEntry<K,V>((K)from.key,(V)from.value));
 		while((from=successor((K)from.key))!=null && comp.compareTo((K)from.key)>0){
 			list.add(new SimpleEntry<K,V>((K)from.key,(V)from.value));
 		}
-		
+
 		return list;
 	}
-	
+
 
 
 	// this is to test
@@ -640,7 +640,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return null;	
 	}
 
-	
+
 	//C5
 	// returns true if there is a successor of k and in that case binds the successor to res; otherwise returns
 	// false and binds the default value of KeyValuePair<K,V> to res.
@@ -655,8 +655,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		out = null;
 		return false;
 	}
-	
-	
+
+
 	//C5
 	public final Node weakSuccessor(K key){
 		final Comparable<? super K> comp = comparable(key);
@@ -701,9 +701,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 
 	}
-	
-	
-	
+
+
+
 	//C5
 	// returns true if there is a weak successor of k and in that case binds the weak successor to res;
 	// otherwise returns false and binds the default value of KeyValuePair<K,V> to res.
@@ -718,9 +718,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		out.value = null;
 		return false;
 	}
-	
-	
-	
+
+
+
 	//C5
 	public final Node weakPredecessor(K key){
 		final Comparable<? super K> comp = comparable(key);
@@ -763,7 +763,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}
 		}
 	}
-	
+
 	//C5
 	// returns true if there is a precedessor of k and in that case binds the predecessor to res; otherwise
 	// returns false and binds the default value of KeyValuePair<K,V> to res
@@ -778,7 +778,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		out.value = null;
 		return false;
 	}
-		
+
 	//C5
 	// eturns true if there is a weak precedessor of k and in that case binds the weak prede-
 	// cessor to res; otherwise returns false and binds the default value of Key-
@@ -794,7 +794,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		out.value = null;
 		return false;
 	}
-	
+
 	private boolean gcas(Node in, Node old, Node n,char dir){
 		n.prev=old;
 		boolean casResult;
@@ -804,9 +804,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return n.prev==null;
 		}else
 			return false;
-			
+
 	}
-	
+
 	private Node gcasCommit(Node in, Node m, char dir){
 		Node p=m.prev;
 		Node r=root;// should be abbortable_read
@@ -829,10 +829,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				updatePrev.compareAndSet(m,p,new Node(p));
 				return dir == LEFT ? gcasCommit(in,in.left,dir) : gcasCommit(in,in.right,dir);
 			}	
-		
+
 		}
 	}
-	
+
 	private Node gcasRead(Node in,char dir){
 		Node m = dir == LEFT ? in.left : in.right ;
 		if(m.prev==null)
@@ -840,11 +840,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		else
 			return gcasCommit(in,m,dir);
 	}
-	
+
 	private boolean gcasCopy(Node p,Node n,char dir,int gen){//needs to be implemented
 		return true;
 	}
-	
+
 	public SearchRecord search(K key){ // readOnly maybe
 		while(true){
 			final Comparable<? super K> comp = comparable(key);
@@ -886,12 +886,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				gcasCopy(root,sentinel,dir,gen);
 				retry=true;//continue;//return retry;
 			}
-			
+
 		}
 	}
-	
+
 	private boolean helpSCXX(Operation op){
-		final AtomicReferenceFieldUpdater<Integer, Integer> updateStep; // might be wrong
+		final AtomicReferenceFieldUpdater<Integer, Integer> updateStep = 
+				AtomicReferenceFieldUpdater.newUpdater(Integer.class, Integer.class, null);//need to be checked also		
 		Node[] nodes=op.nodes;
 		Operation[] ops=op.ops;
 		Node subtree=op.subtree;
@@ -915,7 +916,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			left=false;
 		}
 
-		
+
 		while(true){
 			if(op.state!=Operation.STATE_INPROGRESS){
 				return op.state==Operation.STATE_COMMITTED ? true : false ;
@@ -923,7 +924,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			int step=op.step;
 			if(step==Operation.STEP_SUBTREE){
 				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
-				(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
+						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
 					updateStep.compareAndSet(op.step,step,Operation.STEP_GENERATION);
 				}else{
 					updateStep.compareAndSet(op.step,step,Operation.STEP_ABORT);
@@ -949,10 +950,71 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}
 		}
 	}
+
+	private Node RDCSS_ABORTABLE_READ(){
+		return RDCSS_COMPLETE(true);//need to be checked
+	}
+
+	private Node RDCSS_READ_ROOT(boolean abort){
+		Node r = root;
+		if(r instanceof Descriptor){
+			return (Node)RDCSS_COMPLETE(abort);
+		}
+		else 
+			return r;		
+	}
 	
-	
-	
-	
+	private boolean RDCSS_ROOT(Node ov, Node expectedMain, Node nv){
+		Descriptor desc = new Descriptor(ov, expectedMain, nv);
+		if(CAS_ROOT(ov, desc)){
+			RDCSS_COMPLETE(false);
+			return desc.committed;
+		}else
+			return false;
+	}
+
+	private Node RDCSS_COMPLETE(boolean abort){
+		Node v = root;
+		if(v instanceof Node)
+			return v;
+		else {//v is instanceof Descriptor
+			Descriptor desc = (Descriptor)v;
+			if(abort){
+				if(CAS_ROOT(desc, desc.oldValue)){
+					return desc.oldValue;
+				}else{
+					return RDCSS_COMPLETE(abort);
+				}
+			}else{
+				Node oldMain = gcasRead(desc.oldValue,'L');//should be specified direction dir
+				if(oldMain.equals(desc.expectedMain)){
+					if(CAS_ROOT(desc, desc.newValue)){
+						desc.committed = true;
+						return desc.newValue;
+					}
+					else{
+						return RDCSS_COMPLETE(abort);
+					}
+
+				}else{
+					if(CAS_ROOT(desc, desc.oldValue))
+						return desc.oldValue;
+					else
+						return RDCSS_COMPLETE(abort);
+				}
+			}
+
+		}
+	}
+
+	private boolean CAS_ROOT(Node ov, Node nv){
+		AtomicReferenceFieldUpdater updater;
+		updater = updateLeft ;// ? updateRight;
+		return updater.compareAndSet(root, ov, nv);//should be double check ???		
+	}
+
+
+
 	//--------------------------------------------------------------------------
 	//-------------------------end of our contribution--------------------------
 
@@ -1381,7 +1443,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 	}
 
-	public static final class Node {
+	public static class Node {//this class first is declared as final
 		public final int weight;
 		public final Object value;
 		public volatile boolean marked;
@@ -1401,7 +1463,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.right = right;
 			this.op = op;
 		}
-		
+
 		public Node(Node n) { // only use when failed
 			this.key = n.key;
 			this.value = n.value;
@@ -1416,13 +1478,24 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		public final boolean hasChild(final Node node) {
 			return node == left || node == right;
 		}
-		
+
 		//added by us
 		public boolean isLeaf(){
 			return left==null && right==null;
 		}
+
+		public boolean equals(Node o) 
+		{
+			if (o instanceof Node) 
+			{
+				Node c = (Node) o;
+				if(this.key.equals(c.key) && this.value.equals(c.value))
+					return true;
+			}
+			return false;
+		}
 	}
-	
+
 	public static final class SearchRecord {
 		public Node greatGrandParent;
 		public Node grandParent;
@@ -1430,7 +1503,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		public Node n;
 		public int startGen;
 		public int violations;
-		
+
 		public SearchRecord(Node ggp,Node gp,Node p,Node n,int gen,int viol){
 			greatGrandParent=ggp;
 			grandParent=gp;
@@ -1439,7 +1512,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			startGen=gen;
 			violations=viol;
 		}
-		
+
 		public SearchRecord(Node ggp,Node gp,Node p,Node n,int gen){
 			greatGrandParent=ggp;
 			grandParent=gp;
@@ -1448,7 +1521,22 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			startGen=gen;
 			violations=0;
 		}
-		
+
+	}
+
+	//class Descriptor
+	public static final class Descriptor extends Node {
+		//old: INode[K, V], expectedmain: MainNode[K, V], nv: INode[K, V]
+		public Node oldValue;
+		public Node expectedMain;
+		public Node newValue;
+		public volatile boolean committed  = false;
+		public Descriptor(Node old, Node exp, Node nv){
+			super(null,null,0,null,null,null);//call super class constructor
+			oldValue = old;
+			expectedMain = exp;
+			newValue = nv;
+		}
 	}
 
 	public static final class Operation {
@@ -1460,8 +1548,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final static int STEP_GENERATION=4;
 		final static int STEP_COMMIT=5;
 		final static int STEP_ABORT=4;
-		
-		
+
+
 
 		volatile Node subtree;
 		volatile Node[] nodes;
