@@ -890,6 +890,66 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 	}
 	
+	private boolean helpSCXX(Operation op){
+		final AtomicReferenceFieldUpdater<Integer, Integer> updateStep; // might be wrong
+		Node[] nodes=op.nodes;
+		Operation[] ops=op.ops;
+		Node subtree=op.subtree;
+		int gen=op.gen;
+		AtomicReferenceFieldUpdater genericUpdater;
+		for(int i=0;i<ops.length;i++){
+			if(!updateOp.compareAndSet(nodes[i],ops[i],op) && nodes[i].op != op){ // check order of cas
+				if(!op.allFrozen){
+					op.state=Operation.STATE_ABORTED;
+					return false;
+				}
+			}
+		}
+		op.allFrozen=true;
+		boolean left;
+		if(nodes[0].left==nodes[1]){
+			genericUpdater=updateLeft;
+			left=true;
+		}else{
+			genericUpdater=updateRight;
+			left=false;
+		}
+
+		
+		while(true){
+			if(op.state!=Operation.STATE_INPROGRESS){
+				return op.state==Operation.STATE_COMMITTED ? true : false ;
+			}
+			int step=op.step;
+			if(step==Operation.STEP_SUBTREE){
+				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
+				(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
+					updateStep.compareAndSet(op.step,step,Operation.STEP_GENERATION);
+				}else{
+					updateStep.compareAndSet(op.step,step,Operation.STEP_ABORT);
+				}
+			}else if(step==Operation.STEP_GENERATION){
+				Node root=RDCSS_ABORTABLE_READ();
+				if(root.gen==nodes[0].gen){
+					updateStep.compareAndSet(op.step,step,Operation.STEP_COMMIT);
+				}else{
+					updateStep.compareAndSet(op.step,step,Operation.STEP_ABORT);
+				}
+			}else if(step==Operation.STEP_ABORT){
+				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
+					op.state=Operation.STATE_ABORTED;
+					return false;
+				}
+			}else if(step==Operation.STEP_COMMIT){
+				for(int i=1;i<nodes.length;i++){
+					nodes[i].marked=true;
+				}
+				op.state=Operation.STATE_COMMITTED;
+				return true;
+			}
+		}
+	}
+	
 	
 	
 	
@@ -1395,11 +1455,20 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final static int STATE_INPROGRESS = 0;
 		final static int STATE_ABORTED = 1;
 		final static int STATE_COMMITTED = 2;
+		// added steps
+		final static int STEP_SUBTREE=3;
+		final static int STEP_GENERATION=4;
+		final static int STEP_COMMIT=5;
+		final static int STEP_ABORT=4;
+		
+		
 
 		volatile Node subtree;
 		volatile Node[] nodes;
 		volatile Operation[] ops;
 		volatile int state;
+		volatile int step;
+		volatile int gen;
 		volatile boolean allFrozen;
 
 		public Operation() {            // create an inactive operation (a no-op) [[ we do this to avoid the overhead of inheritance ]]
