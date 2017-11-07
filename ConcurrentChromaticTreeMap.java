@@ -990,7 +990,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					return RDCSS_COMPLETE(abort);
 				}
 			}else{
-				Node oldMain = gcasRead(desc.oldValue,'L');//should be specified direction dir
+				Node oldMain = gcasRead(desc.oldValue,LEFT);//should be specified direction dir
 				if(oldMain.equals(desc.expectedMain)){
 					if(CAS_ROOT(desc, desc.newValue)){
 						desc.committed = true;
