@@ -69,6 +69,7 @@ import java.util.ArrayList;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 
@@ -1012,9 +1013,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	private boolean CAS_ROOT(Node ov, Node nv){
-		AtomicReferenceFieldUpdater updater;
-		updater = updateLeft ;// ? updateRight;
-		return updater.compareAndSet(root, ov, nv);//should be double check ???		
+		AtomicReference<Node> ref=new AtomicReference(root);
+		return ref.compareAndSet(ov, nv);//should be double check ???		
 	}
 
 
