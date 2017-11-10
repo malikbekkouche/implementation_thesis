@@ -842,11 +842,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return gcasCommit(in,m,dir);
 	}
 
-	private boolean gcasCopy(Node p,Node n,char dir,int gen){//needs to be implemented
-		return true;
-	}
 
-	public SearchRecord search(K key){ // readOnly maybe
+	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
 		while(true){
 			final Comparable<? super K> comp = comparable(key);
 			Node ggp=null,gp=null,p=null,n=null;
@@ -855,7 +852,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			int gen=root.gen;
 			char dir=LEFT;
 			Node sentinel=gcasRead(root,dir);
-			if(sentinel.gen==gen){
+			if(sentinel.gen==gen || readOp){
 				if(sentinel.left==null)
 					return new SearchRecord(null,null,root,sentinel,gen);
 				gp=root;
@@ -876,7 +873,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							break;
 						}
 					}
-					if(n.gen==gen){
+					if(n.gen==gen || readOp){
 						return new SearchRecord(ggp,gp,p,n,gen,violations);
 					}else{
 						if(!gcasCopy(root,sentinel,dir,gen))
@@ -1015,6 +1012,25 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private boolean CAS_ROOT(Node ov, Node nv){
 		AtomicReference<Node> ref=new AtomicReference(root);
 		return ref.compareAndSet(ov, nv);//should be double check ???		
+	}
+	
+	private boolean gcasCopy(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
+		Operation op=createReplaceOp(p,n,n.gen);
+		return helpSCXX(op); // original took int also
+	}
+	
+	private Operation createReplaceOp(final Node p, final Node l, final int gen) {// same as old version except
+		final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
+		final Node[] nodes = new Node[]{null, l};
+		int newGen=l.gen+1;
+
+		if (!weakLLX(p, 0, ops, nodes)) return null;
+
+		if (l != p.left && l != p.right) return null;
+
+		// Build new sub-tree
+		final Node subtree = new Node(l,newGen);
+		return new Operation(nodes, ops, subtree);
 	}
 
 
@@ -1480,6 +1496,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.op = n.op;
 			this.prev=n.prev;
 			this.failed=true;
+		}
+		
+		public Node(Node n,int gen) { 
+			this.key = n.key;
+			this.value = n.value;
+			this.weight = n.weight;
+			this.left = n.left;
+			this.right = n.right;
+			this.op = n.op;
+			this.prev=n.prev;
+			this.gen=gen;
 		}
 
 		public final boolean hasChild(final Node node) {
