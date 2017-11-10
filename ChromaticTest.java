@@ -36,7 +36,7 @@ class ChromaticTest {
 		//testContains(tree);
 		testRangeTo(tree);
 
-		testContains(tree);
+		//testContains(tree);
 
 
 	}
