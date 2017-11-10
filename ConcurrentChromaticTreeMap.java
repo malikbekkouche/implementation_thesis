@@ -964,10 +964,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		else 
 			return r;		
 	}
-	
 
-	
-	
+
+
+
 
 	private boolean RDCSS_ROOT(Node ov, Node expectedMain, Node nv){
 		Descriptor desc = new Descriptor(ov, expectedMain, nv);
@@ -1061,7 +1061,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					op = createReplaceOp(p, l, key, value);
 				} else {
 					found = false;
-					op = createInsertOp(p, l, key, value, k);
+					op = createInsertOp(p, l, key, value, k);					
 				}
 			}
 			if (helpSCX(op, 0)) {
@@ -1105,6 +1105,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				// the key was not in the tree at the linearization point, so no value was removed
 				if (l.key == null || k.compareTo((K) l.key) != 0) return null;
 				op = createDeleteOp(gp, p, l);
+				//remove parent pointer
+				l.parent = null;
 			}
 			if (helpSCX(op, 0)) {
 				// clean up violations if necessary
@@ -1244,14 +1246,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final int newWeight = (isSentinel(l) ? 1 : l.weight - 1);               // (maintain sentinel weights at 1)
 
 		// Build new sub-tree
+
 		final Node newLeaf = new Node(key, value, 1, null, null, dummy);
 		final Node newL = new Node(l.key, l.value, 1, null, null, dummy);
 		final Node newP;
 		if (l.key == null || k.compareTo(l.key) < 0) {
-			newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);
+			newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);			
 		} else {
-			newP = new Node(key, value, newWeight, newL, newLeaf, dummy);
+			newP = new Node(key, value, newWeight, newL, newLeaf, dummy);			
 		}
+
 		return new Operation( nodes, ops, newP);
 	}
 
@@ -1266,6 +1270,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		// Build new sub-tree
 		final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
+		
 		return new Operation(nodes, ops, subtree);
 	}
 
@@ -1455,6 +1460,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		public volatile Operation op;
 		public final Object key;
 		public volatile Node left, right;
+		public volatile Node parent;
 		// added for snapshot
 		public volatile Node prev;
 		public volatile boolean failed;
