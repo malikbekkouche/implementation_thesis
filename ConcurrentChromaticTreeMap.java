@@ -1109,6 +1109,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				} else {
 					if (searchRecord.violations >= d) fixToKey(k);
 				}
+				
+				searchRecord.n.parent = null;
 				// we may have found the key and replaced its value (and, if so, the old value is stored in the old node)
 				return (found ? (V) searchRecord.n.value : null);
 			}
@@ -1138,6 +1140,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				} else {
 					if (searchRecord.violations >= d) fixToKey(k);
 				}
+								
+				//add parent pointer
+				searchRecord.n.parent=null;
+				searchRecord.parent.parent=null;
 				// we deleted a key, so we return the removed value (saved in the old node)
 				return (V) searchRecord.n.value;
 			}
@@ -1199,6 +1205,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				} else {
 					if (count >= d) fixToKey(k);
 				}
+				//change parent pointer 
+				l.parent = null;
+				
 				// we may have found the key and replaced its value (and, if so, the old value is stored in the old node)
 				return (found ? (V) l.value : null);
 			}
@@ -1383,6 +1392,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		} else {
 			newP = new Node(key, value, newWeight, newL, newLeaf, dummy);			
 		}
+		
+		// add parent pointer
+		newP.parent = p;
+		newLeaf.parent = newP;
+		newL.parent = newP;
 
 		return new Operation( nodes, ops, newP);
 	}
@@ -1398,6 +1412,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		// Build new sub-tree
 		final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
+		
+		//add parent pointer
+		subtree.parent = p;
 		
 		return new Operation(nodes, ops, subtree);
 	}
@@ -1424,6 +1441,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		// Build new sub-tree
 		final Node newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
+		
+		//add parent pointer
+		newP.parent = gp;
 		return new Operation(nodes, ops, newP);
 	}
 
