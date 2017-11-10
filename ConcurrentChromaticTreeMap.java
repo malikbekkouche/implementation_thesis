@@ -1071,8 +1071,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					found = false;
 					searchRecord.leafGen=searchRecord.n.gen;
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
-				}
-				
+				}				
 			}
 			if (helpSCXX(op)) {
 				// clean up violations if necessary
