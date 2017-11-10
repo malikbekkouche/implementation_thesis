@@ -1081,6 +1081,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				} else {
 					if (searchRecord.violations >= d) fixToKey(k);
 				}
+				
+				searchRecord.n.parent = null;
 				// we may have found the key and replaced its value (and, if so, the old value is stored in the old node)
 				return (found ? (V) searchRecord.n.value : null);
 			}
@@ -1110,6 +1112,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				} else {
 					if (searchRecord.violations >= d) fixToKey(k);
 				}
+								
+				//add parent pointer
+				searchRecord.n.parent=null;
+				searchRecord.parent.parent=null;
 				// we deleted a key, so we return the removed value (saved in the old node)
 				return (V) searchRecord.n.value;
 			}
