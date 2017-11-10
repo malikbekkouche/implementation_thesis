@@ -1034,20 +1034,48 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 	
 	private Operation createReplaceOp(final Node p, final Node l, final K key, final V value,int gen) {
-		final Operation[] ops = new Operation[]{null,null};
-		final Node[] nodes = new Node[]{null,p, l};
+		Operation[] ops = new Operation[]{null};// added a null/ was final
+		Node[] nodes = new Node[]{null, l}; // added p/ was final
+		
+		final ArrayList<Operation> opps=new ArrayList();
+		final ArrayList<Node> noddes=new ArrayList();
+		noddes.add(l);
+		Node parent =p;
+		Node pChild=l;
+		while(parent.extra!=null){
+			char dir = (parent.left==pChild) ? LEFT : RIGHT;
+			final Node child=new Node(key,value,pChild.weight,null,null,dummy);//add generation
+			if(dir==LEFT){
+				final Node subtree = new Node(key, value, parent.weight, parent.extra,child, parent.op);//maybe dummy and gen
+			}else{
+				final Node subtree = new Node(key, value, parent.weight, child,parent.extra, parent.op);//maybe dummy and gen
+			}
+			noddes.add(parent);
+			opps.add(parent.op);
+			pChild=parent;
+			parent=parent.parent;
+			
+		}
+		
+		final Node subtree = new Node(parent.key, parent.value, parent.weight, parent.left, parent.right, dummy);// maybe parent.op
+		char dir = (parent.left==pChild) ? LEFT : RIGHT;
+		int weight=pChild.weight;
+		subtree.extra=new Node(key,value,weight,null,null,dummy,gen);
+		subtree.extraDir=dir;
+		
+		ops=new Operation[opps.size()];
+		ops=opps.toArray(ops);
+		
+		nodes=new Node[noddes.size()];
+		nodes=noddes.toArray(nodes);
 
-		if (!weakLLX(p, 0, ops, nodes)) return null;
+		if (!weakLLX(parent, 0, ops, nodes)) return null;
 
-		if (l != p.left && l != p.right) return null;
+		if (pChild != parent.left && pChild != parent.right) return null;
 
 		// Build new sub-tree
 		//final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
-		final Node subtree = new Node(p.key, p.value, p.weight, p.left, p.right, dummy);
-		char dir = (p.left==l) ? LEFT : RIGHT;
-		int weight=l.weight;
-		subtree.extra=new Node(key,value,weight,null,null,dummy,gen);
-		subtree.extraDir=dir;
+		
 		return new Operation(nodes, ops, subtree);
 	}
 	
