@@ -1066,9 +1066,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(searchRecord.n != null && k.compareTo((K) searchRecord.n.key) == 0){
 					found = true;
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
-					op = createReplaceOp(searchRecord.parent, searchRecord.n, key, value);//update replaceop so it uses extra
+					op = createReplaceOp(searchRecord.parent, searchRecord.n, key, value,searchRecord.startGen);//update replaceop so it uses extra
 				} else {
 					found = false;
+					searchRecord.leafGen=searchRecord.n.gen;
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
 				}
 				
@@ -1650,6 +1651,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		public Node n;
 		public int startGen;
 		public int violations;
+		public int leafGen;
 
 		public SearchRecord(Node ggp,Node gp,Node p,Node n,int gen,int viol){
 			greatGrandParent=ggp;
