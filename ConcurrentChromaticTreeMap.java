@@ -842,11 +842,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return gcasCommit(in,m,dir);
 	}
 
-	private boolean gcasCopy(Node p,Node n,char dir,int gen){//needs to be implemented
-		return true;
-	}
 
-	public SearchRecord search(K key){ // readOnly maybe
+	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
 		while(true){
 			final Comparable<? super K> comp = comparable(key);
 			Node ggp=null,gp=null,p=null,n=null;
@@ -855,7 +852,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			int gen=root.gen;
 			char dir=LEFT;
 			Node sentinel=gcasRead(root,dir);
-			if(sentinel.gen==gen){
+			if(sentinel.gen==gen || readOp){
 				if(sentinel.left==null)
 					return new SearchRecord(null,null,root,sentinel,gen);
 				gp=root;
@@ -876,7 +873,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							break;
 						}
 					}
-					if(n.gen==gen){
+					if(n.gen==gen || readOp){
 						return new SearchRecord(ggp,gp,p,n,gen,violations);
 					}else{
 						if(!gcasCopy(root,sentinel,dir,gen))
@@ -1015,6 +1012,90 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private boolean CAS_ROOT(Node ov, Node nv){
 		AtomicReference<Node> ref=new AtomicReference(root);
 		return ref.compareAndSet(ov, nv);//should be double check ???		
+	}
+	
+	private boolean gcasCopy(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
+		Operation op=createReplaceOp(p,n,n.gen);
+		return helpSCXX(op); // original took int also
+	}
+	
+	private Operation createReplaceOp(final Node p, final Node l, final int gen) {// same as old version except
+		final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
+		final Node[] nodes = new Node[]{null, l};
+		int newGen=l.gen+1;
+
+		if (!weakLLX(p, 0, ops, nodes)) return null;
+
+		if (l != p.left && l != p.right) return null;
+
+		// Build new sub-tree
+		final Node subtree = new Node(l,newGen);
+		return new Operation(nodes, ops, subtree);
+	}
+	
+	private V newDoPut(final K key, final V value, final boolean onlyIfAbsent) { // update fixToKey
+		final Comparable<? super K> k = comparable(key);
+		boolean found = false;
+		Operation op = null;
+		Node p = null, l = null;
+		int count = 0;
+		SearchRecord searchRecord=null;
+
+		while (true) {
+			while (op == null) {
+				
+				searchRecord= search(key,false);
+				if(searchRecord.n != null && k.compareTo((K) searchRecord.n.key) == 0){
+					found = true;
+					if (onlyIfAbsent) return (V) searchRecord.n.value;
+					op = createReplaceOp(searchRecord.parent, searchRecord.n, key, value);//update replaceop so it uses extra
+				} else {
+					found = false;
+					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
+				}
+				
+			}
+			if (helpSCXX(op)) {
+				// clean up violations if necessary
+				if (d == 0) {
+					if (!found && (searchRecord.parent.weight == 0 )&& searchRecord.n.weight == 1) fixToKey(k);
+				} else {
+					if (searchRecord.violations >= d) fixToKey(k);
+				}
+				// we may have found the key and replaced its value (and, if so, the old value is stored in the old node)
+				return (found ? (V) searchRecord.n.value : null);
+			}
+			op = null;
+		}
+	}
+	
+	public final V newRemove(final K key, int n) {
+		final Comparable<? super K> k = comparable(key);
+		Node gp, p = null, l = null;
+		Operation op = null;
+		int count = 0;
+		SearchRecord searchRecord=null;
+
+		while (true) {
+			while (op == null) {
+				searchRecord=search(key,false); // check loop (ifra method or outter)
+
+				// the key was not in the tree at the linearization point, so no value was removed
+				if (searchRecord.n.key == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
+				op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
+			}
+			if (helpSCXX(op)) {
+				// clean up violations if necessary
+				if (d == 0) {
+					if (searchRecord.parent.weight > 0 && searchRecord.n.weight > 0 && !isSentinel(searchRecord.parent)) fixToKey(k);
+				} else {
+					if (searchRecord.violations >= d) fixToKey(k);
+				}
+				// we deleted a key, so we return the removed value (saved in the old node)
+				return (V) searchRecord.n.value;
+			}
+			op = null;
+		}
 	}
 
 
@@ -1476,6 +1557,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.right = right;
 			this.op = op;
 		}
+		
+		public Node(final Object key, final Object value, final int weight, final Node left, final Node right, final Operation op, final int gen) {
+			this.key = key;
+			this.value = value;
+			this.weight = weight;
+			this.left = left;
+			this.right = right;
+			this.op = op;
+			this.gen=gen;
+		}
 
 		public Node(Node n) { // only use when failed
 			this.key = n.key;
@@ -1486,6 +1577,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.op = n.op;
 			this.prev=n.prev;
 			this.failed=true;
+		}
+		
+		public Node(Node n,int gen) { 
+			this.key = n.key;
+			this.value = n.value;
+			this.weight = n.weight;
+			this.left = n.left;
+			this.right = n.right;
+			this.op = n.op;
+			this.prev=n.prev;
+			this.gen=gen;
 		}
 
 		public final boolean hasChild(final Node node) {
