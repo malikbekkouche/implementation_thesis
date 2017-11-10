@@ -1033,6 +1033,24 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return new Operation(nodes, ops, subtree);
 	}
 	
+	private Operation createReplaceOp(final Node p, final Node l, final K key, final V value,int gen) {
+		final Operation[] ops = new Operation[]{null,null};
+		final Node[] nodes = new Node[]{null,p, l};
+
+		if (!weakLLX(p, 0, ops, nodes)) return null;
+
+		if (l != p.left && l != p.right) return null;
+
+		// Build new sub-tree
+		//final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
+		final Node subtree = new Node(p.key, p.value, p.weight, p.left, p.right, dummy);
+		char dir = (p.left==l) ? LEFT : RIGHT;
+		int weight=l.weight;
+		subtree.extra=new Node(key,value,weight,null,null,dummy,gen);
+		subtree.extraDir=dir;
+		return new Operation(nodes, ops, subtree);
+	}
+	
 	private V newDoPut(final K key, final V value, final boolean onlyIfAbsent) { // update fixToKey
 		final Comparable<? super K> k = comparable(key);
 		boolean found = false;
