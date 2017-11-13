@@ -87,6 +87,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	// added for gcas
 	private final char LEFT='L';
 	private final char RIGHT='R';
+	private volatile boolean isSnapshot;
+	private volatile int generation;
+	private volatile maxSnapId =-1;
 
 	public ConcurrentChromaticTreeMap() {
 		this(DEFAULT_d, null); 
@@ -873,7 +876,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					if(n.gen==gen || readOp){
 						return new SearchRecord(ggp,gp,p,n,gen,violations);
 					}else{
-						if(!gcasCopy(root,sentinel,dir,gen))
+						if(!gcasCopy(p,n,dir,gen))
 							retry=true;//continue;//return RETRY; or continue maybe??
 					}
 				}
@@ -1025,22 +1028,26 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return new Operation(nodes, ops, subtree);
 	}
 	
-	private Operation createReplaceOp(final Node p, final Node l, final K key, final V value,int gen) {
+	private Operation createReplaceOp(final Node p, final Node l, final K key, final V value,int startGen,int leafGen) {
 		Operation[] ops = new Operation[]{null};// added a null/ was final
 		Node[] nodes = new Node[]{null, l}; // added p/ was final
+		
+		Node parent =p;
+		Node pChild=l;
+		if(startGen!=leafGen){
+			
 		
 		final ArrayList<Operation> opps=new ArrayList();
 		final ArrayList<Node> noddes=new ArrayList();
 		noddes.add(l);
-		Node parent =p;
-		Node pChild=l;
+		
 		while(parent.extra!=null){
 			char dir = (parent.left==pChild) ? LEFT : RIGHT;
-			final Node child=new Node(key,value,pChild.weight,null,null,dummy);//add generation
+			final Node child=new Node(key,value,pChild.weight,null,null,dummy,startGen);//add generation
 			if(dir==LEFT){
-				final Node subtree = new Node(key, value, parent.weight, parent.extra,child, parent.op);//maybe dummy and gen
+				final Node subtree = new Node(key, value, parent.weight, parent.extra,child, parent.op,startGen);//maybe dummy and gen
 			}else{
-				final Node subtree = new Node(key, value, parent.weight, child,parent.extra, parent.op);//maybe dummy and gen
+				final Node subtree = new Node(key, value, parent.weight, child,parent.extra, parent.op,startGen);//maybe dummy and gen
 			}
 			noddes.add(parent);
 			opps.add(parent.op);
@@ -1052,7 +1059,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final Node subtree = new Node(parent.key, parent.value, parent.weight, parent.left, parent.right, dummy);// maybe parent.op
 		char dir = (parent.left==pChild) ? LEFT : RIGHT;
 		int weight=pChild.weight;
-		subtree.extra=new Node(key,value,weight,null,null,dummy,gen);
+		subtree.extra=new Node(key,value,weight,null,null,dummy,startGen);
 		subtree.extraDir=dir;
 		
 		ops=new Operation[opps.size()];
@@ -1060,6 +1067,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		
 		nodes=new Node[noddes.size()];
 		nodes=noddes.toArray(nodes);
+		
+		}else{
+			// Build new sub-tree
+			final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
+			//add parent pointer
+			subtree.parent = p;
+		}
 
 		if (!weakLLX(parent, 0, ops, nodes)) return null;
 
@@ -1604,6 +1618,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		public volatile Node prev;
 		public volatile boolean failed;
 		public volatile int gen;
+		public volatile int lastGen=-1;
 		public volatile Node extra;
 		public volatile char extraDir;
 
