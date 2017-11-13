@@ -89,7 +89,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private final char RIGHT='R';
 	private volatile boolean isSnapshot;
 	private volatile int generation;
-	private volatile maxSnapId =-1;
+	private volatile int maxSnapId =-1;
 
 	public ConcurrentChromaticTreeMap() {
 		this(DEFAULT_d, null); 
