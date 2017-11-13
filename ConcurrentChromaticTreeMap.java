@@ -89,7 +89,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private final char RIGHT='R';
 	private volatile boolean isSnapshot;
 	private volatile int generation;
-	private volatile maxSnapId =-1;
+	private volatile int maxSnapId =-1;
 
 	public ConcurrentChromaticTreeMap() {
 		this(DEFAULT_d, null); 
@@ -370,7 +370,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		else
 			return false;
 	}
-
 
 	//C5
 	// returns true if the dictionary contains an entry whose
@@ -833,7 +832,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				updatePrev.compareAndSet(m,p,new Node(p));
 				return dir == LEFT ? gcasCommit(in,in.left,dir) : gcasCommit(in,in.right,dir);
 			}	
-
 		}
 	}
 
@@ -844,7 +842,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		else
 			return gcasCommit(in,m,dir);
 	}
-
 
 	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
 		while(true){
@@ -917,7 +914,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			left=false;
 		}
 
-
 		while(true){
 			if(op.state!=Operation.STATE_INPROGRESS){
 				return op.state==Operation.STATE_COMMITTED ? true : false ;
@@ -965,10 +961,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return r;		
 	}
 
-
-
-
-
 	private boolean RDCSS_ROOT(Node ov, Node expectedMain, Node nv){
 		Descriptor desc = new Descriptor(ov, expectedMain, nv);
 		if(CAS_ROOT(ov, desc)){
@@ -1008,7 +1000,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return RDCSS_COMPLETE(abort);
 				}
 			}
-
 		}
 	}
 
@@ -1033,6 +1024,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		// Build new sub-tree
 		final Node subtree = new Node(l,newGen);
+		subtree.parent = p;
 		return new Operation(nodes, ops, subtree);
 	}
 	
