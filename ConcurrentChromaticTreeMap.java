@@ -87,6 +87,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	// added for gcas
 	private final char LEFT='L';
 	private final char RIGHT='R';
+	private volatile boolean isSnapshot;
+	private volatile int generation;
+	private volatile maxSnapId =-1;
 
 	public ConcurrentChromaticTreeMap() {
 		this(DEFAULT_d, null); 
@@ -1623,6 +1626,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		public volatile Node prev;
 		public volatile boolean failed;
 		public volatile int gen;
+		public volatile int lastGen=-1;
 		public volatile Node extra;
 		public volatile char extraDir;
 
