@@ -1093,6 +1093,68 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return new Operation(nodes, ops, subtree);
 	}
 	
+	private Operation createReplaceOp(SearchRecord searchRecord, final K key, final V value) {
+		Operation[] ops = new Operation[]{null};// added a null/ was final
+		Node[] nodes = new Node[]{null, l}; // added p/ was final
+		
+		Node parent = searchRecord.parent;
+		Node pChild=searchRecord.n;
+		if(searchRecord.copy){// copy is true when extra pointer is needed
+		
+		final ArrayList<Operation> opps=new ArrayList();
+		final ArrayList<Node> noddes=new ArrayList();
+		noddes.add(l);
+		
+		if(parent.extra==null){
+			char dir = (parent.left==pChild) ? LEFT : RIGHT;
+			final Node child=new Node(pChild.key,pChild.value,pChild.weight,null,null,dummy,pChild.gen);//add generation
+			final Node subtree = new Node(parent.key, parent.value, parent.weight, parent.left,parent.right, parent.op,parent.gen);//maybe dummy and gen
+			subtree.extra=child;
+			subtree.dir=dir;
+			/* noddes.add(parent);
+			opps.add(parent.op);
+			pChild=parent;
+			parent=parent.parent; */
+			
+		}else{
+			while(parent.extra!=null){
+				char dir = parent.dir;
+				final Node child=new Node(pChild.key,pChild.value,pChild.weight,null,null,dummy,pChild.gen);//add generation
+				final Node subtree = new Node(parent.key, parent.value, parent.weight, parent.left,parent.right, parent.op,parent.gen);//maybe dummy and gen
+				subtree.extra=child;
+				subtree.dir=dir;
+			}
+		}
+		
+		final Node subtree = new Node(parent.key, parent.value, parent.weight, parent.left, parent.right, dummy);// maybe parent.op
+		char dir = (parent.left==pChild) ? LEFT : RIGHT;
+		int weight=pChild.weight;
+		subtree.extra=new Node(key,value,weight,null,null,dummy,startGen);
+		subtree.extraDir=dir;
+		
+		ops=new Operation[opps.size()];
+		ops=opps.toArray(ops);
+		
+		nodes=new Node[noddes.size()];
+		nodes=noddes.toArray(nodes);
+		
+		}else{
+			// Build new sub-tree
+			final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
+			//add parent pointer
+			subtree.parent = p;
+		}
+
+		if (!weakLLX(parent, 0, ops, nodes)) return null;
+
+		if (pChild != parent.left && pChild != parent.right) return null;
+
+		// Build new sub-tree
+		//final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
+		
+		return new Operation(nodes, ops, subtree);
+	}
+	
 	private V newDoPut(final K key, final V value, final boolean onlyIfAbsent) { // update fixToKey
 		final Comparable<? super K> k = comparable(key);
 		boolean found = false;
@@ -1115,7 +1177,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
 				}				
 			}
-			if (helpSCXX(op)) {
+			if (helpSCXX(op)) {+
 				// clean up violations if necessary
 				if (d == 0) {
 					if (!found && (searchRecord.parent.weight == 0 )&& searchRecord.n.weight == 1) fixToKey(k);
