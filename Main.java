@@ -4,6 +4,8 @@ class Main {
 		tree.put(5,7);
 		//ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
 		System.out.println(tree.put(8,1));
+		System.out.println(tree.get(8));
+		System.out.println(tree.search(8,true).n.key);
 	}
 }
 

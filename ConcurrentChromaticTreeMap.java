@@ -923,8 +923,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	private boolean helpSCXX(Operation op){
-		final AtomicReferenceFieldUpdater<Integer, Integer> updateStep = 
-				AtomicReferenceFieldUpdater.newUpdater(Integer.class, Integer.class, null);//need to be checked also		
+		final AtomicReferenceFieldUpdater<Operation,Integer> updateStep = 
+				AtomicReferenceFieldUpdater.newUpdater(Operation.class,Integer.class, "step");//need to be checked also		
 		Node[] nodes=op.nodes;
 		Operation[] ops=op.ops;
 		Node subtree=op.subtree;
@@ -956,16 +956,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			if(step==Operation.STEP_SUBTREE){
 				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
 						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
-					updateStep.compareAndSet(op.step,step,Operation.STEP_GENERATION);
+					updateStep.compareAndSet(op,step,Operation.STEP_GENERATION);
 				}else{
-					updateStep.compareAndSet(op.step,step,Operation.STEP_ABORT);
+					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 				}
 			}else if(step==Operation.STEP_GENERATION){
 				Node root=RDCSS_ABORTABLE_READ();
 				if(root.gen==nodes[0].gen){
-					updateStep.compareAndSet(op.step,step,Operation.STEP_COMMIT);
+					updateStep.compareAndSet(op,step,Operation.STEP_COMMIT);
 				}else{
-					updateStep.compareAndSet(op.step,step,Operation.STEP_ABORT);
+					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 				}
 			}else if(step==Operation.STEP_ABORT){
 				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
@@ -1283,8 +1283,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			while (op == null) {
 
 				searchRecord= search(key,false);
-				if(searchRecord.n != null){System.out.println(searchRecord.n);
-				if( k.compareTo((K) searchRecord.n.key) == 0){
+				
+				if(searchRecord.n.key != null && k.compareTo((K) searchRecord.n.key) == 0){
 					found = true;
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
 					op = createReplaceOp(searchRecord.parent, searchRecord.n, key, value,searchRecord.startGen);//update replaceop so it uses extra
@@ -1293,7 +1293,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					searchRecord.leafGen=searchRecord.n.gen;
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
 				}
-			}				
+							
 			}
 			if (helpSCXX(op)) {
 				// clean up violations if necessary
@@ -1970,10 +1970,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final static int STATE_ABORTED = 1;
 		final static int STATE_COMMITTED = 2;
 		// added steps
-		final static int STEP_SUBTREE=3;
-		final static int STEP_GENERATION=4;
-		final static int STEP_COMMIT=5;
-		final static int STEP_ABORT=4;
+		final static int STEP_SUBTREE=0;
+		final static int STEP_GENERATION=1;
+		final static int STEP_COMMIT=2;
+		final static int STEP_ABORT=3;
 
 
 
@@ -1981,7 +1981,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		volatile Node[] nodes;
 		volatile Operation[] ops;
 		volatile int state;
-		volatile int step;
+		volatile Integer step=new Integer(2);
 		volatile int gen;
 		volatile boolean allFrozen;
 
