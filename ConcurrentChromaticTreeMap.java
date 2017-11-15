@@ -70,6 +70,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 
 
@@ -923,8 +924,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	private boolean helpSCXX(Operation op){
-		final AtomicReferenceFieldUpdater<Operation,Integer> updateStep = 
-				AtomicReferenceFieldUpdater.newUpdater(Operation.class,Integer.class, "step");//need to be checked also		
+		final AtomicIntegerFieldUpdater<Operation> updateStep = 
+				AtomicIntegerFieldUpdater.newUpdater(Operation.class, "step");//need to be checked also		
 		Node[] nodes=op.nodes;
 		Operation[] ops=op.ops;
 		Node subtree=op.subtree;
@@ -957,6 +958,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
 						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
 					updateStep.compareAndSet(op,step,Operation.STEP_GENERATION);
+					System.out.println("op "+op.step );
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 				}
@@ -964,12 +966,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				Node root=RDCSS_ABORTABLE_READ();
 				if(root.gen==nodes[0].gen){
 					updateStep.compareAndSet(op,step,Operation.STEP_COMMIT);
+					System.out.println("commit");
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
+					System.out.println("ab");
 				}
 			}else if(step==Operation.STEP_ABORT){
 				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
 					op.state=Operation.STATE_ABORTED;
+					System.out.println("aborted");
 					return false;
 				}
 			}else if(step==Operation.STEP_COMMIT){
@@ -977,13 +982,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					nodes[i].marked=true;
 				}
 				op.state=Operation.STATE_COMMITTED;
+				System.out.println("commited");
 				return true;
 			}
 		}
 	}
 
 	private Node RDCSS_ABORTABLE_READ(){
-		return RDCSS_COMPLETE(true);//need to be checked
+		return RDCSS_READ(true);//need to be checked
 	}
 
 	private Node RDCSS_READ(boolean abort){
@@ -1289,6 +1295,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
 					op = createReplaceOp(searchRecord.parent, searchRecord.n, key, value,searchRecord.startGen);//update replaceop so it uses extra
 				} else {
+					System.out.println("else");
 					found = false;
 					searchRecord.leafGen=searchRecord.n.gen;
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
@@ -1981,7 +1988,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		volatile Node[] nodes;
 		volatile Operation[] ops;
 		volatile int state;
-		volatile Integer step=new Integer(2);
+		volatile int step;
 		volatile int gen;
 		volatile boolean allFrozen;
 
