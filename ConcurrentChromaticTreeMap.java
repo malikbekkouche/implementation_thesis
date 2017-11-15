@@ -889,7 +889,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							//used if there is an extra pointer of a node
 							if(n.extra!=null){
 								if(dir == LEFT && n.extraDir == LEFT || 
-										dir == RIGHT && n.extraDir == RIGHT){
+										(dir == RIGHT && n.extraDir == RIGHT)){
 									n = n.extra;								
 								}
 							}else{
@@ -1068,8 +1068,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 			}
 		}
-}
+	}
 	public ConcurrentChromaticTreeMap snapshot() {
+
 			while(true) {
 				Node root = RDCSS_READ(false);
 				Operation rootOp = weakLLX(root);
@@ -1081,11 +1082,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						//TODO: Return old root instead of this new one? New one will point to the same anyways
 						//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
 						maxSnapId++;
-						return new ConcurrentChromaticTreeMap(root, true);
-					}
+						return new ConcurrentChromaticTreeMap(root, true);					
 				}
 			}
 		}
+	}
 
 
 	private Operation createReplaceOp(final Node p, final Node l, final int gen) {// same as old version except
@@ -1287,7 +1288,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		while (true) {
 			while (op == null) {
-
 				searchRecord= search(key,false);
 				
 				if(searchRecord.n.key != null && k.compareTo((K) searchRecord.n.key) == 0){
