@@ -90,6 +90,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private volatile boolean isSnapshot;
 	private volatile int generation;
 	private volatile int maxSnapId =-1;
+	public boolean isReadOnly=false;
 
 	public ConcurrentChromaticTreeMap() {
 		this(DEFAULT_d, null); 
@@ -111,6 +112,21 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		updateRight = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "right");
 		updatePrev = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "prev");
 	}
+	
+	public ConcurrentChromaticTreeMap(Node root, boolean isReadOnly) {
+			/* if(default(TValue) != null) {
+				throw new Exception("Type of TValue must be a nullable type.");
+			} */
+			d = 6;
+			dummy = new Operation();
+			this.root = root;
+			this.isReadOnly = isReadOnly;
+			comparator=null;
+			updateOp = AtomicReferenceFieldUpdater.newUpdater(Node.class, Operation.class, "op");
+			updateLeft = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "left");
+			updateRight = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "right");
+			updatePrev = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "prev");
+		}
 
 	/**
 	 * size() is NOT a constant time method, and the result is only guaranteed to
@@ -799,19 +815,19 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return false;
 	}
 
-	private boolean gcas(Node in, Node old, Node n,char dir){
+	private boolean GCAS(Node in, Node old, Node n,char dir){
 		n.prev=old;
 		boolean casResult;
 		casResult = (dir == LEFT) ? updateLeft.compareAndSet(in,old,n) : updateRight.compareAndSet(in,old,n);
 		if(casResult){
-			gcasCommit(in,n,dir);
+			GCAS_COMMIT(in,n,dir);
 			return n.prev==null;
 		}else
 			return false;
 
 	}
 
-	private Node gcasCommit(Node in, Node m, char dir){
+	private Node GCAS_COMMIT(Node in, Node m, char dir){
 		Node p=m.prev;
 		Node r=root;// should be abbortable_read
 		boolean casResult;
@@ -822,26 +838,26 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			if(casResult)
 				return p.prev;
 			else
-				return dir == LEFT ? gcasCommit(in,in.left,dir) : gcasCommit(in,in.right,dir);
+				return dir == LEFT ? GCAS_COMMIT(in,in.left,dir) : GCAS_COMMIT(in,in.right,dir);
 		}else{
 			if(r.gen==in.gen){//skipped read-only for now
 				if(updatePrev.compareAndSet(m,p,null))
 					return m;
 				else
-					return gcasCommit(in,m,dir);
+					return GCAS_COMMIT(in,m,dir);
 			}else{
 				updatePrev.compareAndSet(m,p,new Node(p));
-				return dir == LEFT ? gcasCommit(in,in.left,dir) : gcasCommit(in,in.right,dir);
+				return dir == LEFT ? GCAS_COMMIT(in,in.left,dir) : GCAS_COMMIT(in,in.right,dir);
 			}	
 		}
 	}
 
-	private Node gcasRead(Node in,char dir){
+	private Node GCAS_READ(Node in,char dir){
 		Node m = dir == LEFT ? in.left : in.right ;
 		if(m.prev==null)
 			return m;
 		else
-			return gcasCommit(in,m,dir);
+			return GCAS_COMMIT(in,m,dir);
 	}
 
 	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
@@ -852,7 +868,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			//Node root=;//=RDCSSRead();
 			int gen=root.gen;
 			char dir=LEFT;
-			Node sentinel=gcasRead(root,dir);
+			Node sentinel=GCAS_READ(root,dir);
 			if(sentinel.gen==gen || readOp){
 				if(sentinel.left==null)
 					return new SearchRecord(null,null,root,sentinel,gen);
@@ -860,7 +876,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				p=sentinel;
 				int violations=0;
 				while(true){
-					n=gcasRead(p,dir);
+					n=GCAS_READ(p,dir);
 					while(!n.isLeaf()){
 						if(n.gen==gen){
 							if(n.weight>1 || (n.left.weight==0 && p.weight==0)) // was originally only l
@@ -876,7 +892,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 									n = n.extra;								
 								}
 							}else{
-								n=gcasRead(n,dir);
+								n=GCAS_READ(n,dir);
 							}
 						}else{
 							break;
@@ -889,13 +905,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					}else if(n.lastGen < gen){//added for extra pointer use
 						return null;
 					}else{
-						if(!gcasCopy(p,n,dir,gen))
+						if(!GCAS_COPY(p,n,dir,gen))
 							retry=true;//continue;//return RETRY; or continue maybe??
 					}
 				}
 
 			}else{
-				gcasCopy(root,sentinel,dir,gen);
+				GCAS_COPY(root,sentinel,dir,gen);
 				retry=true;//continue;//return retry;
 			}
 
@@ -997,7 +1013,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					return RDCSS_COMPLETE(abort);
 				}
 			}else{
-				Node oldMain = gcasRead(desc.oldValue,LEFT);//should be specified direction dir
+				Node oldMain = GCAS_READ(desc.oldValue,LEFT);//should be specified direction dir
 				if(oldMain.equals(desc.expectedMain)){
 					if(CAS_ROOT(desc, desc.newValue)){
 						desc.committed = true;
@@ -1022,10 +1038,27 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return ref.compareAndSet(ov, nv);//should be double check ???		
 	}
 
-	private boolean gcasCopy(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
+	private boolean GCAS_COPY(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
 		Operation op=createReplaceOp(p,n,n.gen);
 		return helpSCXX(op); // original took int also
 	}
+	
+	private ConcurrentChromaticTreeMap DoReadOnlySnapshot() {
+			while(true) {
+				Node root = RDCSS_READ(false);
+				Operation rootOp = weakLLX(root);
+				// rootOp is null if another operation was undergoing.
+				if(rootOp != null) {
+					Node left = GCAS_READ(root, LEFT);
+					Operation leftOp = weakLLX(left);
+					if(RDCSS(root, left /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
+						//TODO: Return old root instead of this new one? New one will point to the same anyways
+						//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
+						return new ConcurrentChromaticTreeMap(root, true);
+					}
+				}
+			}
+		}
 	
 	
 
