@@ -1062,8 +1062,23 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 			}
 		}
-	}
-
+}
+	public ConcurrentChromaticTreeMap snapshot() {
+			while(true) {
+				Node root = RDCSS_READ(false);
+				Operation rootOp = weakLLX(root);
+				// rootOp is null if another operation was undergoing.
+				if(rootOp != null) {
+					Node left = GCAS_READ(root, LEFT);
+					Operation leftOp = weakLLX(left);
+					if(RDCSS(root, left /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
+						//TODO: Return old root instead of this new one? New one will point to the same anyways
+						//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
+						return new ConcurrentChromaticTreeMap(root, true);
+					}
+				}
+			}
+		}
 
 
 	private Operation createReplaceOp(final Node p, final Node l, final int gen) {// same as old version except
@@ -1267,7 +1282,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			while (op == null) {
 
 				searchRecord= search(key,false);
-				if(searchRecord.n != null && k.compareTo((K) searchRecord.n.key) == 0){
+				if(searchRecord.n != null)
+				if( k.compareTo((K) searchRecord.n.key) == 0){
 					found = true;
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
 					op = createReplaceOp(searchRecord.parent, searchRecord.n, key, value,searchRecord.startGen);//update replaceop so it uses extra
@@ -1333,7 +1349,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	//-------------------------end of our contribution--------------------------
 
 	public final V put(final K key, final V value) {
-		return doPut(key, value, false);
+		return newDoPut(key, value, false);
 	}
 
 	public final V putIfAbsent(final K key, final V value) {

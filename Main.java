@@ -1,17 +1,9 @@
 class Main {
 	public static void main(String[] args){
-		Gen g=new Gen();
-		Gen f=new Gen();
-		System.out.println(g.gen);
-		System.out.println(f.gen);
+		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
+		tree.put(5,7);
+		//ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
+		System.out.println(tree.put(8,1));
 	}
 }
 
-class Gen {
-	private static int counter=0;
-	public int gen;
-	public Gen(){
-		gen=counter;
-		counter++;
-	}
-}
