@@ -1054,6 +1054,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					if(RDCSS(root, left /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
 						//TODO: Return old root instead of this new one? New one will point to the same anyways
 						//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
+						maxSnapId++;
 						return new ConcurrentChromaticTreeMap(root, true);
 					}
 				}
@@ -1263,7 +1264,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			while (op == null) {
 
 				searchRecord= search(key,false);
-				if(searchRecord.n != null)
+				if(searchRecord.n != null){System.out.println(searchRecord.n);
 				if( k.compareTo((K) searchRecord.n.key) == 0){
 					found = true;
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
@@ -1272,7 +1273,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					found = false;
 					searchRecord.leafGen=searchRecord.n.gen;
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
-				}				
+				}
+			}				
 			}
 			if (helpSCXX(op)) {
 				// clean up violations if necessary
