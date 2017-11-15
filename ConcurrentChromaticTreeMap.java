@@ -1028,7 +1028,38 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return new Operation(nodes, ops, subtree);
 	}
 	
-	private Operation createReplaceOp(final Node p, final Node l, final K key, final V value,int startGen,int leafGen) {
+	private Operation createReplaceOp(final Node p, final Node l,K key, V value , final int gen) {// same as old version except
+		final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
+		final Node[] nodes = new Node[]{null, l};
+		int newGen=l.gen+1;//maybe wrong
+
+		if (!weakLLX(p, 0, ops, nodes)) return null;
+
+		if (l != p.left && l != p.right) return null;
+
+		
+		char dir = (p.left==l) ? LEFT : RIGHT;
+		Node newChild = new Node(l);
+		newChild.lastGen=newGen-2;
+		
+		// Build new sub-tree
+		final Node updated=new Node(key,value,l.weight,l.left,l.right,l.op,l.gen);
+		Node subtree;
+		if(dir==LEFT)
+			subtree = new Node(p.key,p.value,p.weight,updated,p.right,p.op,p.gen);//make sure to use the correct constructor
+		else
+			subtree = new Node(p.key,p.value,p.weight,p.left,updated,p.op,p.gen);//make sure to use the correct constructor
+		subtree.parent = p.parent;
+		
+		//put extra
+		subtree.extra=newChild;
+		subtree.extraDir=dir;
+		
+		
+		return new Operation(nodes, ops, subtree);
+	}
+	
+	/* private Operation createReplaceOp(final Node p, final Node l, final K key, final V value,int startGen,int leafGen) {
 		Operation[] ops = new Operation[]{null};// added a null/ was final
 		Node[] nodes = new Node[]{null, l}; // added p/ was final
 		
@@ -1083,9 +1114,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		//final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
 		
 		return new Operation(nodes, ops, subtree);
-	}
+	} */
 	
-	private Operation createReplaceOp(SearchRecord searchRecord, final K key, final V value) {
+	/* private Operation createReplaceOp(SearchRecord searchRecord, final K key, final V value) {
 		Operation[] ops = new Operation[]{null};// added a null/ was final
 		Node[] nodes = new Node[]{null, l}; // added p/ was final
 		
@@ -1106,7 +1137,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			/* noddes.add(parent);
 			opps.add(parent.op);
 			pChild=parent;
-			parent=parent.parent; */
+			parent=parent.parent; 
 			
 		}else{
 			while(parent.extra!=null){
@@ -1145,7 +1176,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		//final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
 		
 		return new Operation(nodes, ops, subtree);
-	}
+	} */
 	
 	private V newDoPut(final K key, final V value, final boolean onlyIfAbsent) { // update fixToKey
 		final Comparable<? super K> k = comparable(key);
@@ -1169,7 +1200,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
 				}				
 			}
-			if (helpSCXX(op)) {+
+			if (helpSCXX(op)) {
 				// clean up violations if necessary
 				if (d == 0) {
 					if (!found && (searchRecord.parent.weight == 0 )&& searchRecord.n.weight == 1) fixToKey(k);
@@ -1467,6 +1498,42 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		return new Operation( nodes, ops, newP);
 	}
+	
+	private Operation createDeleteOpSnap(final Node gp, final Node p, final Node l,int gen) {
+		final Operation[] ops = new Operation[]{null, null, null};
+		final Node[] nodes = new Node[]{null, null, null};
+
+		if (!weakLLX(gp, 0, ops, nodes)) return null;
+		if (!weakLLX(p, 1, ops, nodes)) return null;
+
+		if (p != gp.left && p != gp.right) return null;
+		final boolean left = (l == p.left);
+		if (!left && l != p.right) return null;
+
+		// Read fields for the sibling of l into ops[2], nodes[2] = s
+		if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
+		final Node s = nodes[2];
+
+		// Now, if the op. succeeds, all structure is guaranteed to be just as we verified
+
+		// Compute weight for the new node (to replace to deleted leaf l and parent p)
+		final int newWeight = (isSentinel(p) ? 1 : p.weight + s.weight); // weights of parent + sibling of deleted leaf
+
+		// Build new sub-tree
+		final Node newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
+		
+		//add parent pointer
+		newP.parent = gp;
+		
+		
+		//create extra
+		Node extra=new Node(l.key,l.value,l.weight,l.left,l.right,l.op,gen);
+		extra.lastGen=gen-1;
+		newP.extra=extra;
+		
+	return new Operation(nodes, ops, newP);
+	}
+	
 
 	// Just like insert, except this replaces any existing value.
 	private Operation createReplaceOp(final Node p, final Node l, final K key, final V value) {
