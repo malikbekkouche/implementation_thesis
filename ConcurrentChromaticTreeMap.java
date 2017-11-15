@@ -888,7 +888,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							//used if there is an extra pointer of a node
 							if(n.extra!=null){
 								if(dir == LEFT && n.extraDir == LEFT || 
-										dir == RIGHT && n.extraDir == RIGHT){
+										(dir == RIGHT && n.extraDir == RIGHT)){
 									n = n.extra;								
 								}
 							}else{
@@ -1062,23 +1062,23 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 			}
 		}
-}
+	}
 	public ConcurrentChromaticTreeMap snapshot() {
-			while(true) {
-				Node root = RDCSS_READ(false);
-				Operation rootOp = weakLLX(root);
-				// rootOp is null if another operation was undergoing.
-				if(rootOp != null) {
-					Node left = GCAS_READ(root, LEFT);
-					Operation leftOp = weakLLX(left);
-					if(RDCSS(root, left /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
-						//TODO: Return old root instead of this new one? New one will point to the same anyways
-						//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
-						return new ConcurrentChromaticTreeMap(root, true);
-					}
+		while(true) {
+			Node root = RDCSS_READ(false);
+			Operation rootOp = weakLLX(root);
+			// rootOp is null if another operation was undergoing.
+			if(rootOp != null) {
+				Node left = GCAS_READ(root, LEFT);
+				Operation leftOp = weakLLX(left);
+				if(RDCSS(root, left /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
+					//TODO: Return old root instead of this new one? New one will point to the same anyways
+					//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
+					return new ConcurrentChromaticTreeMap(root, true);
 				}
 			}
 		}
+	}
 
 
 	private Operation createReplaceOp(final Node p, final Node l, final int gen) {// same as old version except
@@ -1280,18 +1280,18 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		while (true) {
 			while (op == null) {
-
 				searchRecord= search(key,false);
-				if(searchRecord.n != null)
-				if( k.compareTo((K) searchRecord.n.key) == 0){
-					found = true;
-					if (onlyIfAbsent) return (V) searchRecord.n.value;
-					op = createReplaceOp(searchRecord.parent, searchRecord.n, key, value,searchRecord.startGen);//update replaceop so it uses extra
-				} else {
-					found = false;
-					searchRecord.leafGen=searchRecord.n.gen;
-					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
-				}				
+				if(searchRecord.n.key != null){					
+					if( k.compareTo((K) searchRecord.n.key) == 0){
+						found = true;
+						if (onlyIfAbsent) return (V) searchRecord.n.value;
+						op = createReplaceOp(searchRecord.parent, searchRecord.n, key, value,searchRecord.startGen);//update replaceop so it uses extra
+					} else {
+						found = false;
+						searchRecord.leafGen=searchRecord.n.gen;
+						op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
+					}				
+				}
 			}
 			if (helpSCXX(op)) {
 				// clean up violations if necessary
