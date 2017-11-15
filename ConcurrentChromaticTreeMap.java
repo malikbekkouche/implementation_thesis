@@ -848,7 +848,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			final Comparable<? super K> comp = comparable(key);
 			Node ggp=null,gp=null,p=null,n=null;
 			boolean retry;
-			//Node root=;//=RDCSSRead();
+			Node root=RDCSS_ABORTABLE_READ();
 			int gen=root.gen;
 			char dir=LEFT;
 			Node sentinel=gcasRead(root,dir);
@@ -886,7 +886,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					}else if(n.lastGen >= gen){//added for extra pointer use
 						return new SearchRecord(ggp,gp,p,n,gen,violations);
 					}else if(n.lastGen < gen){//added for extra pointer use
-						return null;
+						return new SearchRecord(null, null, null, null,gen,violations);// if we cannot find the target node
 					}else{
 						if(!gcasCopy(p,n,dir,gen))
 							retry=true;//continue;//return RETRY; or continue maybe??
