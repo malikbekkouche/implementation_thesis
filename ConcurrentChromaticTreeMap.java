@@ -1043,7 +1043,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return helpSCXX(op); // original took int also
 	}
 	
-	private ConcurrentChromaticTreeMap DoReadOnlySnapshot() {
+	public ConcurrentChromaticTreeMap snapshot() {
 			while(true) {
 				Node root = RDCSS_READ(false);
 				Operation rootOp = weakLLX(root);
@@ -1263,7 +1263,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			while (op == null) {
 
 				searchRecord= search(key,false);
-				if(searchRecord.n != null && k.compareTo((K) searchRecord.n.key) == 0){
+				if(searchRecord.n != null)
+				if( k.compareTo((K) searchRecord.n.key) == 0){
 					found = true;
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
 					op = createReplaceOp(searchRecord.parent, searchRecord.n, key, value,searchRecord.startGen);//update replaceop so it uses extra
@@ -1329,7 +1330,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	//-------------------------end of our contribution--------------------------
 
 	public final V put(final K key, final V value) {
-		return doPut(key, value, false);
+		return newDoPut(key, value, false);
 	}
 
 	public final V putIfAbsent(final K key, final V value) {
