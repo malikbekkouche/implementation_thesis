@@ -104,7 +104,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		d = allowedViolationsPerPath;
 		comparator = cmp;
 		dummy = new Operation();
-		root = new Node(null, null, 1, new Node(null, null, 1, null, null, dummy), null, dummy);
+		Gen gen=new Gen();
+		root = new Node(null, null, 1, new Node(null, null, 1, null, null, dummy), null, dummy,gen.gen);
 		updateOp = AtomicReferenceFieldUpdater.newUpdater(Node.class, Operation.class, "op");
 		updateLeft = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "left");
 		updateRight = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "right");
@@ -965,7 +966,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return RDCSS_COMPLETE(true);//need to be checked
 	}
 
-	private Node RDCSS_READ_ROOT(boolean abort){
+	private Node RDCSS_READ(boolean abort){
 		Node r = root;
 		if(r instanceof Descriptor){
 			return (Node)RDCSS_COMPLETE(abort);
@@ -974,7 +975,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return r;		
 	}
 
-	private boolean RDCSS_ROOT(Node ov, Node expectedMain, Node nv){
+	private boolean RDCSS(Node ov, Node expectedMain, Node nv){
 		Descriptor desc = new Descriptor(ov, expectedMain, nv);
 		if(CAS_ROOT(ov, desc)){
 			RDCSS_COMPLETE(false);
@@ -1025,6 +1026,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		Operation op=createReplaceOp(p,n,n.gen);
 		return helpSCXX(op); // original took int also
 	}
+	
+	
 
 	private Operation createReplaceOp(final Node p, final Node l, final int gen) {// same as old version except
 		final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
@@ -1771,6 +1774,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return createW7Op(new Node[] {fX, fXX, fXXL, fXXR}, new Operation[] {opfX, opfXX, opfXXL, opfXXR});
 		}
 	}
+	
+	public static class Gen {
+	private static int counter=0;
+	public int gen;
+	public Gen(){
+		gen=counter;
+		counter++;
+	}
+}
 
 	public static class Node {//this class first is declared as final
 		public final int weight;
