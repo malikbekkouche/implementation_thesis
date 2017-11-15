@@ -69,6 +69,7 @@ import java.util.ArrayList;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -923,8 +924,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	private boolean helpSCXX(Operation op){
-		final AtomicReferenceFieldUpdater<Operation,Integer> updateStep = 
-				AtomicReferenceFieldUpdater.newUpdater(Operation.class,Integer.class, "step");//need to be checked also		
+//		final AtomicReferenceFieldUpdater<Operation,Integer> updateStep = 
+//				AtomicReferenceFieldUpdater.newUpdater(Operation.class,Integer.class, "step");//need to be checked also
+		
+		final AtomicIntegerFieldUpdater<Operation> updateStep = 
+				AtomicIntegerFieldUpdater.newUpdater(Operation.class, "step");//need to be checked also
+				
 		Node[] nodes=op.nodes;
 		Operation[] ops=op.ops;
 		Node subtree=op.subtree;
@@ -1981,7 +1986,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		volatile Node[] nodes;
 		volatile Operation[] ops;
 		volatile int state;
-		volatile Integer step=new Integer(2);
+		volatile int step=2;
 		volatile int gen;
 		volatile boolean allFrozen;
 
