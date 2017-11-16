@@ -850,7 +850,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				else
 					return GCAS_COMMIT(in,m,dir);
 			}else{
-				updatePrev.compareAndSet(m,p,new Node(p));
+				updatePrev.compareAndSet(m,p,new Node(p,true));
 				return dir == LEFT ? GCAS_COMMIT(in,in.left,dir) : GCAS_COMMIT(in,in.right,dir);
 			}	
 		}
@@ -1129,10 +1129,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		char dir = (p.left==l) ? LEFT : RIGHT;
 		Node newChild = new Node(l);
-		newChild.lastGen=newGen-2;
+		newChild.lastGen=newGen;
 
 		// Build new sub-tree
 		final Node updated=new Node(key,value,l.weight,l.left,l.right,l.op,l.gen);
+		updated.lastGen=newGen+1;//new child has updated lastGen
 		Node subtree;
 		if(dir==LEFT)
 			subtree = new Node(p.key,p.value,p.weight,updated,p.right,p.op,p.gen);//make sure to use the correct constructor
@@ -1305,7 +1306,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(searchRecord.grandParent != null && k.compareTo((K) searchRecord.n.key) == 0){
 					found = true;
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
-					if(maxSnapId==-1)
+					if(searchRecord.n.lastGen == searchRecord.startGen)
 						op = createReplaceOp(searchRecord.parent, searchRecord.n, value,searchRecord.startGen);//update replaceop so it uses extra
 					else
 						op = createReplaceOp(searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
@@ -1919,7 +1920,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.extra = null;
 		}
 
-		public Node(Node n) { // only use when failed
+		public Node(Node n,boolean failed) { // only use when failed
 			this.key = n.key;
 			this.value = n.value;
 			this.weight = n.weight;
@@ -1927,7 +1928,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.right = n.right;
 			this.op = n.op;
 			this.prev=n.prev;
-			this.failed=true;
+			this.failed=failed;
 			this.extra = null;
 		}
 
@@ -1941,6 +1942,19 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.prev=n.prev;
 			this.gen=gen;
 			this.extra = null;
+		}
+		
+		public Node(Node n){
+			this.key = n.key;
+			this.value = n.value;
+			this.weight = n.weight;
+			this.left = n.left;
+			this.right = n.right;
+			this.op = n.op;
+			this.prev=n.prev;
+			this.gen=gen;
+			this.extra = n.extra;
+			this.lastGen=n.lastGen;
 		}
 
 		public final boolean hasChild(final Node node) {
