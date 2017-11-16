@@ -5,8 +5,8 @@ class Main {
 		System.out.println("put "+tree.put(8,5));
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
 		System.out.println("put "+tree.put(8,1));
-		System.out.println("get "+tree.get(8));
-		System.out.println(tree.search(8,true).n.key);
+		//System.out.println("get "+tree.get(8));
+		System.out.println(tree.search(8,true).n.value);
 	}
 }
 

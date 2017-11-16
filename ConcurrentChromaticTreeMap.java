@@ -1026,8 +1026,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}else{
 				//Node oldMain = GCAS_READ(desc.oldValue,LEFT);//should be specified direction dir
 				if(weakLLX(GCAS_READ(desc.oldValue, LEFT)) == desc.sentinelOp){
-					if(new AtomicReference(root).compareAndSet(desc.oldValue, desc.newValue)){
+					AtomicReference ar=new AtomicReference(root);
+					if(ar.compareAndSet(desc.oldValue, desc.newValue)){
 						desc.committed = true;
+						System.out.println("root "+root.gen+" - "+"old "+desc.oldValue.gen+" - n "+desc.newValue.gen);
 						return desc.newValue;
 					}
 					else{
@@ -1092,11 +1094,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					System.out.println("if");
 					Node left = GCAS_READ(root, LEFT);
 					Operation leftOp = weakLLX(left);
-					if(RDCSS(root, leftOp /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
+					Node r=new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, root.gen+1);
+					if(RDCSS(root, leftOp /*was leftOp*/, r)) {
 						//TODO: Return old root instead of this new one? New one will point to the same anyways
 						//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
 						maxSnapId++;
-						System.out.println("return");
+						System.out.println("return "+root.gen+" - "+r.gen);
 						return new ConcurrentChromaticTreeMap(root, true);					
 				}
 			}
@@ -1104,7 +1107,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 
-	private Operation createReplaceOp(final Node p, final Node l, final int gen) {// same as old version except
+	private Operation createReplaceOp(final Node p, final Node l,final int gen) {// same as old version except
 		final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
 		final Node[] nodes = new Node[]{null, l};
 		int newGen=l.gen+1;
@@ -1308,7 +1311,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(searchRecord.n.key != null && k.compareTo((K) searchRecord.n.key) == 0){
 					found = true;
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
-					op = createReplaceOp(searchRecord.parent, searchRecord.n, key, value,searchRecord.startGen);//update replaceop so it uses extra
+					if(maxSnapId==-1)
+						op = createReplaceOp(searchRecord.parent, searchRecord.n, value,searchRecord.startGen);//update replaceop so it uses extra
+					else
+						op = createReplaceOp(searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
 				} else {
 					System.out.println("else");
 					found = false;
@@ -1663,6 +1669,24 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		// Build new sub-tree
 		final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
+
+		//add parent pointer
+		subtree.parent = p;
+
+		return new Operation(nodes, ops, subtree);
+	}
+	
+	// Just like insert, except this replaces any existing value.
+	private Operation createReplaceOp(final Node p, final Node l, final V value,final int gen) {
+		final Operation[] ops = new Operation[]{null};
+		final Node[] nodes = new Node[]{null, l};
+
+		if (!weakLLX(p, 0, ops, nodes)) return null;
+
+		if (l != p.left && l != p.right) return null;
+
+		// Build new sub-tree
+		final Node subtree = new Node(l.key, value, l.weight, l.left, l.right, dummy);
 
 		//add parent pointer
 		subtree.parent = p;
