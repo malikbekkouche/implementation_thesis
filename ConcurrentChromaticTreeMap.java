@@ -1353,9 +1353,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				searchRecord=search(key,false); // check loop (ifra method or outter)
 				System.out.println("sinbadji");
 				// the key was not in the tree at the linearization point, so no value was removed
-				if (searchRecord.grandParent != null || k.compareTo((K) searchRecord.n.key) != 0) return null;
+				if (searchRecord.grandParent == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
 				if(searchRecord.n.lastGen==searchRecord.startGen){ // maybe save extra somewhere
-
+					System.out.println(searchRecord.n.lastGen+" - "+searchRecord.startGen);
 					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
 					System.out.println("normal");
 				}
