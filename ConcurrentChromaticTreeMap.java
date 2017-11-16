@@ -903,10 +903,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					if(comp.compareTo((K)n.key)==0){// if we found the node
 						if(n.gen==gen || readOp){
 							return new SearchRecord(ggp,gp,p,n,gen,violations);
-						}else if(n.lastGen >= gen){//added for extra pointer use
-							return new SearchRecord(ggp,gp,p,n,gen,violations);
-						}else if(n.lastGen < gen){//added for extra pointer use
-							return new SearchRecord(ggp,gp,p,n,gen,violations);// if we cannot find the target node
 						}else{
 							if(!GCAS_COPY(p,n,dir,gen))
 								retry=true;//continue;//return RETRY; or continue maybe??
