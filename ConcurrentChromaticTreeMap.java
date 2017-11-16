@@ -199,12 +199,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 	public final V get(final K key) {
 		final Comparable<? super K> k = comparable(key);
-		Node l = root.left.left;
+		/* Node l = root.left.left;
 		if (l == null) return null; // no keys in data structure
 		while (l.left != null) {
 			l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
-		}
-		return (k.compareTo((K) l.key) == 0) ? (V) l.value : null;
+		} */
+		
+		SearchRecord searchRecord=search(key,true);
+		return (k.compareTo((K) searchRecord.n.key) == 0) ? (V) searchRecord.n.value : null;
 	}
 
 	// only adds if element not in the tree
@@ -1079,8 +1081,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 	}
 	public ConcurrentChromaticTreeMap snapshot() {
-
-
 			while(true) {
 				System.out.println("snap");
 				Node root = RDCSS_READ(false);
