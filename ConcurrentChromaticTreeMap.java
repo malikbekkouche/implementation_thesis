@@ -86,7 +86,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Operation> updateOp;
 	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Node> updateLeft, updateRight;
 	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Node> updatePrev;
-	
+
 	// added for gcas
 	private final char LEFT='L';
 	private final char RIGHT='R';
@@ -906,14 +906,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					if(n.gen==gen || readOp){						
 						return new SearchRecord(ggp,gp,p,n,gen,violations);
 					}else{
-						if(!GCAS_COPY(p,n,dir,gen))
+						if(!GCAS_COPY(p,n,dir,gen)){
 							retry=true;//continue;//return RETRY; or continue maybe??
+							System.out.println("GCAS_COPY finish");
+						}
 					}
 				}
 
 			}else{
 				GCAS_COPY(root,sentinel,dir,gen);
 				retry=true;//continue;//return retry;
+
 			}
 
 		}
@@ -1023,7 +1026,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(weakLLX(GCAS_READ(desc.oldValue, LEFT)) == desc.sentinelOp){
 					//AtomicReference ar=new AtomicReference(v
 					final AtomicIntegerFieldUpdater<Node> updateGen = 
-				AtomicIntegerFieldUpdater.newUpdater(Node.class, "gen");//need to be checked also	
+							AtomicIntegerFieldUpdater.newUpdater(Node.class, "gen");//need to be checked also	
 					if(updateGen.compareAndSet(v,desc.oldValue.gen, desc.newValue.gen)){
 						desc.committed = true;
 						System.out.println("root "+root.gen+" - "+"old "+desc.oldValue.gen+" - n "+desc.newValue.gen);
@@ -1055,12 +1058,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private boolean GCAS_COPY(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
 		Operation op=createReplaceOp(p,n,n.gen);		
 		//check direction of parent node
-		if(dir == LEFT)
-		{
-			return (p.left == n);
-		}else if(dir == RIGHT){
-			return (p.right == n);
-		}
 		return helpSCXX(op); // original took int also					
 	}
 
@@ -1099,7 +1096,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					maxSnapId++;
 					System.out.println("return "+root.gen+" - "+r.gen);
 					return new ConcurrentChromaticTreeMap(root, true);					
-
 				}
 			}
 		}
@@ -1609,7 +1605,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		// Compute the weight for the new parent node
 		final int newWeight = (isSentinel(l) ? 1 : l.weight - 1);               // (maintain sentinel weights at 1)
-		
+
 
 		// Build new sub-tree
 		final Node newLeaf = new Node(key, value, 1, null, null, dummy);
@@ -1619,7 +1615,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		//update generation
 		newL.gen = l.gen;
 		newL.lastGen = l.lastGen;
-		
+
 		final Node newP;
 		if (l.key == null || k.compareTo(l.key) < 0) {
 			newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);		
@@ -1670,6 +1666,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		Node extra=new Node(l.key,l.value,l.weight,l.left,l.right,l.op,gen);
 		extra.lastGen=gen-1;
 		newP.extra=extra;
+		
 
 		return new Operation(nodes, ops, newP);
 	}
