@@ -69,6 +69,7 @@ import java.util.ArrayList;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
@@ -958,7 +959,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
 						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
 					updateStep.compareAndSet(op,step,Operation.STEP_GENERATION);
-					System.out.println("op "+op.step );
+					//System.out.println("op "+op.step );
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 				}
@@ -966,7 +967,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				Node root=RDCSS_ABORTABLE_READ();
 				if(root.gen==nodes[0].gen){
 					updateStep.compareAndSet(op,step,Operation.STEP_COMMIT);
-					System.out.println("commit");
+					//System.out.println("commit");
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 					System.out.println("ab");
@@ -974,7 +975,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}else if(step==Operation.STEP_ABORT){
 				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
 					op.state=Operation.STATE_ABORTED;
-					System.out.println("aborted");
+					//System.out.println("aborted");
 					return false;
 				}
 			}else if(step==Operation.STEP_COMMIT){
@@ -982,7 +983,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					nodes[i].marked=true;
 				}
 				op.state=Operation.STATE_COMMITTED;
-				System.out.println("commited");
+				//System.out.println("commited");
 				return true;
 			}
 		}
@@ -1991,12 +1992,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final static int STEP_ABORT=3;
 
 
-
 		volatile Node subtree;
 		volatile Node[] nodes;
 		volatile Operation[] ops;
 		volatile int state;
 		volatile int step;
+
 		volatile int gen;
 		volatile boolean allFrozen;
 
