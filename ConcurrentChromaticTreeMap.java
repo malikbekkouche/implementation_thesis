@@ -1050,8 +1050,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	private boolean GCAS_COPY(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
-		Operation op=createReplaceOp(p,n,n.gen);
-		return helpSCXX(op); // original took int also
+		Operation op=createReplaceOp(p,n,n.gen);		
+		//check direction of parent node
+		if(dir == LEFT)
+		{
+			return (p.left == n);
+		}else if(dir == RIGHT){
+			return (p.right == n);
+		}
+		return helpSCXX(op); // original took int also					
 	}
 
 	private ConcurrentChromaticTreeMap DoReadOnlySnapshot() {
