@@ -995,16 +995,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 	private Node RDCSS_READ(boolean abort){
 		Node r = root;
-		if(r instanceof Descriptor){
+		if(r.op instanceof Descriptor){
 			return (Node)RDCSS_COMPLETE(abort);
 		}
 		else 
 			return r;		
 	}
 
-	private boolean RDCSS(Node ov, Node expectedMain, Node nv){
-		Descriptor desc = new Descriptor(ov, expectedMain, nv);
-		if(CAS_ROOT(ov, desc)){
+	private boolean RDCSS(Node ov, Operation sent, Node nv){
+		Descriptor desc = new Descriptor(ov, sent, nv);
+		if(CAS_ROOT(root.op, desc)){
 			RDCSS_COMPLETE(false);
 			return desc.committed;
 		}else
@@ -1013,20 +1013,20 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 	private Node RDCSS_COMPLETE(boolean abort){
 		Node v = root;
-		if(v instanceof Node)
-			return v;
-		else {//v is instanceof Descriptor
-			Descriptor desc = (Descriptor)v;
+		Operation op=v.op;
+		
+		if(op instanceof Descriptor) {//v is instanceof Descriptor
+			Descriptor desc = (Descriptor)op;
 			if(abort){
-				if(CAS_ROOT(desc, desc.oldValue)){
+				if(CAS_ROOT(desc, new Operation(1))){
 					return desc.oldValue;
 				}else{
 					return RDCSS_COMPLETE(abort);
 				}
 			}else{
-				Node oldMain = GCAS_READ(desc.oldValue,LEFT);//should be specified direction dir
-				if(oldMain.equals(desc.expectedMain)){
-					if(CAS_ROOT(desc, desc.newValue)){
+				//Node oldMain = GCAS_READ(desc.oldValue,LEFT);//should be specified direction dir
+				if(weakLLX(GCAS_READ(desc.oldValue, LEFT)) == desc.sentinelOp){
+					if(new AtomicReference(root).compareAndSet(desc.oldValue, desc.newValue)){
 						desc.committed = true;
 						return desc.newValue;
 					}
@@ -1035,18 +1035,20 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					}
 
 				}else{
-					if(CAS_ROOT(desc, desc.oldValue))
+					if(CAS_ROOT(desc, new Operation(1)))
 						return desc.oldValue;
 					else
 						return RDCSS_COMPLETE(abort);
 				}
 			}
+		}else {
+			return v;
 		}
 	}
 
-	private boolean CAS_ROOT(Node ov, Node nv){
-		AtomicReference<Node> ref=new AtomicReference(root);
-		return ref.compareAndSet(ov, nv);//should be double check ???		
+	private boolean CAS_ROOT(Operation ov, Operation nv){
+		//AtomicReference<Node> ref=new AtomicReference(root);
+		return updateOp.compareAndSet(root,ov, nv);//should be double check ???		
 	}
 
 	private boolean GCAS_COPY(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
@@ -1063,13 +1065,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 	private ConcurrentChromaticTreeMap DoReadOnlySnapshot() {
 		while(true) {
+			System.out.println("snap");
 			Node root = RDCSS_READ(false);
 			Operation rootOp = weakLLX(root);
 			// rootOp is null if another operation was undergoing.
 			if(rootOp != null) {
+				System.out.println("if");
 				Node left = GCAS_READ(root, LEFT);
 				Operation leftOp = weakLLX(left);
-				if(RDCSS(root, left /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
+				if(RDCSS(root, leftOp /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
 					//TODO: Return old root instead of this new one? New one will point to the same anyways
 					//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
 					return new ConcurrentChromaticTreeMap(root, true);
@@ -1080,16 +1084,19 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	public ConcurrentChromaticTreeMap snapshot() {
 
 			while(true) {
+				System.out.println("snap");
 				Node root = RDCSS_READ(false);
 				Operation rootOp = weakLLX(root);
 				// rootOp is null if another operation was undergoing.
 				if(rootOp != null) {
+					System.out.println("if");
 					Node left = GCAS_READ(root, LEFT);
 					Operation leftOp = weakLLX(left);
-					if(RDCSS(root, left /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
+					if(RDCSS(root, leftOp /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
 						//TODO: Return old root instead of this new one? New one will point to the same anyways
 						//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
 						maxSnapId++;
+						System.out.println("return");
 						return new ConcurrentChromaticTreeMap(root, true);					
 				}
 			}
@@ -1966,21 +1973,22 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	//class Descriptor
-	public static final class Descriptor extends Node {
+	public static final class Descriptor extends Operation {
 		//old: INode[K, V], expectedmain: MainNode[K, V], nv: INode[K, V]
 		public Node oldValue;
-		public Node expectedMain;
+		public Operation sentinelOp;
 		public Node newValue;
 		public volatile boolean committed  = false;
-		public Descriptor(Node old, Node exp, Node nv){
-			super(null,null,0,null,null,null);//call super class constructor
+		public Descriptor(Node old, Operation exp, Node nv){
+			//super(null,null,0,null,null,null);//call super class constructor
+			super();
 			oldValue = old;
-			expectedMain = exp;
+			sentinelOp = exp;
 			newValue = nv;
 		}
 	}
 
-	public static final class Operation {
+	public static class Operation {
 		final static int STATE_INPROGRESS = 0;
 		final static int STATE_ABORTED = 1;
 		final static int STATE_COMMITTED = 2;
@@ -2009,6 +2017,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.nodes = nodes;
 			this.ops = ops;
 			this.subtree = subtree;
+		}
+		
+		public Operation(int state) {     // added by me
+			nodes = null; ops = null; subtree = null;
+			this.state = state;   
 		}
 	}
 
