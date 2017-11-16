@@ -205,7 +205,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		while (l.left != null) {
 			l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;
 		} */
-		
+
 		SearchRecord searchRecord=search(key,true);
 		return (searchRecord.grandParent != null && k.compareTo((K) searchRecord.n.key) == 0) ? (V) searchRecord.n.value : null;
 	}
@@ -1083,22 +1083,22 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 	}
 	public ConcurrentChromaticTreeMap snapshot() {
-			while(true) {
-				System.out.println("snap");
-				Node root = RDCSS_READ(false);
-				Operation rootOp = weakLLX(root);
-				// rootOp is null if another operation was undergoing.
-				if(rootOp != null) {
-					System.out.println("if");
-					Node left = GCAS_READ(root, LEFT);
-					Operation leftOp = weakLLX(left);
-					Node r=new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, root.gen+1);
-					if(RDCSS(root, leftOp /*was leftOp*/, r)) {
-						//TODO: Return old root instead of this new one? New one will point to the same anyways
-						//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
-						maxSnapId++;
-						System.out.println("return "+root.gen+" - "+r.gen);
-						return new ConcurrentChromaticTreeMap(root, true);					
+		while(true) {
+			System.out.println("snap");
+			Node root = RDCSS_READ(false);
+			Operation rootOp = weakLLX(root);
+			// rootOp is null if another operation was undergoing.
+			if(rootOp != null) {
+				System.out.println("if");
+				Node left = GCAS_READ(root, LEFT);
+				Operation leftOp = weakLLX(left);
+				Node r=new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, root.gen+1);
+				if(RDCSS(root, leftOp /*was leftOp*/, r)) {
+					//TODO: Return old root instead of this new one? New one will point to the same anyways
+					//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
+					maxSnapId++;
+					System.out.println("return "+root.gen+" - "+r.gen);
+					return new ConcurrentChromaticTreeMap(root, true);					
 
 				}
 			}
@@ -1355,6 +1355,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				// the key was not in the tree at the linearization point, so no value was removed
 				if (searchRecord.grandParent != null || k.compareTo((K) searchRecord.n.key) != 0) return null;
 				if(searchRecord.n.lastGen==searchRecord.startGen){ // maybe save extra somewhere
+
 					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
 					System.out.println("normal");
 				}
@@ -1612,16 +1613,28 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		// Compute the weight for the new parent node
 		final int newWeight = (isSentinel(l) ? 1 : l.weight - 1);               // (maintain sentinel weights at 1)
 
-		// Build new sub-tree
+		int newGen = l.gen + 1;//maybe wrong
 
+		// Build new sub-tree
 		final Node newLeaf = new Node(key, value, 1, null, null, dummy);
 		newLeaf.lastGen=generation;
 		final Node newL = new Node(l.key, l.value, 1, null, null, dummy);
+		//update generation
+		newL.gen = newGen;
+		newL.lastGen = l.gen;
+		
+		//assign generation for new added node
+		newLeaf.lastGen = newLeaf.gen = newGen;
+		
 		final Node newP;
 		if (l.key == null || k.compareTo(l.key) < 0) {
-			newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);			
+			newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);		
+			newP.gen = newGen;//add generation
+			newP.lastGen = newGen;//???
 		} else {
-			newP = new Node(key, value, newWeight, newL, newLeaf, dummy);			
+			newP = new Node(key, value, newWeight, newL, newLeaf, dummy);
+			newP.gen = newGen;//add generation
+			newP.lastGen = newGen;//add generation
 		}
 
 		// add parent pointer
@@ -1685,7 +1698,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		return new Operation(nodes, ops, subtree);
 	}
-	
+
 	// Just like insert, except this replaces any existing value.
 	private Operation createReplaceOp(final Node p, final Node l, final V value,final int gen) {
 		final Operation[] ops = new Operation[]{null};
@@ -1955,7 +1968,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.gen=gen;
 			this.extra = null;
 		}
-		
+
 		public Node(Node n){
 			this.key = n.key;
 			this.value = n.value;
