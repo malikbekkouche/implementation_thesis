@@ -206,7 +206,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		} */
 		
 		SearchRecord searchRecord=search(key,true);
-		return (searchRecord.n != null && k.compareTo((K) searchRecord.n.key) == 0) ? (V) searchRecord.n.value : null;
+		return (searchRecord.grandParent != null && k.compareTo((K) searchRecord.n.key) == 0) ? (V) searchRecord.n.value : null;
 	}
 
 	// only adds if element not in the tree
@@ -1305,7 +1305,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			while (op == null) {
 				searchRecord= search(key,false);
 
-				if(searchRecord.n.key != null && k.compareTo((K) searchRecord.n.key) == 0){
+				if(searchRecord.grandParent != null && k.compareTo((K) searchRecord.n.key) == 0){
 					found = true;
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
 					if(maxSnapId==-1)
