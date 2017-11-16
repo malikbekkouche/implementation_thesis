@@ -206,7 +206,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		} */
 		
 		SearchRecord searchRecord=search(key,true);
-		return (k.compareTo((K) searchRecord.n.key) == 0) ? (V) searchRecord.n.value : null;
+		return (searchRecord.n != null && k.compareTo((K) searchRecord.n.key) == 0) ? (V) searchRecord.n.value : null;
 	}
 
 	// only adds if element not in the tree
@@ -1346,7 +1346,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 				// the key was not in the tree at the linearization point, so no value was removed
 				if (searchRecord.n.key == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
-				op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
+				if(maxSnapId==-1)
+					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
+				else
+					op = createDeleteOpSnap(searchRecord.grandParent, searchRecord.parent, searchRecord.n,searchRecord.startGen);
 			}
 			if (helpSCXX(op)) {
 				// clean up violations if necessary
