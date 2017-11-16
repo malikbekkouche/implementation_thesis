@@ -874,6 +874,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			int gen=root.gen;
 			char dir=LEFT;
 			Node sentinel=GCAS_READ(root,dir);
+			System.out.println("while");
 			if(sentinel.gen==gen || readOp){
 				if(sentinel.left==null)
 					return new SearchRecord(null,null,root,sentinel,gen);
@@ -881,6 +882,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				p=sentinel;
 				int violations=0;
 				while(true){
+					System.out.println("inner");
 					n=GCAS_READ(p,dir);
 					while(!n.isLeaf()){
 						if(n.gen==gen){
@@ -908,7 +910,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					}else{
 						if(!GCAS_COPY(p,n,dir,gen)){
 							retry=true;//continue;//return RETRY; or continue maybe??
-							System.out.println("GCAS_COPY finish");
+							System.out.println("retry");
 						}
 					}
 				}
@@ -1056,9 +1058,56 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	private boolean GCAS_COPY(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
-		Operation op=createReplaceOp(p,n,n.gen);		
+		/* Operation op=createReplaceOp(p,n,n.gen);		
 		//check direction of parent node
+<<<<<<< HEAD
 		return helpSCXX(op); // original took int also					
+=======
+		if(dir == LEFT)
+		{
+			return (p.left == n);
+		}else if(dir == RIGHT){
+			return (p.right == n);
+		}
+		return helpSCXX(op); // original took int also */	
+
+
+		Operation[] ops = new Operation[] { null, null,null };
+		Node[] nodes = new Node[] { null, null ,null};
+
+		if(!weakLLX(p, 0, ops, nodes)) {
+			System.out.println("false1");
+			return false;
+		}
+
+		if(!weakLLX(n, 1, ops, nodes)) {
+			System.out.println("false2");
+			return false;
+		}
+
+
+		if(dir==LEFT){
+			if(p.left!=n)
+				return false;
+		}else{
+			if(p.right!=n)
+				return false;
+		}
+
+		// Create copy of o, and create operation
+		Node node = new Node(n, gen);
+		Operation op = new Operation(nodes, ops, n);
+		n.op = op;
+		if(helpSCXX(op)) {
+			// Copy operation was committed, and traversal can continue
+			System.out.println("true");
+			return true;
+		} else {
+			// Copy operation failed, traversal will retry after reading the node again
+			System.out.println("false");
+			return false;
+		}
+
 	}
 
 	private ConcurrentChromaticTreeMap DoReadOnlySnapshot() {
@@ -1348,7 +1397,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				// the key was not in the tree at the linearization point, so no value was removed
 				if (searchRecord.grandParent == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
 				if(searchRecord.n.lastGen==searchRecord.startGen){ // maybe save extra somewhere
-
+					System.out.println(searchRecord.n.lastGen+" - "+searchRecord.startGen);
 					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
 					System.out.println("normal");
 				}
@@ -1666,7 +1715,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		Node extra=new Node(l.key,l.value,l.weight,l.left,l.right,l.op,gen);
 		extra.lastGen=gen-1;
 		newP.extra=extra;
-		
+
 
 		return new Operation(nodes, ops, newP);
 	}
