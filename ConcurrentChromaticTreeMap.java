@@ -1313,8 +1313,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				} else {
 					System.out.println("else");
 					found = false;
-					searchRecord.leafGen=searchRecord.n.gen;
-					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
+					//searchRecord.leafGen=searchRecord.n.gen;
+					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k,searchRecord.startGen);
 				}
 
 			}
@@ -1347,7 +1347,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 				// the key was not in the tree at the linearization point, so no value was removed
 				if (searchRecord.n.key == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
-				if(maxSnapId==-1)
+				if(searchRecord.n.lastGen==searchRecord,startGen) // maybe save extra somewhere
 					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
 				else
 					op = createDeleteOpSnap(searchRecord.grandParent, searchRecord.parent, searchRecord.n,searchRecord.startGen);
@@ -1414,7 +1414,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					op = createReplaceOp(p, l, key, value);
 				} else {
 					found = false;
-					op = createInsertOp(p, l, key, value, k);					
+					//op = createInsertOp(p, l, key, value, k);					
 				}
 			}
 			if (helpSCX(op, 0)) {
@@ -1590,7 +1590,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return true;
 	}
 
-	private Operation createInsertOp(final Node p, final Node l, final K key, final V value, Comparable k) {
+	private Operation createInsertOp(final Node p, final Node l, final K key, final V value, Comparable k,int generation) {
 		final Operation[] ops = new Operation[]{null};
 		final Node[] nodes = new Node[]{null, l};
 
@@ -1604,6 +1604,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		// Build new sub-tree
 
 		final Node newLeaf = new Node(key, value, 1, null, null, dummy);
+		newLeaf.lastGen=generation;
 		final Node newL = new Node(l.key, l.value, 1, null, null, dummy);
 		final Node newP;
 		if (l.key == null || k.compareTo(l.key) < 0) {
