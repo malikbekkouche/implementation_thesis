@@ -903,6 +903,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						}
 					}					
 					if(n.gen==gen || readOp){
+						if(n == root.left){//if the tree is empty
+							return new SearchRecord(null, null, null, null, gen,violations);
+						}
 						return new SearchRecord(ggp,gp,p,n,gen,violations);
 					}else{
 						if(!GCAS_COPY(p,n,dir,gen))
