@@ -899,20 +899,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						}else{
 							break;
 						}
-					}
-					if(comp.compareTo((K)n.key)==0){// if we found the node
-						if(n.gen==gen || readOp){
-							return new SearchRecord(ggp,gp,p,n,gen,violations);
-						}else if(n.lastGen >= gen){//added for extra pointer use
-							return new SearchRecord(ggp,gp,p,n,gen,violations);
-						}else if(n.lastGen < gen){//added for extra pointer use
-							return new SearchRecord(ggp,gp,p,n,gen,violations);// if we cannot find the target node
-						}else{
-							if(!GCAS_COPY(p,n,dir,gen))
-								retry=true;//continue;//return RETRY; or continue maybe??
-						}
-					}else{//if we cannot find the node
-						return new SearchRecord(ggp, gp, p, n,gen,violations);// if we cannot find the target node
+					}					
+					if(n.gen==gen || readOp){
+						return new SearchRecord(ggp,gp,p,n,gen,violations);
+					}else{
+						if(!GCAS_COPY(p,n,dir,gen))
+							retry=true;//continue;//return RETRY; or continue maybe??
 					}
 				}
 
@@ -1014,7 +1006,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private Node RDCSS_COMPLETE(boolean abort){
 		Node v = root;
 		Operation op=v.op;
-		
+
 		if(op instanceof Descriptor) {//v is instanceof Descriptor
 			Descriptor desc = (Descriptor)op;
 			if(abort){
@@ -1085,6 +1077,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 	public ConcurrentChromaticTreeMap snapshot() {
 
+
 			while(true) {
 				System.out.println("snap");
 				Node root = RDCSS_READ(false);
@@ -1101,6 +1094,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						maxSnapId++;
 						System.out.println("return "+root.gen+" - "+r.gen);
 						return new ConcurrentChromaticTreeMap(root, true);					
+
 				}
 			}
 		}
@@ -1307,7 +1301,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		while (true) {
 			while (op == null) {
 				searchRecord= search(key,false);
-				
+
 				if(searchRecord.n.key != null && k.compareTo((K) searchRecord.n.key) == 0){
 					found = true;
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
@@ -1321,7 +1315,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					searchRecord.leafGen=searchRecord.n.gen;
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k);
 				}
-							
+
 			}
 			if (helpSCXX(op)) {
 				// clean up violations if necessary
@@ -2042,7 +2036,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.ops = ops;
 			this.subtree = subtree;
 		}
-		
+
 		public Operation(int state) {     // added by me
 			nodes = null; ops = null; subtree = null;
 			this.state = state;   
