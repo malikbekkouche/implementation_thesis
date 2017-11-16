@@ -1347,13 +1347,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		SearchRecord searchRecord=null;
 
 		while (true) {
-			System.out.println("loop");
 			while (op == null) {
-				System.out.println("tet");
 				searchRecord=search(key,false); // check loop (ifra method or outter)
-				System.out.println("sinbadji");
 				// the key was not in the tree at the linearization point, so no value was removed
-				if (searchRecord.grandParent != null || k.compareTo((K) searchRecord.n.key) != 0) return null;
+				if (searchRecord.grandParent == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
 				if(searchRecord.n.lastGen==searchRecord.startGen){ // maybe save extra somewhere
 
 					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
@@ -1612,29 +1609,26 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		// Compute the weight for the new parent node
 		final int newWeight = (isSentinel(l) ? 1 : l.weight - 1);               // (maintain sentinel weights at 1)
-
-		int newGen = l.gen + 1;//maybe wrong
+		
 
 		// Build new sub-tree
 		final Node newLeaf = new Node(key, value, 1, null, null, dummy);
 		newLeaf.lastGen=generation;
+		newLeaf.gen = generation;
 		final Node newL = new Node(l.key, l.value, 1, null, null, dummy);
 		//update generation
-		newL.gen = newGen;
-		newL.lastGen = l.gen;
-		
-		//assign generation for new added node
-		newLeaf.lastGen = newLeaf.gen = newGen;
+		newL.gen = l.gen;
+		newL.lastGen = l.lastGen;
 		
 		final Node newP;
 		if (l.key == null || k.compareTo(l.key) < 0) {
 			newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);		
-			newP.gen = newGen;//add generation
-			newP.lastGen = newGen;//???
+			newP.gen = l.gen;//add generation
+			newP.lastGen = l.gen;//???
 		} else {
 			newP = new Node(key, value, newWeight, newL, newLeaf, dummy);
-			newP.gen = newGen;//add generation
-			newP.lastGen = newGen;//add generation
+			newP.gen = generation;//add generation
+			newP.lastGen = generation;//add generation
 		}
 
 		// add parent pointer
