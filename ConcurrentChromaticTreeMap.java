@@ -357,7 +357,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	// returns true if the dictionary contains an entry whose key
 	// equals k and if so removes that entry; otherwise returns false.
 	public boolean remove(final K k){
-		V result = remove(k, 0);
+		V result = newRemove(k, 0);
 		if(result != null)
 			return true;
 		return false;
