@@ -86,6 +86,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Operation> updateOp;
 	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Node> updateLeft, updateRight;
 	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Node> updatePrev;
+	
 	// added for gcas
 	private final char LEFT='L';
 	private final char RIGHT='R';
@@ -1020,17 +1021,21 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}else{
 				//Node oldMain = GCAS_READ(desc.oldValue,LEFT);//should be specified direction dir
 				if(weakLLX(GCAS_READ(desc.oldValue, LEFT)) == desc.sentinelOp){
-					AtomicReference ar=new AtomicReference(root);
-					if(ar.compareAndSet(desc.oldValue, desc.newValue)){
+					//AtomicReference ar=new AtomicReference(v
+					final AtomicIntegerFieldUpdater<Node> updateGen = 
+				AtomicIntegerFieldUpdater.newUpdater(Node.class, "gen");//need to be checked also	
+					if(updateGen.compareAndSet(v,desc.oldValue.gen, desc.newValue.gen)){
 						desc.committed = true;
 						System.out.println("root "+root.gen+" - "+"old "+desc.oldValue.gen+" - n "+desc.newValue.gen);
 						return desc.newValue;
 					}
 					else{
+						System.out.println("error");
 						return RDCSS_COMPLETE(abort);
 					}
 
 				}else{
+					System.out.println("error 2");
 					if(CAS_ROOT(desc, new Operation(1)))
 						return desc.oldValue;
 					else
@@ -1342,15 +1347,21 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		SearchRecord searchRecord=null;
 
 		while (true) {
+			System.out.println("loop");
 			while (op == null) {
+				System.out.println("tet");
 				searchRecord=search(key,false); // check loop (ifra method or outter)
-
+				System.out.println("sinbadji");
 				// the key was not in the tree at the linearization point, so no value was removed
-				if (searchRecord.n.key == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
-				if(searchRecord.n.lastGen==searchRecord,startGen) // maybe save extra somewhere
+				if (searchRecord.grandParent != null || k.compareTo((K) searchRecord.n.key) != 0) return null;
+				if(searchRecord.n.lastGen==searchRecord.startGen){ // maybe save extra somewhere
 					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
-				else
+					System.out.println("normal");
+				}
+				else{
 					op = createDeleteOpSnap(searchRecord.grandParent, searchRecord.parent, searchRecord.n,searchRecord.startGen);
+					System.out.println("panormal");
+				}
 			}
 			if (helpSCXX(op)) {
 				// clean up violations if necessary
@@ -1360,7 +1371,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					if (searchRecord.violations >= d) fixToKey(k);
 				}
 
-				//add parent pointer
+				//add parent pointer ---- should be inside removeOperation
 				searchRecord.n.parent=null;
 				searchRecord.parent.parent=null;
 				// we deleted a key, so we return the removed value (saved in the old node)
