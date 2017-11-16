@@ -906,13 +906,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						}else if(n.lastGen >= gen){//added for extra pointer use
 							return new SearchRecord(ggp,gp,p,n,gen,violations);
 						}else if(n.lastGen < gen){//added for extra pointer use
-							return new SearchRecord(null, null, null, null,gen,violations);// if we cannot find the target node
+							return new SearchRecord(ggp,gp,p,n,gen,violations);// if we cannot find the target node
 						}else{
 							if(!GCAS_COPY(p,n,dir,gen))
 								retry=true;//continue;//return RETRY; or continue maybe??
 						}
 					}else{//if we cannot find the node
-						return new SearchRecord(null, null, null, null,gen,violations);// if we cannot find the target node
+						return new SearchRecord(ggp, gp, p, n,gen,violations);// if we cannot find the target node
 					}
 				}
 
