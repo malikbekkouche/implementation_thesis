@@ -1034,7 +1034,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
 						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
 					updateStep.compareAndSet(op,step,Operation.STEP_GENERATION);
-					System.out.println("SUBTREE " );
+					//System.out.println("SUBTREE " );
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 				}
@@ -1042,7 +1042,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				Node root=RDCSS_ABORTABLE_READ();
 				if(root.gen==nodes[0].gen){
 					updateStep.compareAndSet(op,step,Operation.STEP_COMMIT);
-					System.out.println("GENERATION");
+					//System.out.println("GENERATION");
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 					//System.out.println("ab");
@@ -1050,7 +1050,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}else if(step==Operation.STEP_ABORT){
 				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
 					op.state=Operation.STATE_ABORTED;
-					System.out.println("aborted");
+					//System.out.println("aborted");
 					return false;
 				}
 			}else if(step==Operation.STEP_COMMIT){
@@ -1249,7 +1249,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private Operation createReplaceOp(final Node p, final Node l,K key, V value , final int gen) {// same as old version except
 		final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
 		final Node[] nodes = new Node[]{null, l};
-		int newGen=l.gen+1;//maybe wrong
+		int newGen=gen;//maybe wrong
 
 		if (!weakLLX(p, 0, ops, nodes)) return null;
 
@@ -1259,10 +1259,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		char dir = (p.left==l) ? LEFT : RIGHT;
 		Node newChild = new Node(l);
 		newChild.lastGen=newGen;
+		newChild.gen=newGen;
 
 		// Build new sub-tree
 		final Node updated=new Node(key,value,l.weight,l.left,l.right,l.op,l.gen);
-		updated.lastGen=newGen+1;//new child has updated lastGen
+		updated.lastGen=newGen;//new child has updated lastGen
 		Node subtree;
 		if(dir==LEFT)
 			subtree = new Node(p.key,p.value,p.weight,updated,p.right,p.op,p.gen);//make sure to use the correct constructor
@@ -1274,7 +1275,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		subtree.extra=newChild;
 		subtree.extraDir=dir;
 
-
+		System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
 		return new Operation(nodes, ops, subtree);
 	}
 
@@ -1435,10 +1436,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(searchRecord.grandParent != null && k.compareTo((K) searchRecord.n.key) == 0){
 					found = true;
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
-					if(searchRecord.n.lastGen == searchRecord.startGen)
+					if(searchRecord.n.lastGen == searchRecord.startGen){
 						op = createReplaceOp(searchRecord.parent, searchRecord.n, value,searchRecord.startGen);//update replaceop so it uses extra
-					else
+						System.out.println("normal");
+					}
+					else{
 						op = createReplaceOp(searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
+						System.out.println("extra ordinary");
+					}
 				} else {
 					//System.out.println("else");
 					found = false;
@@ -1755,19 +1760,20 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			newP.gen = l.gen;//add generation
 			newP.lastGen = l.gen;//???
 			
-			System.out.println("createInsertOp 1660 " + l.key + " " + l.value );
+			//System.out.println("createInsertOp 1660 " + l.key + " " + l.value );
 		} else {
 			newP = new Node(key, value, newWeight, newL, newLeaf, dummy);
 			newP.gen = generation;//add generation
 			newP.lastGen = generation;//add generation
-			System.out.println("createInsertOp 1665 " );
+			//System.out.println("createInsertOp 1665 " );
 		}
 
 		// add parent pointer
 		newP.parent = p;
 		newLeaf.parent = newP;
 		newL.parent = newP;
-
+		
+		System.out.println();
 		return new Operation( nodes, ops, newP);
 	}
 
