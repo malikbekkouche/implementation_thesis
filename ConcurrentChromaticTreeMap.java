@@ -991,6 +991,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					nodes[i].marked=true;
 				} */
 				op.state=Operation.STATE_COMMITTED;
+				System.out.println("final gen for node "+nodes[1].gen+" "+nodes[1].key);
 				//System.out.println("commited");
 				return true;
 			}
