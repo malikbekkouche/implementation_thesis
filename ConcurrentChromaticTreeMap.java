@@ -310,7 +310,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					found = true;
 					//if (onlyIfAbsent) return (V) l.value;
 					oldValue.value=(V)l.value;
-					System.out.println("old "+oldValue.value);
+					//System.out.println("old "+oldValue.value);
 					op = createReplaceOp(p, l, key, value);
 				} else {
 					found = false;
@@ -417,7 +417,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final Comparable<? super K> comp = comparable(key);
 		boolean bool=false;
 		while(true){
-			System.out.println("start");
+			//System.out.println("start");
 			ArrayList<Node> nodes=new ArrayList();
 			ArrayList<Operation> ops=new ArrayList();
 			Node lastLeft=root.left.left;
@@ -447,19 +447,20 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 				if(bool==false){
 					try{
-						System.out.println("wait");
-						b.await();}catch(Exception e){System.out.println("tree");}
+						//System.out.println("wait");
+						b.await();}catch(Exception e){////System.out.println("tree");
+						}
 				}
 				if(vlx(nodes,ops))
 					if(comp.compareTo((K)succ.key)<0){
-						System.out.println("vlx succeeded");
+						//System.out.println("vlx succeeded");
 						return succ;
 					}
 
 					else
 						return null;
 				else{
-					System.out.println("vlx failed");
+					//System.out.println("vlx failed");
 					bool=true;
 					//continue;
 				}
@@ -874,7 +875,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			int gen=root.gen;
 			char dir=LEFT;
 			Node sentinel=GCAS_READ(root,dir);
-			System.out.println("while");
+			//System.out.println("while");
 			if(sentinel.gen==gen || readOp){
 				if(sentinel.left==null)
 					return new SearchRecord(null,null,root,sentinel,gen);
@@ -882,7 +883,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				p=sentinel;
 				int violations=0;
 				while(true){
-					System.out.println("inner");
+					//System.out.println("inner");
 					n=GCAS_READ(p,dir);
 					while(!n.isLeaf()){
 						if(n.gen==gen){
@@ -908,16 +909,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					if(n.gen==gen || readOp){						
 						return new SearchRecord(ggp,gp,p,n,gen,violations);
 					}else{
-						System.out.println("generation" +n.gen+" "+p.gen);
+						//System.out.println("generation" +n.gen+" "+p.gen);
 						if(!GCAS_COPY(p,n,dir,gen)){
 							retry=true;//continue;//return RETRY; or continue maybe??
-							System.out.println("retry");
+							//System.out.println("retry");
 						}
 					}
 				}
 
 			}else{
-				System.out.println("generation else"+" : root"+root.gen+root.marked+" sentinel " +sentinel.gen+sentinel.marked+ " left "+sentinel.left.key+" "+sentinel.left.gen+" "+sentinel.left.marked);
+				//System.out.println("generation else"+" : root"+root.gen+root.marked+" sentinel " +sentinel.gen+sentinel.marked+ " left "+sentinel.left.key+" "+sentinel.left.gen+" "+sentinel.left.marked);
 				GCAS_COPY(root,sentinel,dir,gen);
 				retry=true;//continue;//return retry;
 
@@ -961,7 +962,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
 						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
 					updateStep.compareAndSet(op,step,Operation.STEP_GENERATION);
-					//System.out.println("op "+op.step );
+					////System.out.println("op "+op.step );
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 				}
@@ -969,21 +970,21 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				Node root=RDCSS_ABORTABLE_READ();
 				if(root.gen==nodes[1].gen){
 					updateStep.compareAndSet(op,step,Operation.STEP_COMMIT);
-					//System.out.println("commit");
+					////System.out.println("commit");
 				}else{
 					/* updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
-					System.out.println("ab"); */
+					//System.out.println("ab"); */
 					AtomicIntegerFieldUpdater<Node> up=AtomicIntegerFieldUpdater.newUpdater(Node.class, "gen");
 					Node sentinel=nodes[1];
 					if(up.compareAndSet(sentinel,nodes[1].gen,root.gen))
-						System.out.println("updated gen");
+						System.out.println("updated gen "+nodes[1].key+" "+nodes[1].gen);
 					else 
 						updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 				}
 			}else if(step==Operation.STEP_ABORT){
 				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
 					op.state=Operation.STATE_ABORTED;
-					//System.out.println("aborted");
+					////System.out.println("aborted");
 					return false;
 				}
 			}else if(step==Operation.STEP_COMMIT){
@@ -991,7 +992,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					nodes[i].marked=true;
 				} */
 				op.state=Operation.STATE_COMMITTED;
-				System.out.println("final gen for node "+nodes[1].gen+" "+nodes[1].key);
+				//System.out.println("final gen for node "+nodes[1].gen+" "+nodes[1].key);
 				//System.out.println("commited");
 				return true;
 			}
@@ -1044,7 +1045,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("commit");
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
-					System.out.println("ab");
+					//System.out.println("ab");
 				}
 			}else if(step==Operation.STEP_ABORT){
 				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
@@ -1057,7 +1058,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					nodes[i].marked=true;
 				}
 				op.state=Operation.STATE_COMMITTED;
-				//System.out.println("commited");
+				////System.out.println("commited");
 				return true;
 			}
 		}
@@ -1105,16 +1106,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							AtomicIntegerFieldUpdater.newUpdater(Node.class, "gen");//need to be checked also	
 					if(updateGen.compareAndSet(v,desc.oldValue.gen, desc.newValue.gen)){
 						desc.committed = true;
-						System.out.println("root "+root.gen+" - "+"old "+desc.oldValue.gen+" - n "+desc.newValue.gen);
+						//System.out.println("root "+root.gen+" - "+"old "+desc.oldValue.gen+" - n "+desc.newValue.gen);
 						return desc.newValue;
 					}
 					else{
-						System.out.println("error");
+						//System.out.println("error");
 						return RDCSS_COMPLETE(abort);
 					}
 
 				}else{
-					System.out.println("error 2");
+					//System.out.println("error 2");
 					if(CAS_ROOT(desc, new Operation(1)))
 						return desc.oldValue;
 					else
@@ -1150,12 +1151,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		Node[] nodes = new Node[] { null, null };
 
 		if(!weakLLX(p, 0, ops, nodes)) {
-			System.out.println("false1");
+			//System.out.println("false1");
 			return false;
 		}
 
 		 if(!weakLLX(n, 1, ops, nodes)) {
-			System.out.println("false2");
+			//System.out.println("false2");
 			//System.out.println(ops[1].state);
 			return false;
 		} 
@@ -1176,11 +1177,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		n.op = op;
 		if(newHelpSCXX(op)) {
 			// Copy operation was committed, and traversal can continue
-			System.out.println("true");
+			//System.out.println("true");
 			return true;
 		} else {
 			// Copy operation failed, traversal will retry after reading the node again
-			System.out.println("false");
+			//System.out.println("false");
 			return false;
 		}
 
@@ -1188,12 +1189,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 	private ConcurrentChromaticTreeMap DoReadOnlySnapshot() {
 		while(true) {
-			System.out.println("snap");
+			//System.out.println("snap");
 			Node root = RDCSS_READ(false);
 			Operation rootOp = weakLLX(root);
 			// rootOp is null if another operation was undergoing.
 			if(rootOp != null) {
-				System.out.println("if");
+				//System.out.println("if");
 				Node left = GCAS_READ(root, LEFT);
 				Operation leftOp = weakLLX(left);
 				if(RDCSS(root, leftOp /*was leftOp*/, new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, new Gen().gen))) {
@@ -1206,12 +1207,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 	public ConcurrentChromaticTreeMap snapshot() {
 		while(true) {
-			System.out.println("snap");
+			//System.out.println("snap");
 			Node root = RDCSS_READ(false);
 			Operation rootOp = weakLLX(root);
 			// rootOp is null if another operation was undergoing.
 			if(rootOp != null) {
-				System.out.println("if");
+				//System.out.println("if");
 				Node left = GCAS_READ(root, LEFT);
 				Operation leftOp = weakLLX(left);
 				Node r=new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, root.gen+1);
@@ -1219,7 +1220,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//TODO: Return old root instead of this new one? New one will point to the same anyways
 					//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
 					maxSnapId++;
-					System.out.println("return "+root.gen+" - "+r.gen);
+					//System.out.println("return "+root.gen+" - "+r.gen);
 					return new ConcurrentChromaticTreeMap(root, true);					
 				}
 			}
@@ -1437,7 +1438,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					else
 						op = createReplaceOp(searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
 				} else {
-					System.out.println("else");
+					//System.out.println("else");
 					found = false;
 					//searchRecord.leafGen=searchRecord.n.gen;
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k,searchRecord.startGen);
@@ -1451,7 +1452,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				} else {
 					if (searchRecord.violations >= d) fixToKey(k);
 				}
-				System.out.println("help "+op.state+ " "+ searchRecord.n.gen+searchRecord.n.marked);
+				//System.out.println("help "+op.state+ " "+ searchRecord.n.gen+searchRecord.n.marked);
 				//searchRecord.n.parent = null;
 				// we may have found the key and replaced its value (and, if so, the old value is stored in the old node)
 				return (found ? (V) searchRecord.n.value : null);
@@ -1473,7 +1474,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				// the key was not in the tree at the linearization point, so no value was removed
 				if (searchRecord.grandParent == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
 				if(searchRecord.n.lastGen==searchRecord.startGen){ // maybe save extra somewhere
-					System.out.println(searchRecord.n.lastGen+" - "+searchRecord.startGen);
+					//System.out.println(searchRecord.n.lastGen+" - "+searchRecord.startGen);
 					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
 					System.out.println("normal");
 				}
@@ -1658,7 +1659,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final Operation rinfo = r.op;
 		final int state = rinfo.state;
 		if (state == Operation.STATE_ABORTED || (state == Operation.STATE_COMMITTED && !r.marked)) {
-			System.out.println("state "+state+" "+r.marked);
+			//System.out.println("state "+state+" "+r.marked);
 			return rinfo;
 		}
 		if (rinfo.state == Operation.STATE_INPROGRESS) {
@@ -1666,15 +1667,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		} else if (r.op.state == Operation.STATE_INPROGRESS) {
 			helpSCX(r.op, 1);
 		}
-		System.out.println("node "+state+" "+r.marked);
-		System.out.println("null");
+		//System.out.println("node "+state+" "+r.marked);
+		//System.out.println("null");
 		return null;
 	}
 	// helper function to use the results of a weakLLX more conveniently
 	private boolean weakLLX(final Node r, final int i, final Operation[] ops, final Node[] nodes) {
 		if ((ops[i] = weakLLX(r)) == null) return false;
 		nodes[i] = r;
-		System.out.println("here "+ops[i].state+ " "+r.marked);
+		//System.out.println("here "+ops[i].state+ " "+r.marked);
 		return true;
 	}
 
@@ -1729,7 +1730,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final Node[] nodes = new Node[]{null, l};
 
 		if (!weakLLX(p, 0, ops, nodes)) return null;
-		System.out.println("insertOp"+ops[0].state+" "+p.marked);
+		//System.out.println("insertOp"+ops[0].state+" "+p.marked);
 
 		if (l != p.left && l != p.right) return null;
 
@@ -1787,6 +1788,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		// Build new sub-tree
 		final Node newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
+		newP.gen=gen;
 
 		//add parent pointer
 		newP.parent = gp;
@@ -1794,8 +1796,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		//create extra
 		Node extra=new Node(l.key,l.value,l.weight,l.left,l.right,l.op,gen);
+		extra.gen=gen;
 		extra.lastGen=gen-1;
 		newP.extra=extra;
+		System.out.println("deletion baby "+newP.extra.key+" "+newP.extra.lastGen+" "+newP.extra.gen);
 
 
 		return new Operation(nodes, ops, newP);
