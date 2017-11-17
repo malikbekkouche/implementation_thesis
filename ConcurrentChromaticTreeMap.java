@@ -1034,7 +1034,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
 						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
 					updateStep.compareAndSet(op,step,Operation.STEP_GENERATION);
-					//System.out.println("op "+op.step );
+					System.out.println("SUBTREE " );
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 				}
@@ -1042,7 +1042,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				Node root=RDCSS_ABORTABLE_READ();
 				if(root.gen==nodes[0].gen){
 					updateStep.compareAndSet(op,step,Operation.STEP_COMMIT);
-					//System.out.println("commit");
+					System.out.println("GENERATION");
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 					//System.out.println("ab");
@@ -1050,7 +1050,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}else if(step==Operation.STEP_ABORT){
 				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
 					op.state=Operation.STATE_ABORTED;
-					//System.out.println("aborted");
+					System.out.println("aborted");
 					return false;
 				}
 			}else if(step==Operation.STEP_COMMIT){
@@ -1133,6 +1133,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	private boolean GCAS_COPY(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
+
 		/* Operation op=createReplaceOp(p,n,n.gen);		
 		//check direction of parent node
 <<<<<<< HEAD
@@ -1175,6 +1176,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		Operation op = new Operation(nodes, ops, n);
 		op.gen=gen;
 		n.op = op;
+
 		if(newHelpSCXX(op)) {
 			// Copy operation was committed, and traversal can continue
 			//System.out.println("true");
@@ -1752,10 +1754,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);		
 			newP.gen = l.gen;//add generation
 			newP.lastGen = l.gen;//???
+			
+			System.out.println("createInsertOp 1660 " + l.key + " " + l.value );
 		} else {
 			newP = new Node(key, value, newWeight, newL, newLeaf, dummy);
 			newP.gen = generation;//add generation
 			newP.lastGen = generation;//add generation
+			System.out.println("createInsertOp 1665 " );
 		}
 
 		// add parent pointer
