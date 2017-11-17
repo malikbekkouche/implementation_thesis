@@ -1068,8 +1068,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return helpSCXX(op); // original took int also */	
 
 
-		Operation[] ops = new Operation[] { null, null,null };
-		Node[] nodes = new Node[] { null, null ,null};
+		Operation[] ops = new Operation[] { null, null};
+		Node[] nodes = new Node[] { null, null };
 
 		if(!weakLLX(p, 0, ops, nodes)) {
 			System.out.println("false1");
@@ -1578,6 +1578,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final Operation rinfo = r.op;
 		final int state = rinfo.state;
 		if (state == Operation.STATE_ABORTED || (state == Operation.STATE_COMMITTED && !r.marked)) {
+			System.out.println("info");
 			return rinfo;
 		}
 		if (rinfo.state == Operation.STATE_INPROGRESS) {
