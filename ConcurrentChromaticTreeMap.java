@@ -888,19 +888,19 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("inner");
 					n=GCAS_READ(p,dir);
 					while( !n.isLeaf()){											
-						if(n.gen==gen){//if the tree is live tree
+						if(n.gen==gen){//if the tree is live tree -- n.gen==gen
 							if(n.weight>1 || (n.left.weight==0 && p.weight==0)) // was originally only l
 								violations++;
 							ggp=gp;
 							gp=p;
 							p=n;
-							System.out.println("search node "+key+": "+n.key+"*"+n.gen);
+							//System.out.println("search node "+key+": "+n.key+"*"+n.gen);
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
-							System.out.println("node key = " + n.key + " - dir = " + dir);
+							//System.out.println("node key = " + n.key + " - dir = " + dir);
 							//used if there is an extra pointer of a node
-							System.out.println("node "+n.key+" "+dir);
+							//System.out.println("node "+n.key+" "+dir);
 							if(this.isReadOnly == true && n.extra!=null ){//only go to extra pointer if the current tree is a snapshot
-								System.out.println("extra");
+								//System.out.println("extra");
 								if(dir == LEFT && n.extraDir == LEFT || 
 										(dir == RIGHT && n.extraDir == RIGHT)){
 									n = n.extra;								
@@ -913,8 +913,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						}
 
 				}
-				System.out.println("leaf "+key+": "+n.key+"*"+n.gen+"*"+n.lastGen+"*"+n.value);
-				if(n.gen==gen || readOp){						
+				//System.out.println("leaf "+key+": "+n.key+"*"+n.gen+"*"+n.lastGen+"*"+n.value);
+				if(n.gen==gen || (readOp && this.isReadOnly)){//live tree read here						
 					return new SearchRecord(ggp,gp,p,n,gen,violations);
 				}else{
 					//System.out.println("generation" +n.gen+" "+p.gen);
