@@ -1230,7 +1230,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
 					maxSnapId++;
 					//System.out.println("return "+root.gen+" - "+r.gen);
-					return new ConcurrentChromaticTreeMap(root, true);					
+					return new ConcurrentChromaticTreeMap(new Node(null,null,1, left, null, dummy,root.gen), true);					
 				}
 			}
 		}
@@ -1254,6 +1254,54 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 
 	private Operation createReplaceOpSnap(final Node gp,final Node p, final Node l,K key, V value , final int gen) {// same as old version except
+		/* final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
+		final Node[] nodes = new Node[]{null, l};
+		int newGen=gen;//maybe wrong
+
+		if (!weakLLX(p, 0, ops, nodes)) return null;
+
+		if (l != p.left && l != p.right) return null; */
+		int newGen=gen;//maybe wrong
+		final Operation[] ops = new Operation[]{null, null, null};
+		final Node[] nodes = new Node[]{null, null, null};
+
+		if (!weakLLX(gp, 0, ops, nodes)) return null;
+		if (!weakLLX(p, 1, ops, nodes)) return null;
+
+		if (p != gp.left && p != gp.right) return null;
+		final boolean left = (l == p.left);
+		if (!left && l != p.right) return null;
+
+		// Read fields for the sibling of l into ops[2], nodes[2] = s
+		if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
+		final Node s = nodes[2];
+
+
+		char dir = (p.left==l) ? LEFT : RIGHT;
+		Node newChild = new Node(l);
+		newChild.lastGen=newGen-1;
+		newChild.gen=newGen;
+
+		// Build new sub-tree
+		final Node updated=new Node(key,value,l.weight,l.left,l.right,l.op,l.gen);
+		updated.lastGen=newGen;//new child has updated lastGen
+		Node subtree;
+		if(dir==LEFT)
+			subtree = new Node(p.key,p.value,p.weight,updated,p.right,p.op,p.gen);//make sure to use the correct constructor
+		else
+			subtree = new Node(p.key,p.value,p.weight,p.left,updated,p.op,p.gen);//make sure to use the correct constructor
+		subtree.parent = p.parent;
+
+		//put extra
+		subtree.extra=newChild;
+		subtree.extraDir=dir;
+		
+		System.out.println("subtree "+subtree.key+" "+subtree.left.key+subtree.left.value+" "+subtree.right.key+" "+subtree.extra.key+subtree.extra.value);
+		//System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
+		return new Operation(nodes, ops, subtree);
+	}
+	
+	private Operation createReplaceOpSnapLoop(final Node gp,final Node p, final Node l,K key, V value , final int gen) {// same as old version except
 		/* final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
 		final Node[] nodes = new Node[]{null, l};
 		int newGen=gen;//maybe wrong
@@ -1828,12 +1876,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 
 		//create extra
-		Node extra=new Node(l.key,l.value,l.weight,l.left,l.right,l.op,gen);
+		Node extra=new Node(l);
 		extra.gen=gen;
 		extra.lastGen=gen-1;
 		newP.extra=extra;
 		System.out.println("deletion baby "+newP.extra.key+" "+newP.extra.lastGen+" "+newP.extra.gen);
-
+		System.out.println("all :"+newP.key
+		+" "+newP.left+
+		" "+newP.right+" "+
+		newP.extra.key);
 
 		return new Operation(nodes, ops, newP);
 	}
