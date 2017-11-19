@@ -892,10 +892,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							ggp=gp;
 							gp=p;
 							p=n;
+							System.out.println("search node "+key+": "+n.key+"*"+n.gen);
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
 							System.out.println("node key = " + n.key + " - dir = " + dir);
 							//used if there is an extra pointer of a node
+							System.out.println("node "+n.key+" "+dir);
 							if(n.extra!=null){
+								System.out.println("extra");
 								if(dir == LEFT && n.extraDir == LEFT || 
 										(dir == RIGHT && n.extraDir == RIGHT)){
 									n = n.extra;								
@@ -906,9 +909,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						}else{
 							break;
 						}
-						
-						
-					}					
+
+					}
+					System.out.println("leaf "+key+": "+n.key+"*"+n.gen);
 					if(n.gen==gen || readOp){						
 						return new SearchRecord(ggp,gp,p,n,gen,violations);
 					}else{
@@ -979,9 +982,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("ab"); */
 					AtomicIntegerFieldUpdater<Node> up=AtomicIntegerFieldUpdater.newUpdater(Node.class, "gen");
 					Node sentinel=nodes[1];
-					if(up.compareAndSet(sentinel,nodes[1].gen,root.gen))
+					/* if(up.compareAndSet(sentinel,nodes[1].gen,root.gen))
 						System.out.println("updated gen "+nodes[1].key+" "+nodes[1].gen);
-					else 
+					else  */
+					if(!up.compareAndSet(sentinel,nodes[1].gen,root.gen))
 						updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
 				}
 			}else if(step==Operation.STEP_ABORT){
@@ -1249,14 +1253,28 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 
-	private Operation createReplaceOp(final Node p, final Node l,K key, V value , final int gen) {// same as old version except
-		final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
+	private Operation createReplaceOpSnap(final Node gp,final Node p, final Node l,K key, V value , final int gen) {// same as old version except
+		/* final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
 		final Node[] nodes = new Node[]{null, l};
 		int newGen=gen;//maybe wrong
 
 		if (!weakLLX(p, 0, ops, nodes)) return null;
 
-		if (l != p.left && l != p.right) return null;
+		if (l != p.left && l != p.right) return null; */
+		int newGen=gen;//maybe wrong
+		final Operation[] ops = new Operation[]{null, null, null};
+		final Node[] nodes = new Node[]{null, null, null};
+
+		if (!weakLLX(gp, 0, ops, nodes)) return null;
+		if (!weakLLX(p, 1, ops, nodes)) return null;
+
+		if (p != gp.left && p != gp.right) return null;
+		final boolean left = (l == p.left);
+		if (!left && l != p.right) return null;
+
+		// Read fields for the sibling of l into ops[2], nodes[2] = s
+		if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
+		final Node s = nodes[2];
 
 
 		char dir = (p.left==l) ? LEFT : RIGHT;
@@ -1277,8 +1295,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		//put extra
 		subtree.extra=newChild;
 		subtree.extraDir=dir;
-
-		System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
+		
+		System.out.println("subtree "+subtree.key+" "+subtree.left.key+" "+subtree.right.key+" "+subtree.extra.key);
+		//System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
 		return new Operation(nodes, ops, subtree);
 	}
 
@@ -1444,7 +1463,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						System.out.println("normal");
 					}
 					else{
-						op = createReplaceOp(searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
+						op = createReplaceOpSnap(searchRecord.grandParent,searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
 						System.out.println("extra ordinary");
 					}
 				} else {
