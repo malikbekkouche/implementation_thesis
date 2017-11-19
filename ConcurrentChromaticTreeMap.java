@@ -887,10 +887,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				while(true){
 					//System.out.println("inner");
 					n=GCAS_READ(p,dir);
-					while(true){ //while( !n.isLeaf())						
-						if(n.isLeaf()){
-							break;
-						}
+					while( !n.isLeaf())											
 
 					if(n.gen==gen){//if the tree is live tree
 						if(n.weight>1 || (n.left.weight==0 && p.weight==0)) // was originally only l
