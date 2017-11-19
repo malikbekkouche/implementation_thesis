@@ -909,7 +909,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							break;
 						}
 					}
-					System.out.println("leaf "+key+": "+n.key+"*"+n.gen);
+					System.out.println("leaf "+key+": "+n.key+"*"+n.gen+"*"+n.lastGen+"*"+n.value);
 					if(n.gen==gen || readOp){						
 						return new SearchRecord(ggp,gp,p,n,gen,violations);
 					}else{
@@ -1277,7 +1277,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		char dir = (p.left==l) ? LEFT : RIGHT;
 		Node newChild = new Node(l);
-		newChild.lastGen=newGen;
+		newChild.lastGen=newGen-1;
 		newChild.gen=newGen;
 
 		// Build new sub-tree
@@ -1294,7 +1294,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		subtree.extra=newChild;
 		subtree.extraDir=dir;
 		
-		System.out.println("subtree "+subtree.key+" "+subtree.left.key+" "+subtree.right.key+" "+subtree.extra.key);
+		System.out.println("subtree "+subtree.key+" "+subtree.left.key+subtree.left.value+" "+subtree.right.key+" "+subtree.extra.key+subtree.extra.value);
 		//System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
 		return new Operation(nodes, ops, subtree);
 	}
