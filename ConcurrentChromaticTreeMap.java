@@ -894,6 +894,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							p=n;
 							System.out.println("search node "+key+": "+n.key+"*"+n.gen);
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
+							System.out.println("node key = " + n.key + " - dir = " + dir);
 							//used if there is an extra pointer of a node
 							System.out.println("node "+n.key+" "+dir);
 							if(n.extra!=null){
@@ -908,6 +909,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						}else{
 							break;
 						}
+
 					}
 					System.out.println("leaf "+key+": "+n.key+"*"+n.gen+"*"+n.lastGen+"*"+n.value);
 					if(n.gen==gen || readOp){						
