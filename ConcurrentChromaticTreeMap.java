@@ -1230,12 +1230,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				Node left = GCAS_READ(root, LEFT);
 				Operation leftOp = weakLLX(left);
 				Node r=new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, root.gen+1);
+				int oldGen = root.gen;
 				if(RDCSS(root, leftOp /*was leftOp*/, r)) {
 					//TODO: Return old root instead of this new one? New one will point to the same anyways
 					//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
 					maxSnapId++;
 					//System.out.println("return "+root.gen+" - "+r.gen);
-					return new ConcurrentChromaticTreeMap(new Node(null,null,1, left, null, dummy,root.gen), true);					
+					return new ConcurrentChromaticTreeMap(new Node(null,null,1, left, null, dummy,oldGen), true);					
 				}
 			}
 		}
