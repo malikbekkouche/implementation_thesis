@@ -897,7 +897,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							System.out.println("node key = " + n.key + " - dir = " + dir);
 							//used if there is an extra pointer of a node
 							System.out.println("node "+n.key+" "+dir);
-							if(n.extra!=null){
+							if(this.isReadOnly == true && n.extra!=null ){//only go to extra pointer if the current tree is a snapshot
 								System.out.println("extra");
 								if(dir == LEFT && n.extraDir == LEFT || 
 										(dir == RIGHT && n.extraDir == RIGHT)){
