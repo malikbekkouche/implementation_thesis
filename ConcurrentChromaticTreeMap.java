@@ -914,7 +914,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 				}
 				//System.out.println("leaf "+key+": "+n.key+"*"+n.gen+"*"+n.lastGen+"*"+n.value);
-				if(n.gen==gen || (readOp && this.isReadOnly)){//live tree read here						
+				if(n.gen==gen || (readOp && this.isReadOnly)){//live tree read here											
 					return new SearchRecord(ggp,gp,p,n,gen,violations);
 				}else{
 					//System.out.println("generation" +n.gen+" "+p.gen);
@@ -1303,7 +1303,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		subtree.extra=newChild;
 		subtree.extraDir=dir;
 
-		System.out.println("subtree "+subtree.key+" "+subtree.left.key+subtree.left.value+" "+subtree.right.key+" "+subtree.extra.key+subtree.extra.value);
+		//System.out.println("subtree "+subtree.key+" "+subtree.left.key+subtree.left.value+" "+subtree.right.key+" "+subtree.extra.key+subtree.extra.value);
 		//System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
 		return new Operation(nodes, ops, subtree);
 	}
@@ -1351,7 +1351,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		subtree.extra=newChild;
 		subtree.extraDir=dir;
 
-		System.out.println("subtree "+subtree.key+" "+subtree.left.key+subtree.left.value+" "+subtree.right.key+" "+subtree.extra.key+subtree.extra.value);
+		//System.out.println("subtree "+subtree.key+" "+subtree.left.key+subtree.left.value+" "+subtree.right.key+" "+subtree.extra.key+subtree.extra.value);
 		//System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
 		return new Operation(nodes, ops, subtree);
 	}
@@ -1515,11 +1515,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					if (onlyIfAbsent) return (V) searchRecord.n.value;
 					if(searchRecord.n.lastGen == searchRecord.startGen){
 						op = createReplaceOp(searchRecord.parent, searchRecord.n, value,searchRecord.startGen);//update replaceop so it uses extra
-						System.out.println("normal");
+						//System.out.println("normal");
 					}
 					else{
 						op = createReplaceOpSnap(searchRecord.grandParent,searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
-						System.out.println("extra ordinary");
+						//System.out.println("extra ordinary");
 					}
 				} else {
 					//System.out.println("else");
@@ -1560,11 +1560,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(searchRecord.n.lastGen==searchRecord.startGen){ // maybe save extra somewhere
 					//System.out.println(searchRecord.n.lastGen+" - "+searchRecord.startGen);
 					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
-					System.out.println("normal");
+					//System.out.println("normal");
 				}
 				else{
 					op = createDeleteOpSnap(searchRecord.grandParent, searchRecord.parent, searchRecord.n,searchRecord.startGen);
-					System.out.println("panormal");
+					//System.out.println("panormal");
 				}
 			}
 			if (helpSCXX(op)) {
@@ -1850,7 +1850,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		newLeaf.parent = newP;
 		newL.parent = newP;
 
-		System.out.println();
+		//System.out.println();
 		return new Operation( nodes, ops, newP);
 	}
 
@@ -1886,11 +1886,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		extra.gen=gen;
 		extra.lastGen=gen-1;
 		newP.extra=extra;
-		System.out.println("deletion baby "+newP.extra.key+" "+newP.extra.lastGen+" "+newP.extra.gen);
-		System.out.println("all :"+newP.key
-				+" "+newP.left+
-				" "+newP.right+" "+
-				newP.extra.key);
+//		System.out.println("deletion baby "+newP.extra.key+" "+newP.extra.lastGen+" "+newP.extra.gen);
+//		System.out.println("all :"+newP.key
+//				+" "+newP.left+
+//				" "+newP.right+" "+
+//				newP.extra.key);
 
 
 
