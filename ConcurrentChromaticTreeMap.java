@@ -897,7 +897,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					n=GCAS_READ(p,dir);
 					while(true){//while(!n.isLeaf()){
 
-						System.out.println("SEARCH METHOD " + n.key + " - " + n.gen);
+						//System.out.println("SEARCH METHOD " + n.key + " - " + n.gen);
 						
 						if((!this.isReadOnly && n.isLeaf()) || (this.isReadOnly && n.isLeaf() && n.extra == null))
 							break;												
@@ -1342,6 +1342,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		
 		Node newP;
 		Node subtree=null;
+		Node parentExtra;
 		//make non final copies
 		Node ll=l,pp=p,gpp=gp;
 		System.out.println("1");
@@ -1396,7 +1397,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				//new is less than old extra
 				if(k.compareTo((K)p.extra.key)<0){
 					//create extra subtree
-					Node parentExtra=new Node(pp.extra);
+					parentExtra=new Node(pp.extra);
 					Node parentRight=new Node(pp.extra);
 					Node parentLeft=new Node(pp.left);
 					parentExtra.right=parentRight;
@@ -1407,7 +1408,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					System.out.println("else1");
 					
 				}else{
-					Node parentExtra=new Node(pp.right);
+					parentExtra=new Node(pp.right);
 					Node parentRight=new Node(pp.right);
 					Node parentLeft=new Node(pp.extra);
 					parentExtra.right=parentRight;
@@ -1435,12 +1436,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					subtree=new Node(gp.key,gp.value,gp.weight,newP,gp.right,gp.op,gp.gen);
 				else
 					subtree=new Node(gp.key,gp.value,gp.weight,gp.left,newP,gp.op,gp.gen);
+				subtree.extra=parentExtra;
+				subtree.extraDir=dir;
+				System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
+				System.out.println("subtree extra: "+subtree.extra+"/"+subtree.extra+"/"+subtree.extra+"/"+subtree.extra+"/");
 				
 				
 				
 			}
 		}
-		System.out.println("subtree "+subtree.key+" "+subtree.left.key+subtree.left.value+" "+subtree.right.key+" "+subtree.extra.key+subtree.extra.value);
+		//System.out.println("subtree "+subtree.key+" "+subtree.left.key+subtree.left.value+" "+subtree.right.key+" "+subtree.extra.key+subtree.extra.value);
 
 		//System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
 		return new Operation(nodes, ops, subtree);
@@ -1613,7 +1618,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					}
 					else{
 
-						op = createReplaceOpSnap(searchRecord.grandParent,searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
+						op = createReplaceOpSnapLoop(searchRecord.grandParent,searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
 						//System.out.println("extra ordinary");
 					}
 				} else {
