@@ -516,12 +516,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return null;
 				else
 					continue;
-
-
 			}
-
 		}
-
 	}
 
 	public final Node predecessor(K key){
@@ -561,9 +557,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return null;
 				else
 					continue;
-
-
-
 			}
 		}
 
@@ -894,7 +887,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("inner");
 					n=GCAS_READ(p,dir);
 					while(true){//while(!n.isLeaf()){
-						System.out.println("SEARCH METHOD " + n.key + " - " + n.gen);
+						//System.out.println("SEARCH METHOD " + n.key + " - " + n.gen);
 						
 						if((!this.isReadOnly && n.isLeaf()) || (this.isReadOnly && n.isLeaf() && n.extra == null))
 							break;												
