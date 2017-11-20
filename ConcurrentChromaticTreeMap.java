@@ -1394,8 +1394,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			while(p.extra!=null){
 				// built bottom up
 				final Comparable<? super K> k = comparable(l.key);
-				System.out.println("while");
-				
+				System.out.println("while");				
 				//new is less than old extra
 				if(k.compareTo((K)p.extra.key)<0){
 					//create extra subtree
