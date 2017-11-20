@@ -893,6 +893,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("inner");
 					n=GCAS_READ(p,dir);
 					while(true){//while(!n.isLeaf()){
+						System.out.println("SEARCH METHOD " + n.key + " - " + n.gen);
+						
 						if((!this.isReadOnly && n.isLeaf()) || (this.isReadOnly && n.isLeaf() && n.extra == null))
 							break;												
 						if(n.gen==gen || this.isReadOnly){//if the tree is live tree -- n.gen==gen
@@ -1755,7 +1757,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private Operation weakLLX(final Node r) {
 		final Operation rinfo = r.op;
 		final int state = rinfo.state;
-		if (state == Operation.STATE_ABORTED || (state == Operation.STATE_COMMITTED && !r.marked)) {
+		if (state == Operation.STATE_ABORTED || (state == Operation.STATE_COMMITTED )) {//!r.marked
 			//System.out.println("state "+state+" "+r.marked);
 			return rinfo;
 		}
