@@ -886,11 +886,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				p=sentinel;
 				int violations=0;
 				while(true){
-					//System.out.println("inner");
+					System.out.println("inner");
 					n=GCAS_READ(p,dir);
 					while(true){//while(!n.isLeaf()){
 
-						//System.out.println("SEARCH METHOD " + n.key + " - " + n.gen);
+						System.out.println("SEARCH METHOD " + n.key + " - " + n.gen);
 						
 
 						if((!this.isReadOnly && n.isLeaf()) || (this.isReadOnly && n.isLeaf() && n.extra == null))
@@ -1060,6 +1060,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			System.out.println("where");
 			if(step==Operation.STEP_SUBTREE){
 				System.out.println("syb");
+				if(left)
+					System.out.println("left : "+nodes[0].left.key+"-"+nodes[0].left.value+nodes[0].left.extra+"*"+nodes[1].key+"-"+nodes[1].value+nodes[1].extra);
+				else
+					System.out.println("right "+ nodes[0].right.key+"-"+nodes[0].right.value+nodes[0].right.extra+"*"+nodes[1].key+"-"+nodes[1].value+nodes[1].extra);
 				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
 						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
 					updateStep.compareAndSet(op,step,Operation.STEP_GENERATION);
@@ -1428,8 +1432,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				ll=pp;
 				pp=gpp;
 				gpp=gpp.parent;
+				System.out.println("parent "+gpp.key+gpp.value);
 				
-				if (!weakLLX(gp, 0, opsArray, nodesArray)) return null;
+				if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
 				//if (!weakLLX(p, 1, ops, nodes)) return null;
 				
 				dir = (p==gp.left) ? LEFT : RIGHT;

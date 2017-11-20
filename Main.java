@@ -15,15 +15,18 @@ class Main {
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
 		System.out.println("update "+tree.put(8,32));
 		System.out.println("update "+tree.put(15,11));
-		//System.out.println("update "+tree.put(18,18));
+		System.out.println("update "+tree.put(18,18));
+		System.out.println("update "+tree.put(1,77));
 		System.out.println("-------------------------------");
-		System.out.println("get "+snap.get(8));
-		System.out.println("get "+snap.get(15));
-		//System.out.println("get "+snap.get(18));
+		System.out.println("snap "+snap.get(8));
+		System.out.println("snap "+snap.get(15));
+		System.out.println("snap "+snap.get(18));
+		System.out.println("snap "+snap.get(1));
 		System.out.println("-------------------------------");
-		System.out.println("get "+tree.get(8));
-		System.out.println("get "+tree.get(15));
-		//System.out.println("get "+tree.get(18));
+		System.out.println("tree "+tree.get(8));
+		System.out.println("tree "+tree.get(15));
+		System.out.println("tree "+tree.get(18));
+		System.out.println("tree "+tree.get(1));
 		
 		//System.out.println("get "+snap.get(8));
 		//System.out.println("remove "+tree.remove(8));
