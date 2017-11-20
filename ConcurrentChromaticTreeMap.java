@@ -1389,7 +1389,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				subtree = new Node(p.key,p.value,p.weight,p.left,updated,p.op,p.gen);//make sure to use the correct constructor
 			subtree.parent = p.parent;
 
-
 			//put extra
 			subtree.extra=newChild;
 			subtree.extraDir=dir;
@@ -1452,8 +1451,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					System.out.println("subtree extra if: "+subtree.extra.key+"/"+subtree.extra.value+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key+"/");
 				}
 				System.out.println("subtree extra: "+subtree.extra.key+"/"+subtree.extra.value+"/"+subtree.extra+"/"+subtree.extra+"/");
-				
-				
 				
 			}
 		}
