@@ -516,12 +516,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return null;
 				else
 					continue;
-
-
 			}
-
 		}
-
 	}
 
 	public final Node predecessor(K key){
@@ -561,9 +557,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return null;
 				else
 					continue;
-
-
-
 			}
 		}
 
@@ -899,6 +892,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 						//System.out.println("SEARCH METHOD " + n.key + " - " + n.gen);
 						
+
 						if((!this.isReadOnly && n.isLeaf()) || (this.isReadOnly && n.isLeaf() && n.extra == null))
 							break;												
 						if(n.gen==gen || this.isReadOnly){//if the tree is live tree -- n.gen==gen
