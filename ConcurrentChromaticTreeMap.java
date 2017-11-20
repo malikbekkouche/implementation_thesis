@@ -1431,7 +1431,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				ll=pp;
 				pp=gpp;
 				gpp=gpp.parent;
-				System.out.println("parent "+gpp.key+gpp.value);
+				//System.out.println("parent "+gpp.key+gpp.value);
 				
 				if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
 				//if (!weakLLX(p, 1, ops, nodes)) return null;
