@@ -914,6 +914,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 								if(dir == LEFT && n.extraDir == LEFT || 
 										(dir == RIGHT && n.extraDir == RIGHT)){
 									n = n.extra;								
+								}else{//we should go left when we have extra right and vice versa
+									n = (dir == LEFT ) ? n.left : n.right;
 								}
 							}else if(this.isReadOnly){//lack of case Snapshot get the element
 								n = (dir == LEFT) ? n.left : n.right;								
