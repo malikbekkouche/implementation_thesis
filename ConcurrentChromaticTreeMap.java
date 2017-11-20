@@ -876,6 +876,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
 		while(true){
+			System.out.println("while");
 			final Comparable<? super K> comp = comparable(key);
 			Node ggp=null,gp=null,p=null,n=null;
 			boolean retry;
@@ -887,6 +888,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			if(sentinel.gen==gen || readOp){
 				if(sentinel.left==null)
 					return new SearchRecord(null,null,root,sentinel,gen);
+				System.out.println("in");
 				gp=root;
 				p=sentinel;
 				int violations=0;
@@ -894,6 +896,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("inner");
 					n=GCAS_READ(p,dir);
 					while(true){//while(!n.isLeaf()){
+						System.out.println("inner");
 						if((!this.isReadOnly && n.isLeaf()) || (this.isReadOnly && n.isLeaf() && n.extra == null))
 							break;												
 						if(n.gen==gen || this.isReadOnly){//if the tree is live tree -- n.gen==gen
@@ -1627,6 +1630,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				} else {
 					if (searchRecord.violations >= d) fixToKey(k);
 				}
+				
 				//System.out.println("help "+op.state+ " "+ searchRecord.n.gen+searchRecord.n.marked);
 				//searchRecord.n.parent = null;
 				// we may have found the key and replaced its value (and, if so, the old value is stored in the old node)
