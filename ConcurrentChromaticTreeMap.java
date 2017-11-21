@@ -1439,6 +1439,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				pp=gpp;
 				gpp=gpp.parent;
 
+
 				//System.out.println("parent "+gpp.key+gpp.value);
 
 				
@@ -1458,6 +1459,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				subtree.extraDir=dir;
 				subtree.parent = pp.parent;
 				
+
 				
 				//System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
 				
