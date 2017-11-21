@@ -1432,20 +1432,23 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				ll=pp;
 				pp=gpp;
 				gpp=gpp.parent;
-				System.out.println("parent "+gpp.key+gpp.value);
+				//System.out.println("parent "+gpp.key+gpp.value);
 				
 				if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
 				//if (!weakLLX(p, 1, ops, nodes)) return null;
 				
-				dir = (p==gp.left) ? LEFT : RIGHT;
+				dir = (p==gpp.left) ? LEFT : RIGHT;
 				
 				
 				if(dir==LEFT)
-					subtree=new Node(gp.key,gp.value,gp.weight,newP,gp.right,gp.op,gp.gen);
+					subtree=new Node(gpp.key,gpp.value,gpp.weight,newP,gpp.right,gpp.op,gpp.gen);
 				else
-					subtree=new Node(gp.key,gp.value,gp.weight,gp.left,newP,gp.op,gp.gen);
+					subtree=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,newP,gpp.op,gpp.gen);
 				subtree.extra=parentExtra;
 				subtree.extraDir=dir;
+				subtree.parent = gpp.parent;
+				
+				
 				System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
 				
 				if(subtree.extra.left!=null && subtree.extra.right!=null){
