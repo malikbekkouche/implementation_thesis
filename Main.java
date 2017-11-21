@@ -17,14 +17,14 @@ class Main {
 		System.out.println("update "+tree.put(8,32));
 		System.out.println("update "+tree.put(15,11));
 		System.out.println("update "+tree.put(18,18));
-		//System.out.println("update "+tree.put(1,77));
-		System.out.println("put "+tree.put(22,69));
+		System.out.println("update "+tree.put(1,77));
+		//System.out.println("put "+tree.put(22,69));
 		System.out.println("-------------------------------");
 		System.out.println("snap "+snap.get(8));
 		System.out.println("snap "+snap.get(15));
 		System.out.println("snap "+snap.get(18));
-		//System.out.println("snap "+snap.get(1));
-		System.out.println("snap "+snap.get(22));
+		System.out.println("snap "+snap.get(1));
+		//System.out.println("snap "+snap.get(22));
 		System.out.println("-------------------------------");
 		System.out.println("tree "+tree.get(8));
 		System.out.println("tree "+tree.get(15));
