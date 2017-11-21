@@ -1434,11 +1434,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				ll=pp;
 				pp=gpp;
 				gpp=gpp.parent;
+<<<<<<< HEAD
 				System.out.println("parent "+pp.key+pp.value);
+=======
+				//System.out.println("parent "+gpp.key+gpp.value);
+>>>>>>> 979f370e3535b85ec249f45a307204ed7dfc5938
 				
 				if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
 				//if (!weakLLX(p, 1, ops, nodes)) return null;
 				
+<<<<<<< HEAD
 				dir = (ll==pp.left) ? LEFT : RIGHT;
 				
 				
@@ -1446,8 +1451,20 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					subtree=new Node(pp.key,pp.value,pp.weight,newP,pp.right,pp.op,pp.gen);
 				else
 					subtree=new Node(pp.key,pp.value,pp.weight,pp.left,newP,pp.op,pp.gen);
+=======
+				dir = (p==gpp.left) ? LEFT : RIGHT;
+				
+				
+				if(dir==LEFT)
+					subtree=new Node(gpp.key,gpp.value,gpp.weight,newP,gpp.right,gpp.op,gpp.gen);
+				else
+					subtree=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,newP,gpp.op,gpp.gen);
+>>>>>>> 979f370e3535b85ec249f45a307204ed7dfc5938
 				subtree.extra=parentExtra;
 				subtree.extraDir=dir;
+				subtree.parent = gpp.parent;
+				
+				
 				System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
 				
 				if(subtree.extra.left!=null && subtree.extra.right!=null){
