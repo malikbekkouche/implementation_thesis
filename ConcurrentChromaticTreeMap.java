@@ -906,7 +906,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							ggp=gp;
 							gp=p;
 							p=n;
-							System.out.println("searching n "+n.key);
+							//System.out.println("searching n "+n.key);
 							//System.out.println("search node "+key+": "+n.key+"*"+n.gen);
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
 							//System.out.println("node key = " + n.key + " - dir = " + dir);
@@ -916,12 +916,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 								//System.out.println("extra");
 								if(dir == LEFT && n.extraDir == LEFT || 
 										(dir == RIGHT && n.extraDir == RIGHT)){
-									System.out.println("direction :"+dir+n.key);
+									//System.out.println("direction :"+dir+n.key);
 									n = n.extra;		
 
 								}else{//we should go left when we have extra right and vice versa
 									n = (dir == LEFT ) ? n.left : n.right;
-									System.out.println("dir n "+dir);
+									//System.out.println("dir n "+dir);
 								}
 							}else if(this.isReadOnly){//lack of case Snapshot get the element
 								n = (dir == LEFT) ? n.left : n.right;								
@@ -1430,8 +1430,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						
 						Node updated=new Node(pp.key,pp.value,pp.weight,pp.left,pp.right,pp.op,pp.gen);
 						
-						System.out.println("debug "+subtree.extra.key+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key);
-						System.out.println("debug2 "+parentExtra.key+"/"+parentExtra.left.key+"/"+parentExtra.right.key);
+						//System.out.println("debug "+subtree.extra.key+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key);
+						//System.out.println("debug2 "+parentExtra.key+"/"+parentExtra.left.key+"/"+parentExtra.right.key);
 						//newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);//original before fix
 						
 						
@@ -1456,8 +1456,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 						//System.out.println("new "+newSubtree.key);
 						parentExtra=new Node(newSubtree.key,newSubtree.value,newSubtree.weight,pp.extra,subtree.extra,subtree.extra.op);
-						
-						System.out.println("KKKKKKKKKKK" + parentExtra.key + " " + parentExtra.left.key + " " + parentExtra.right.key);
+												
 						/* Node parentRight=new Node(pp.extra);
 						Node parentLeft=new Node(pp.left);
 						parentExtra.right=parentRight;
@@ -1528,12 +1527,21 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				else{
 					subtree=new Node(pp.key,pp.value,pp.weight,pp.left,newP,pp.op,pp.gen);
 				}
+				
+				System.out.println("################## " + subtree.key + " L = " + subtree.left.key + " R = " + subtree.right.key);
 
 				
-				System.out.println(parentExtra.key  + " ***** "+ parentExtra.left.key + " ***** " +parentExtra.right.key);
+				//System.out.println(parentExtra.key  + " ***** "+ parentExtra.left.key + " ***** " +parentExtra.right.key);
 				subtree.extra=parentExtra;
 				subtree.extraDir=dir;
 				subtree.parent = pp.parent;
+				
+				Comparable<?super K> ku = comparable((K)subtree.key);
+				if(ku.compareTo((K)pp.parent.key) < 0){
+					pp.parent.left = subtree;
+				}else
+					pp.parent.right = subtree;
+				
 
 				//System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
 
