@@ -1421,16 +1421,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						parentExtra.right=parentRight;
 						parentExtra.left=parentLeft; */
 						//create updated live tree
-						Node newSubtree=subtree.extra;
+						Node newSubtree=pp.right;
 						while(!newSubtree.isLeaf()){
 							newSubtree=newSubtree.left;
 						}
 						//System.out.println("new "+newSubtree.key);
-						parentExtra=new Node(newSubtree.key,newSubtree.value,newSubtree.weight,pp.extra,subtree.extra,subtree.extra.op);
+						parentExtra=new Node(newSubtree.key,newSubtree.value,newSubtree.weight,subtree.extra,pp.extra,subtree.extra.op);
 						
 						Node updated=new Node(pp.key,pp.value,pp.weight,pp.left,pp.right,pp.op,pp.gen);
 						
-						//System.out.println("debug "+subtree.extra.key+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key);
+						System.out.println("debug "+subtree.extra.key+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key);
+						System.out.println("debug2 "+parentExtra.key+"/"+parentExtra.left.key+"/"+parentExtra.right.key);
 						//newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);//original before fix
 						
 						
@@ -1448,7 +1449,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						//System.out.println("ifo");
 					}else{
 						//System.out.println("ll "+ll.key+" pp "+pp.key);
-						Node newSubtree=subtree.extra;
+						Node newSubtree=pp.right;
 						while(!newSubtree.isLeaf()){
 							newSubtree=newSubtree.left;
 						}

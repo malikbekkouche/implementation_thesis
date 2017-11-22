@@ -16,8 +16,9 @@ class Main {
 		//System.out.println("remove "+tree.remove(1));
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
 		System.out.println("update "+tree.put(8,32));
-		System.out.println("update "+tree.put(15,11));
+		
 		System.out.println("put "+tree.put(9,69));
+		System.out.println("update "+tree.put(15,11));
 		
 		
 		System.out.println("update "+tree.put(18,18));
