@@ -1403,6 +1403,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			//System.out.println(dir+" "+subtree.extra.key);
 		}else{			
 			while(pp.extra!=null){
+
 				final Comparable<? super K> k = comparable(ll.key);
 
 				//System.out.println("while");
@@ -1414,6 +1415,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					System.out.println("tifo");
 					if(k.compareTo((K)pp.extra.key)<0){
 						parentExtra=new Node(subtree.extra.key,subtree.extra.value,subtree.weight,subtree.extra,pp.extra,subtree.extra.op);
+						System.out.println("UUUUUUUUUUUUUUUU " + parentExtra.key + " " + parentExtra.left.key + " " + parentExtra.right.key);
 						/* Node parentRight=new Node(pp.extra);
 						Node parentLeft=new Node(pp.left);
 						parentExtra.right=parentRight;
@@ -1423,7 +1425,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						
 						
 						//newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);//original before fix
-												
+						
+						
 						
 						Comparable<? super K> kk = comparable(gpp.key);
 
@@ -1443,7 +1446,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							newSubtree=newSubtree.left;
 						}
 						System.out.println("new "+newSubtree.key);
+						
 						parentExtra=new Node(newSubtree.key,newSubtree.value,newSubtree.weight,pp.extra,subtree.extra,subtree.extra.op);
+						
+						System.out.println("KKKKKKKKKKK" + parentExtra.key + " " + parentExtra.left.key + " " + parentExtra.right.key);
 						/* Node parentRight=new Node(pp.extra);
 						Node parentLeft=new Node(pp.left);
 						parentExtra.right=parentRight;
@@ -1506,9 +1512,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
 				//if (!weakLLX(p, 1, ops, nodes)) return null;
 
-
 				dir = (ll==pp.left) ? LEFT : RIGHT;
-
 
 				if(dir==LEFT){
 					subtree=new Node(pp.key,pp.value,pp.weight,newP,pp.right,pp.op,pp.gen);
@@ -1517,11 +1521,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					subtree=new Node(pp.key,pp.value,pp.weight,pp.left,newP,pp.op,pp.gen);
 				}
 
+				
+				System.out.println(parentExtra.key  + " ***** "+ parentExtra.left.key + " ***** " +parentExtra.right.key);
 				subtree.extra=parentExtra;
 				subtree.extraDir=dir;
 				subtree.parent = pp.parent;
-
-
 
 				//System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
 
