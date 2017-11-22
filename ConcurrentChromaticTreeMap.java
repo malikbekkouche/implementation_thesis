@@ -1419,6 +1419,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						//create updated live tree
 						Node updated=new Node(pp.key,pp.value,pp.weight,pp.left,pp.right,pp.op,pp.gen);
 						newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);
+						System.out.println("syso "+newP.left.key+"/"+newP.right.key);
 						
 						if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
 					System.out.println("ifo");
