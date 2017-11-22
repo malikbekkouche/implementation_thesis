@@ -904,6 +904,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							ggp=gp;
 							gp=p;
 							p=n;
+							System.out.println("searching n "+n.key);
 							//System.out.println("search node "+key+": "+n.key+"*"+n.gen);
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
 							//System.out.println("node key = " + n.key + " - dir = " + dir);
@@ -918,6 +919,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 									
 								}else{//we should go left when we have extra right and vice versa
 									n = (dir == LEFT ) ? n.left : n.right;
+									System.out.println("dir n "+dir);
 								}
 							}else if(this.isReadOnly){//lack of case Snapshot get the element
 								n = (dir == LEFT) ? n.left : n.right;								
@@ -1349,9 +1351,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		ArrayList<Operation> opsArray;
 		ArrayList<Node> nodesArray;
 		
-		Node newP;
+		Node newP=null;
 		Node subtree=null;
-		Node parentExtra;
+		Node parentExtra=null;
 		//make non final copies
 		Node ll=l,pp=p,gpp=gp;
 		//System.out.println("1");
@@ -1381,7 +1383,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		newChild.lastGen=newGen-1;
 		newChild.gen=newGen;
 
-		if(p.extra==null){
+		if(pp.extra==null){
 			// Build new sub-tree
 			System.out.println("p: "+p.key+p.value);
 			final Node updated=new Node(key,value,l.weight,l.left,l.right,l.op,l.gen);
@@ -1400,15 +1402,57 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			//System.out.println(dir+" "+subtree.extra.key);
 		}else{
 			while(pp.extra!=null){
-				// built bottom up
 				final Comparable<? super K> k = comparable(ll.key);
+				
 				//System.out.println("while");
 				if(pp.extra.left!=null && pp.extra.right!=null)
 					System.out.println("LR/updating to "+key+"*"+value+" / extra :"+pp.extra.left.key+pp.extra.right.key+" p: "+pp.key+pp.value);	
 				else
 					System.out.println("updating to "+key+"*"+value+" / extra :"+pp.extra.key+"-"+pp.extra.value+" p: "+pp.key+pp.value);
+			 	if(ll.extra!=null){
+					System.out.println("tifo");
+					if(k.compareTo((K)pp.extra.key)<0){
+						parentExtra=new Node(subtree.extra.key,subtree.extra.value,subtree.weight,subtree.extra,pp.extra,subtree.extra.op);
+						/* Node parentRight=new Node(pp.extra);
+						Node parentLeft=new Node(pp.left);
+						parentExtra.right=parentRight;
+						parentExtra.left=parentLeft; */
+						//create updated live tree
+						Node updated=new Node(pp.key,pp.value,pp.weight,pp.left,pp.right,pp.op,pp.gen);
+						newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);
+						
+						if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
+					System.out.println("ifo");
+					}else{
+						System.out.println("ll "+ll.key+" pp "+pp.key);
+						Node newSubtree=subtree.extra;
+						while(!newSubtree.isLeaf()){
+							newSubtree=newSubtree.left;
+						}
+						System.out.println("new "+newSubtree.key);
+						parentExtra=new Node(newSubtree.key,newSubtree.value,newSubtree.weight,pp.extra,subtree.extra,subtree.extra.op);
+						/* Node parentRight=new Node(pp.extra);
+						Node parentLeft=new Node(pp.left);
+						parentExtra.right=parentRight;
+						parentExtra.left=parentLeft; */
+						//create updated live tree
+						Node updated=new Node(pp.key,pp.value,pp.weight,pp.left,pp.right,pp.op,pp.gen);
+						newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);
+						
+						if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
+						
+						System.out.println("newP "+newP.key+" parentExtra "+parentExtra.key +"left "+parentExtra.left.key
+						+" leftleft "+parentExtra.left.left.key+" leftleftleft "+parentExtra.left.left.left.key );
+						
+						System.out.println("newP "+newP.key+" parentExtra "+parentExtra.key +"right "+parentExtra.right.key
+						+" rightright "+parentExtra.right.right.key+" rightleft "+parentExtra.right.left.key );
+					}
+				} 
+				
+				// built bottom up
+				
 				//new is less than old extra
-				if(k.compareTo((K)pp.extra.key)<0){
+				 if(k.compareTo((K)pp.extra.key)<0){
 					//create extra subtree
 					parentExtra=new Node(pp.extra);
 					Node parentRight=new Node(pp.extra);
@@ -1432,7 +1476,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("else2");
 				}
 				//create normal subtree
-				pp.extra=null;
+				//pp.extra=null;
 				//nodesArray.add(0,null);
 				//opsArray.add(0,null);
 				ll=pp;
@@ -1464,7 +1508,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				//System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
 				
 				if(subtree.extra.left!=null && subtree.extra.right!=null){
-					System.out.println("subtree extra if: "+subtree.extra.key+"/"+subtree.extra.value+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key+"/");
+					System.out.println("subtree extra if: "+subtree.key+"/"+subtree.value+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key+"/");
 				}
 				//System.out.println("subtree extra: "+subtree.extra.key+"/"+subtree.extra.value+"/"+subtree.extra+"/"+subtree.extra+"/");
 				
