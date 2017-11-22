@@ -1389,7 +1389,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			if(dir==LEFT)
 				subtree = new Node(p.key,p.value,p.weight,updated,p.right,p.op,p.gen);//make sure to use the correct constructor
 			else
-				subtree = new Node(p.key,p.value,p.weight,p.left,updated,p.op,p.gen);//make sure to use the correct constructor
+				subtree = new Node(p.key,p.value,p.weight,p.left,updated,p.op,p.gen);//make sure to use the correct constructor						
 			subtree.parent = p.parent;
 
 			//put extra
