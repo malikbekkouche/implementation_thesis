@@ -1398,16 +1398,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			//System.out.println("if");
 			//System.out.println(dir+" "+subtree.extra.key);
 		}else{
-			while(p.extra!=null){
+			while(pp.extra!=null){
 				// built bottom up
-				final Comparable<? super K> k = comparable(l.key);
+				final Comparable<? super K> k = comparable(ll.key);
 				//System.out.println("while");
-				if(p.extra.left!=null && p.extra.right!=null)
-					System.out.println("updating to "+key+"*"+value+" / extra :"+p.extra.left.key+p.extra.right.key+" p: "+p.key+p.value);	
+				if(pp.extra.left!=null && pp.extra.right!=null)
+					System.out.println("LR/updating to "+key+"*"+value+" / extra :"+pp.extra.left.key+pp.extra.right.key+" p: "+pp.key+pp.value);	
 				else
-					System.out.println("updating to "+key+"*"+value+" / extra :"+p.extra.left+p.extra.right+" p: "+p.key+p.value);
+					System.out.println("updating to "+key+"*"+value+" / extra :"+pp.extra.key+"-"+pp.extra.value+" p: "+pp.key+pp.value);
 				//new is less than old extra
-				if(k.compareTo((K)p.extra.key)<0){
+				if(k.compareTo((K)pp.extra.key)<0){
 					//create extra subtree
 					parentExtra=new Node(pp.extra);
 					Node parentRight=new Node(pp.extra);
@@ -1432,7 +1432,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("else2");
 				}
 				//create normal subtree
-				p.extra=null;
+				pp.extra=null;
 				//nodesArray.add(0,null);
 				//opsArray.add(0,null);
 				ll=pp;
@@ -1464,7 +1464,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				//System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
 				
 				if(subtree.extra.left!=null && subtree.extra.right!=null){
-					//System.out.println("subtree extra if: "+subtree.extra.key+"/"+subtree.extra.value+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key+"/");
+					System.out.println("subtree extra if: "+subtree.extra.key+"/"+subtree.extra.value+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key+"/");
 				}
 				//System.out.println("subtree extra: "+subtree.extra.key+"/"+subtree.extra.value+"/"+subtree.extra+"/"+subtree.extra+"/");
 				
