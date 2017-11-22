@@ -1397,7 +1397,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			subtree.extraDir=dir;
 			//System.out.println("if");
 			//System.out.println(dir+" "+subtree.extra.key);
-		}else{
+		}else{			
 			while(pp.extra!=null){
 				// built bottom up
 				final Comparable<? super K> k = comparable(ll.key);
@@ -1438,6 +1438,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				ll=pp;
 				pp=gpp;
 				gpp=gpp.parent;
+				
 
 
 				//System.out.println("parent "+gpp.key+gpp.value);
