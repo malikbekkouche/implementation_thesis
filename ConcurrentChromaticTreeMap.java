@@ -1448,7 +1448,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						System.out.println("newP "+newP.key+" parentExtra "+parentExtra.key +"right "+parentExtra.right.key
 						+" rightright "+parentExtra.right.right.key+" rightleft "+parentExtra.right.left.key );
 					}
-				} 
+				}else { 
 				
 				// built bottom up
 				
@@ -1477,6 +1477,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					newP=new Node(pp.key,pp.value,pp.weight,pp.left,updated,pp.op,pp.gen);
 					//System.out.println("else2");
 				}
+				}
 				//create normal subtree
 				//pp.extra=null;
 				//nodesArray.add(0,null);
@@ -1502,6 +1503,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					subtree=new Node(pp.key,pp.value,pp.weight,pp.left,newP,pp.op,pp.gen);
 
 				subtree.extra=parentExtra;
+				System.out.println("extraaaa "+parentExtra.key);
 				subtree.extraDir=dir;
 				subtree.parent = pp.parent;
 				
@@ -1510,7 +1512,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				//System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
 				
 				if(subtree.extra.left!=null && subtree.extra.right!=null){
-					System.out.println("subtree extra if: "+subtree.key+"/"+subtree.value+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key+"/");
+					System.out.println("subtree extra if: "+subtree.key+"/"+subtree.value+"/"+subtree.extra.key+"/"+subtree.extra.right.key+"/");
 				}
 				//System.out.println("subtree extra: "+subtree.extra.key+"/"+subtree.extra.value+"/"+subtree.extra+"/"+subtree.extra+"/");
 				
