@@ -1387,12 +1387,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			// Build new sub-tree
 			System.out.println("p: "+p.key+p.value);
 			final Node updated=new Node(key,value,l.weight,l.left,l.right,l.op,l.gen);
-			updated.lastGen=newGen;//new child has updated lastGen
-			
+			updated.lastGen=newGen;//new child has updated lastGen			
 			if(dir==LEFT)
 				subtree = new Node(p.key,p.value,p.weight,updated,p.right,p.op,p.gen);//make sure to use the correct constructor
 			else
-				subtree = new Node(p.key,p.value,p.weight,p.left,updated,p.op,p.gen);//make sure to use the correct constructor
+				subtree = new Node(p.key,p.value,p.weight,p.left,updated,p.op,p.gen);//make sure to use the correct constructor						
 			subtree.parent = p.parent;
 
 			//put extra
@@ -1400,7 +1399,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			subtree.extraDir=dir;
 			//System.out.println("if");
 			//System.out.println(dir+" "+subtree.extra.key);
-		}else{
+		}else{			
 			while(pp.extra!=null){
 				final Comparable<? super K> k = comparable(ll.key);
 				
@@ -1471,6 +1470,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					parentExtra.right=parentRight;
 					parentExtra.left=parentLeft;
 					
+					//update the live tree
 					Node updated=new Node(key,value,ll.weight,ll.left,ll.right,ll.op,ll.gen);
 					newP=new Node(pp.key,pp.value,pp.weight,pp.left,updated,pp.op,pp.gen);
 					//System.out.println("else2");
@@ -1482,6 +1482,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				ll=pp;
 				pp=gpp;
 				gpp=gpp.parent;
+				
 
 
 				//System.out.println("parent "+gpp.key+gpp.value);
