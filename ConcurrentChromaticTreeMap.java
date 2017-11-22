@@ -212,6 +212,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		if(searchRecord.n.lastGen == this.root.gen){
 			if(k.compareTo((K) searchRecord.n.key) == 0)
 				return (V)searchRecord.n.value;
+			else
+				return null;
 		}
 		if(searchRecord.n.gen > this.root.gen)
 			return null;
@@ -1437,8 +1439,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				//opsArray.add(0,null);
 				ll=pp;
 				pp=gpp;
-				gpp=gpp.parent;
-				
+				gpp=gpp.parent;				
 
 
 				//System.out.println("parent "+gpp.key+gpp.value);
