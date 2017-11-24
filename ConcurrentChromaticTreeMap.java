@@ -907,7 +907,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				int violations=0;
 				
 				System.out.println("sentinel "+sentinel.gen);
-				nodeList.add(sentinel.left);
+				nodeList.add(new Node(sentinel.left));
 				
 				directionList.add(LEFT);
 				while(true){
@@ -960,7 +960,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 								//System.out.println("direction :"+dir+ " " +n.key);
 							}
 														
-							nodeList.add(n);
+							nodeList.add(new Node(n));
 							directionList.add(dir);	
 						}else{
 							break;
@@ -990,7 +990,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}
 			else{
 				//System.out.println("generation else"+" : root"+root.gen+root.marked+" sentinel " +sentinel.gen+sentinel.marked+ " left "+sentinel.left.key+" "+sentinel.left.gen+" "+sentinel.left.marked);
-				nodeList.add(sentinel);
+				nodeList.add(new Node(sentinel));
 				directionList.add(LEFT);
 				System.out.println("gcas sentinel");
 				GCAS_COPY(root,sentinel,dir,gen);
