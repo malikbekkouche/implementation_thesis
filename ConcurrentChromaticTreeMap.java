@@ -95,6 +95,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private volatile int generation;
 	private volatile int maxSnapId =-1;
 	public boolean isReadOnly=false;
+	public ArrauList<Node> snapList;
 
 	public ConcurrentChromaticTreeMap() {
 		this(DEFAULT_d, null); 
@@ -115,6 +116,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		updateLeft = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "left");
 		updateRight = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "right");
 		updatePrev = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "prev");
+		snapList=new ArrayList();
 	}
 
 	public ConcurrentChromaticTreeMap(Node root, boolean isReadOnly) {
@@ -1294,6 +1296,31 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
 					maxSnapId++;
 					//System.out.println("return "+root.gen+" - "+r.gen);
+					Node newRoot=new Node(null,null,1, left, null, dummy,oldGen);
+					snapList.add(newRoot);
+					return new ConcurrentChromaticTreeMap(newRoot, true);					
+				}
+			}
+		}
+	}
+	
+	public ConcurrentChromaticTreeMap createSnapshot() {
+		while(true) {
+			//System.out.println("snap");
+			Node root = RDCSS_READ(false);
+			Operation rootOp = weakLLX(root);
+			// rootOp is null if another operation was undergoing.
+			if(rootOp != null) {
+				//System.out.println("if");
+				Node left = GCAS_READ(root, LEFT);
+				Operation leftOp = weakLLX(left);
+				Node r=new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, root.gen+1);
+				int oldGen = root.gen;
+				if(RDCSS(root, leftOp /*was leftOp*/, r)) {
+					//TODO: Return old root instead of this new one? New one will point to the same anyways
+					//return new ConcurrentTreeDictionarySnapshot<TKey, TValue>(new Node(1, left, null, true, new Gen()), true);
+					maxSnapId++;
+					//System.out.println("return "+root.gen+" - "+r.gen);
 					return new ConcurrentChromaticTreeMap(new Node(null,null,1, left, null, dummy,oldGen), true);					
 				}
 			}
@@ -1365,6 +1392,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		//System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
 		return new Operation(nodes, ops, subtree);
 	}
+	/*
 	
 	private Operation createReplaceOpReal(final Node gp,final Node p, final Node l,K key, V value , final int gen) {
 		int newGen=gen;//maybe wrong
@@ -1382,8 +1410,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		System.out.println("1");
 		
 		// remember weakLLX
-		Node n= root.left.left;
-		//nodeList.add(n);
+		Node n= root.left;
+		nodeList.add(n);
+		n=n.left;
 		char dir;
 		while(!n.isLeaf()){ // create list of nodes on the path + the directions taken
 			dir = (k.compareTo((K)n.key)<0) ? LEFT : RIGHT ;
@@ -1400,6 +1429,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}
 		}
 		nodeList.add(n);
+		dirList.add(0,LEFT);
 		System.out.println("2");
 		int i=nodeList.size()-1;
 		int j=dirList.size()-1;
@@ -1491,7 +1521,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return r;
 		}
 	}
-	
+	*/
 
 	private Operation createReplaceOpSnapLoop(final Node gp,final Node p, final Node l,K key, V value , final int gen) {// same as old version except
 		/* final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
@@ -2210,6 +2240,31 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		op.nodes = null;
 		op.ops = null;
 		op.subtree = null;
+		if(op.updateSnapshot){ // only do this when a gcas has happened
+			Node node=snapList.get(maxSnapId);
+			
+			for(int x=0;x<op.nodeList ;x++){
+				char dir=op.directionList(x);
+				Node l=(dir==LEFT) ? node.left : node.right;
+				if(node.gen==l.gen){
+					if(dir==LEFT){
+						node.left=op.nodeList(x);
+						node=node.left;
+					}
+					else{
+						node.right=op.nodeList(x);
+						node=node.right;
+					}
+				}else{
+					if(dir==LEFT)
+						node=node.left;
+					else
+						node=node.right;
+				}
+			}
+		}
+		
+		
 		return true;
 	}
 
