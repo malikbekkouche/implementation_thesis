@@ -944,27 +944,35 @@ public class ConcurrentChromaticTreeMap<K,V> {
 								if(dir == LEFT && n.extraDir == LEFT || 
 										(dir == RIGHT && n.extraDir == RIGHT)){
 									//System.out.println("direction :"+dir+n.key);
+//									nodeList.add(n);
+//									directionList.add(dir);	
 									n = n.extra;		
 									//System.out.println("direction :"+dir+ " " + n.key);
 
 								}else{//we should go left when we have extra right and vice versa
 									if(n.isLeaf())
 										break;
-
+									
 									n = (dir == LEFT ) ? n.left : n.right;
 									//System.out.println("dir n "+dir);
 								}
 							}else if(this.isReadOnly){//lack of case Snapshot get the element
+//								nodeList.add(n);
+//								directionList.add(dir);	
 								n = (dir == LEFT) ? n.left : n.right;			
 								//System.out.println("direction :"+dir+ " " +n.key);
 							}
 							else{
+//								nodeList.add(n);
+//								directionList.add(dir);	
 								n=GCAS_READ(n,dir);
 								//System.out.println("direction :"+dir+ " " +n.key);
 							}
 														
+
 							nodeList.add(new Node(n));
 							directionList.add(dir);	
+
 						}else{
 							break;
 						}
@@ -978,8 +986,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							System.out.println(nodeList.get(d).key+" "+nodeList.get(d).value+" "+nodeList.get(d).gen);
 						return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, directionList, updateSnapshot);
 					}else{
-						//System.out.println("generation" +n.key+" "+n.gen+" "+p.gen);
-					
 						if(!GCAS_COPY(p,n,dir,gen)){
 							retry=true;//continue;//return RETRY; or continue maybe??
 							//System.out.println("retry");
