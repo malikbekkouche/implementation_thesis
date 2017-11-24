@@ -918,16 +918,23 @@ public class ConcurrentChromaticTreeMap<K,V> {
 										(dir == RIGHT && n.extraDir == RIGHT)){
 									//System.out.println("direction :"+dir+n.key);
 									n = n.extra;		
+									//System.out.println("direction :"+dir+ " " + n.key);
 
 								}else{//we should go left when we have extra right and vice versa
+									if(n.isLeaf())
+										break;
+									
 									n = (dir == LEFT ) ? n.left : n.right;
+									//System.out.println("direction :"+dir +" "+n.key);
 									//System.out.println("dir n "+dir);
 								}
 							}else if(this.isReadOnly){//lack of case Snapshot get the element
-								n = (dir == LEFT) ? n.left : n.right;								
+								n = (dir == LEFT) ? n.left : n.right;			
+								//System.out.println("direction :"+dir+ " " +n.key);
 							}
 							else{
 								n=GCAS_READ(n,dir);
+								//System.out.println("direction :"+dir+ " " +n.key);
 							}
 						}else{
 							break;
@@ -1528,7 +1535,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					subtree=new Node(pp.key,pp.value,pp.weight,pp.left,newP,pp.op,pp.gen);
 				}
 				
-				System.out.println("################## " + subtree.key + " L = " + subtree.left.key + " R = " + subtree.right.key);
+				//System.out.println("################## " + subtree.key + " L = " + subtree.left.key + " R = " + subtree.right.key);
 
 				
 				//System.out.println(parentExtra.key  + " ***** "+ parentExtra.left.key + " ***** " +parentExtra.right.key);
@@ -1536,11 +1543,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				subtree.extraDir=dir;
 				subtree.parent = pp.parent;
 				
-				Comparable<?super K> ku = comparable((K)subtree.key);
-				if(ku.compareTo((K)pp.parent.key) < 0){
-					pp.parent.left = subtree;
-				}else
-					pp.parent.right = subtree;
+				System.out.println("pp parent " + pp.parent.key);
+				System.out.println(pp.parent.key + " - " + subtree.key);
+				
+//				Comparable<?super K> ku = comparable((K)subtree.key);
+//				if(ku.compareTo((K)pp.parent.key) < 0){
+//					pp.parent.left = subtree;
+//				}else
+//					pp.parent.right = subtree;
 				
 
 				//System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
@@ -1780,6 +1790,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 				else{
 					op = createDeleteOpSnap(searchRecord.grandParent, searchRecord.parent, searchRecord.n,searchRecord.startGen);
+					//op = createDeleteOpSnapLoop(searchRecord.grandParent, searchRecord.parent, searchRecord.n,searchRecord.startGen);
 					//System.out.println("panormal");
 				}
 			}
@@ -2127,6 +2138,95 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 
 		return new Operation(nodes, ops, newP);
+	}
+	
+	private Operation createDeleteOpSnapLoop(final Node gp, final Node p, final Node l,int gen) {
+		final Operation[] ops = new Operation[]{null, null, null};
+		final Node[] nodes = new Node[]{null, null, null};
+		
+		if (!weakLLX(gp, 0, ops, nodes)) return null;
+		if (!weakLLX(p, 1, ops, nodes)) return null;
+		
+		if (p != gp.left && p != gp.right) return null;
+		final boolean left = (l == p.left);
+		if (!left && l != p.right) return null;
+		
+		//traverse the tree to get the list of node from root to the target node l
+		
+		Node temp = root.left.left;
+		ArrayList listDirection = new ArrayList();//list of direction from root to target node l
+		ArrayList<Node> listNodes = new ArrayList<Node>();//list of node from root to l
+		Comparable<?super K> comp = comparable(l.key);
+		while(temp!=null){
+			char dir= (comp.compareTo((K)temp.key)<0) ? LEFT : RIGHT;
+			listNodes.add(temp);
+			if(dir == LEFT)
+				temp = temp.left;
+			else
+				temp = temp.right;
+			listDirection.add(dir);						
+		}
+		int indexListDirection = listDirection.size() - 1;
+		int indexListNodes = listNodes.size() - 1;
+		
+		if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
+		
+		//if node's parent extra pointer is null
+		final Node s = nodes[2];
+
+		// Compute weight for the new node (to replace to deleted leaf l and parent p)
+		final int newWeight = (isSentinel(p) ? 1 : p.weight + s.weight); // weights of parent + sibling of deleted leaf
+		
+		final Node newP;
+		if(l.extra == null && p.extra == null){// ***if the node l does not have extra pointer and so does its parent						
+			// Build new sub-tree
+			newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy, s.gen);
+			newP.lastGen = s.gen;
+			final Node newExtraChild = new Node(l.key, l.value, l.weight, l.left, l.right, dummy, l.gen);//need to be checked newExtraChild.left and newExtraChild.right
+			newExtraChild.lastGen = l.lastGen;
+			newP.extra = newExtraChild;
+			newP.extraDir = left ? LEFT:RIGHT;		
+			
+			return new Operation(nodes, ops, newP);	
+			
+		}else if (l.extra != null && s.extra == null){// ***if the node l has extra pointer and its parent does not
+			if(p.extra == null){
+					newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
+					final Node newExtraChild;
+					if(l.extraDir == LEFT){
+						newExtraChild = new Node(l.key, l.value, l.weight, l.extra, l, dummy, l.gen);
+						newExtraChild.lastGen = l.lastGen;
+					}else{
+						newExtraChild = new Node(l.extra.key, l.extra.value, l.extra.weight, l, l.extra.right, dummy, l.extra.gen);
+						newExtraChild.lastGen = l.extra.lastGen;
+					}
+					newP.extra = newExtraChild;
+					newP.extraDir = left ? LEFT: RIGHT;				
+					return new Operation(nodes, ops, newP);
+			}
+				
+		}else if (l.extra != null && s.extra != null){// ***if the node l has extra pointer and so does its sibling
+					newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
+					final Node lExtra;
+					if(l.extraDir == LEFT){
+						lExtra = new Node(l.key, l.value, l.weight, l.extra, l , dummy);
+					}else{
+						lExtra = new Node(l.extra.key, l.extra.value, l.weight, l, l.extra.right , dummy);
+					}
+					final Node newExtraChild;
+					if(left){
+						newExtraChild = new Node(p.key, p.value, newWeight, lExtra, s.extra, dummy);//should be checked		
+					}else{
+						newExtraChild = new Node(p.key, p.value, newWeight, s.extra, lExtra, dummy);//should be checked
+					}
+					newExtraChild.lastGen = p.lastGen;
+					newP.extra = newExtraChild;
+					newP.extraDir = (left) ? LEFT: RIGHT;
+					return new Operation(nodes, ops, newP);
+			
+		}
+		return null;
+			
 	}
 
 
