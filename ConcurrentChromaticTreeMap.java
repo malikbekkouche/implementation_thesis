@@ -221,7 +221,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 
 
-
 		if(searchRecord.n.lastGen == this.root.gen){
 			if(k.compareTo((K) searchRecord.n.key) == 0)
 				return (V)searchRecord.n.value;
@@ -883,11 +882,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
-		ArrayList<Node> nodeList = new ArrayList<Node>();//used to store list of nodes from root to the target node
-		ArrayList directionList = new ArrayList();
-		boolean updateSnapshot = false;
+		
 		while(true){
 			//System.out.println("while");
+			ArrayList<Node> nodeList = new ArrayList<Node>();//used to store list of nodes from root to the target node
+			ArrayList directionList = new ArrayList();
+			boolean updateSnapshot = false;
+			
+			
 			final Comparable<? super K> comp = comparable(key);
 			Node ggp=null,gp=null,p=null,n=null;
 			boolean retry;
@@ -903,16 +905,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				gp=root;
 				p=sentinel;
 				int violations=0;
-				//nodeList.add(sentinel);
+				nodeList.add(sentinel);
+				nodeList.add(sentinel.left);
+				directionList.add(LEFT);
+				directionList.add(LEFT);
 				while(true){
 					//System.out.println("inner");
 					n=GCAS_READ(p,dir);
-
-
-					while(true){//while(!n.isLeaf()){
-						//System.out.println("SEARCH METHOD " + n.key + " - " + n.gen);
-						nodeList.add(n);//add to list of nodes
-						directionList.add(dir);						
+					
+					while(true){
+									
 						if((!this.isReadOnly && n.isLeaf()) || (this.isReadOnly && n.isLeaf() && n.extra == null))
 							break;												
 						if(n.gen==gen || this.isReadOnly){//if the tree is live tree -- n.gen==gen
@@ -926,6 +928,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							p=n;
 							//System.out.println("search node "+key+": "+n.key+"*"+n.gen);
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
+							
+							//add to list of nodes
+							
 							//System.out.println("searching n "+dir+n.key +" "+n.gen);
 							//System.out.println("node key = " + n.key + " - dir = " + dir);
 							//used if there is an extra pointer of a node
@@ -953,6 +958,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 								n=GCAS_READ(n,dir);
 								//System.out.println("direction :"+dir+ " " +n.key);
 							}
+														
+							nodeList.add(n);
+							directionList.add(dir);	
 						}else{
 							break;
 						}
@@ -1935,6 +1943,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 				op.nodeList = searchRecord.nodeList;
 				op.directionList = searchRecord.directionList;
+				op.updateSnapshot = searchRecord.updateSnapshot;
 			}
 			if (helpSCXX(op)) {
 				// clean up violations if necessary
