@@ -905,7 +905,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				gp=root;
 				p=sentinel;
 				int violations=0;
-				
+				if(nodeList.size()==0){
+					nodeList.add(new Node(sentinel));
+					directionList.add(LEFT);
+				}
 				System.out.println("sentinel "+sentinel.gen);
 				nodeList.add(new Node(sentinel.left));
 				
@@ -1172,7 +1175,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						node=node.right;
 					}
 				}else{
-					System.out.println("else "+node.key+node.gen+l.gen);
+					System.out.println("else "+dir+node.key+node.gen+l.gen);
 					if(dir==LEFT)
 						node=node.left;
 					else
@@ -2779,7 +2782,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.right = n.right;
 			this.op = n.op;
 			this.prev=n.prev;
-			this.gen=gen;
+			this.gen=n.gen;
 			this.extra = n.extra;
 			this.lastGen=n.lastGen;
 		}
