@@ -882,20 +882,21 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
-		
+		ArrayList<Node> nodeList = new ArrayList<Node>();//used to store list of nodes from root to the target node
+		ArrayList directionList = new ArrayList();
+		boolean updateSnapshot = false;
 		while(true){
 			//System.out.println("while");
-			ArrayList<Node> nodeList = new ArrayList<Node>();//used to store list of nodes from root to the target node
-			ArrayList directionList = new ArrayList();
-			boolean updateSnapshot = false;
+			
 			final Comparable<? super K> comp = comparable(key);
 			Node ggp=null,gp=null,p=null,n=null;
 			boolean retry;
 			Node root=RDCSS_ABORTABLE_READ();
 			int gen=root.gen;
 			char dir=LEFT;
+			System.out.println("sentinelo "+root.left.gen);
 			Node sentinel=GCAS_READ(root,dir);
-			nodeList.add(sentinel);
+			
 			//System.out.println("while");
 			if(sentinel.gen==gen || readOp){
 				if(sentinel.left==null)
@@ -904,9 +905,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				gp=root;
 				p=sentinel;
 				int violations=0;
-				nodeList.add(sentinel);
+				
+				System.out.println("sentinel "+sentinel.gen);
 				nodeList.add(sentinel.left);
-				directionList.add(LEFT);
+				
 				directionList.add(LEFT);
 				while(true){
 					//System.out.println("inner");
@@ -969,10 +971,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					if(n.gen==gen || (readOp && this.isReadOnly)){//live tree read here	
 						//System.out.println("print :"+n.key+" "+n.gen+gen);		
 						System.out.println("updating "+updateSnapshot);
+						for(int d=0;d<nodeList.size();d++)
+							System.out.println(nodeList.get(d).key+" "+nodeList.get(d).value+" "+nodeList.get(d).gen);
 						return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, directionList, updateSnapshot);
 					}else{
 						//System.out.println("generation" +n.key+" "+n.gen+" "+p.gen);
-
+					
 						if(!GCAS_COPY(p,n,dir,gen)){
 							retry=true;//continue;//return RETRY; or continue maybe??
 							//System.out.println("retry");
@@ -986,7 +990,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}
 			else{
 				//System.out.println("generation else"+" : root"+root.gen+root.marked+" sentinel " +sentinel.gen+sentinel.marked+ " left "+sentinel.left.key+" "+sentinel.left.gen+" "+sentinel.left.marked);
+				nodeList.add(sentinel);
+				directionList.add(LEFT);
+				System.out.println("gcas sentinel");
 				GCAS_COPY(root,sentinel,dir,gen);
+				updateSnapshot=true;
 				retry=true;//continue;//return retry;
 
 			}
@@ -1144,12 +1152,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				System.out.println("should not");
 		if(op.updateSnapshot){ // only do this when a gcas has happened
 			Node node=snapList.get(maxSnapId);
-			System.out.println("inside ");
+			
 			for(int x=0;x<op.directionList.size() ;x++){
+				
 				char dir=(char)op.directionList.get(x);
 				Node l=(dir==LEFT) ? node.left : node.right;
-				System.out.println("dir : "+dir+" l "+l.key +" p "+node.key);
+				//System.out.println("dir : "+dir+" l "+l.key +" p "+node.key);
 				if(node.gen==l.gen){
+					System.out.println("if "+node.key+node.gen);
 					if(dir==LEFT){
 						node.left=op.nodeList.get(x);
 						System.out.println("print l "+node.left.key);
@@ -1161,6 +1171,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						node=node.right;
 					}
 				}else{
+					System.out.println("else "+node.key+node.gen+l.gen);
 					if(dir==LEFT)
 						node=node.left;
 					else
