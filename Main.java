@@ -2,10 +2,10 @@ class Main {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
 		//tree.put(5,7);
-		System.out.println("put "+tree.put(8,5));
-		System.out.println("put "+tree.put(4,5));
-		System.out.println("put "+tree.put(18,3));
-		System.out.println("put "+tree.put(1,5));
+		System.out.println("put "+tree.put(8,88));
+		System.out.println("put "+tree.put(4,44));
+		System.out.println("put "+tree.put(18,1818));
+		/* System.out.println("put "+tree.put(1,5));
 		System.out.println("put "+tree.put(2,2));
 		System.out.println("put "+tree.put(15,88));
 		System.out.println("put "+tree.put(22,22));
@@ -14,27 +14,29 @@ class Main {
 		System.out.println("put "+tree.put(30,30));
 		System.out.println("put "+tree.put(40,40));
 		System.out.println("put "+tree.put(50,50));
-		System.out.println("put "+tree.put(3,11));
+		System.out.println("put "+tree.put(3,11)); */
 		System.out.println("-------------------------------");
 		System.out.println("-----------END OF PUT----------");
 		System.out.println("-------------------------------");
 		//System.out.println("remove "+tree.remove(1));
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
-		System.out.println("update "+tree.put(8,32));
-		
-		System.out.println("put "+tree.put(9,69));
-		System.out.println("update "+tree.put(15,11));
-		
-		
+		System.out.println("update "+tree.put(8,8));
 		System.out.println("update "+tree.put(18,18));
-		System.out.println("update "+tree.put(1,77));
+		System.out.println("update "+tree.put(4,4));
+		
 		//System.out.println("put "+tree.put(9,69));
-		System.out.println("put "+tree.put(22,69));
+		//System.out.println("update "+tree.put(15,11));
+		
+		
+		
+		//System.out.println("update "+tree.put(1,77));
+		//System.out.println("put "+tree.put(9,69));
+	/* 	System.out.println("put "+tree.put(22,69));
 		System.out.println("put "+tree.put(25,22));
 		System.out.println("put "+tree.put(30,33));
 		System.out.println("put "+tree.put(50,55));
 		 System.out.println("put "+tree.put(40,44));
-		 System.out.println("put "+tree.put(3,951));
+		 System.out.println("put "+tree.put(3,951)); */
 		 
 		//System.out.println("put "+tree.put(50,55)); 
 		
