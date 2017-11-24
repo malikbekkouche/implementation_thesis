@@ -20,11 +20,13 @@ class Main {
 		System.out.println("-------------------------------");
 		//System.out.println("remove "+tree.remove(1));
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
-		System.out.println("update "+tree.put(8,8));
+		//System.out.println("update "+tree.put(8,8));
 		System.out.println("snap "+snap.get(8));
 		System.out.println("update "+tree.put(18,18));
 		System.out.println("snap "+snap.get(18));
+		System.out.println("tree "+tree.get(18));
 		System.out.println("update "+tree.put(4,4));
+		System.out.println("snap "+snap.get(4));
 		
 		//System.out.println("put "+tree.put(9,69));
 		//System.out.println("update "+tree.put(15,11));
@@ -43,7 +45,7 @@ class Main {
 		//System.out.println("put "+tree.put(50,55)); 
 		
 		System.out.println("-------------------------------");
-		System.out.println("snap "+snap.get(8));
+		/* System.out.println("snap "+snap.get(8));
 		System.out.println("snap "+snap.get(9));
 		System.out.println("snap "+snap.get(15));
 		System.out.println("snap "+snap.get(18));
@@ -65,7 +67,7 @@ class Main {
 		System.out.println("tree "+tree.get(25));
 		System.out.println("tree "+tree.get(50));
 		System.out.println("tree "+tree.get(40));
-		System.out.println("tree "+tree.get(3));
+		System.out.println("tree "+tree.get(3)); */
 		
 		//System.out.println("get "+snap.get(8));
 		//System.out.println("remove "+tree.remove(8));
