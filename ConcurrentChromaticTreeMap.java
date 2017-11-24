@@ -906,9 +906,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							ggp=gp;
 							gp=p;
 							p=n;
-							System.out.println("searching n "+n.key);
+							
 							//System.out.println("search node "+key+": "+n.key+"*"+n.gen);
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
+							System.out.println("searching n "+dir+n.key +" "+n.gen);
 							//System.out.println("node key = " + n.key + " - dir = " + dir);
 							//used if there is an extra pointer of a node
 							//System.out.println("node "+n.key+" "+dir);
@@ -921,7 +922,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 								}else{//we should go left when we have extra right and vice versa
 									n = (dir == LEFT ) ? n.left : n.right;
-									System.out.println("dir n "+dir);
+									//System.out.println("dir n "+dir);
 								}
 							}else if(this.isReadOnly){//lack of case Snapshot get the element
 								n = (dir == LEFT) ? n.left : n.right;								
@@ -935,14 +936,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 					}
 					//System.out.println("leaf "+key+": "+n.key+"*"+n.gen+"*"+n.lastGen+"*"+n.value);
-					if(n.gen==gen || (readOp && this.isReadOnly)){//live tree read here											
+					if(n.gen==gen || (readOp && this.isReadOnly)){//live tree read here	
+						System.out.println("print :"+n.key+" "+n.gen+gen);					
 						return new SearchRecord(ggp,gp,p,n,gen,violations);
 					}else{
-						//System.out.println("generation" +n.gen+" "+p.gen);
+						System.out.println("generation" +n.key+" "+n.gen+" "+p.gen);
+						
 						if(!GCAS_COPY(p,n,dir,gen)){
 							retry=true;//continue;//return RETRY; or continue maybe??
 							//System.out.println("retry");
 						}
+						System.out.println("generation" +n.key+" "+n.gen+" "+p.gen);
 					}
 
 				}
@@ -1039,7 +1043,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		Node subtree=op.subtree;
 		int gen=op.gen;
 		AtomicReferenceFieldUpdater genericUpdater;
-		//System.out.println("before");
+		System.out.println("before");
 		for(int i=0;i<ops.length;i++){
 			if(!updateOp.compareAndSet(nodes[i],ops[i],op) && nodes[i].op != op){ // check order of cas
 				if(!op.allFrozen){
@@ -1048,7 +1052,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 			}
 		}
-		//System.out.println("after");
+		System.out.println("after");
 		op.allFrozen=true;
 		boolean left;
 		if(nodes[0].left==nodes[1]){
@@ -1060,12 +1064,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 
 		while(true){
-			//System.out.println("some");
+			System.out.println("some");
 			if(op.state!=Operation.STATE_INPROGRESS){
 				return op.state==Operation.STATE_COMMITTED ? true : false ;
 			}
 			int step=op.step;
-			//System.out.println("where");
+			System.out.println("where");
 			if(step==Operation.STEP_SUBTREE){
 				//System.out.println("syb");
 				//if(left)
@@ -1075,25 +1079,26 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
 						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
 					updateStep.compareAndSet(op,step,Operation.STEP_GENERATION);
-					//System.out.println("SUBTREE " );
+					System.out.println("SUBTREE " );
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
-					//System.out.println("b");
+					System.out.println("b");
 				}
 			}else if(step==Operation.STEP_GENERATION){
 				Node root=RDCSS_ABORTABLE_READ();
 				if(root.gen==nodes[0].gen){
 					updateStep.compareAndSet(op,step,Operation.STEP_COMMIT);
-					//System.out.println("GENERATION");
+					System.out.println("GENERATION");
 				}else{
 					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
-					//System.out.println("ab");
+					System.out.println("ab");
+					System.out.println("gen "+root.gen+nodes[0].gen);
 				}
 			}else if(step==Operation.STEP_ABORT){
-				//System.out.println("u");
+				System.out.println("u");
 				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
 					op.state=Operation.STATE_ABORTED;
-					//System.out.println("aborted");
+					System.out.println("aborted");
 					return false;
 				}
 			}else if(step==Operation.STEP_COMMIT){
@@ -1101,7 +1106,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					nodes[i].marked=true;
 				}
 				op.state=Operation.STATE_COMMITTED;
-				//System.out.println("commited");
+				System.out.println("commited");
 				return true;
 			}
 		}
@@ -1337,6 +1342,133 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		//System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
 		return new Operation(nodes, ops, subtree);
 	}
+	
+	private Operation createReplaceOpReal(final Node gp,final Node p, final Node l,K key, V value , final int gen) {
+		int newGen=gen;//maybe wrong
+		final Operation[] ops = new Operation[]{null, null, null};
+		final Node[] nodes = new Node[]{null, null, null};
+		final Comparable<? super K> k = comparable(key);
+	
+		
+		
+		
+		ArrayList<Node> nodeList=new ArrayList();
+		ArrayList<Character> dirList=new ArrayList();
+		ArrayList<Operation> opsArray=new ArrayList();
+		ArrayList<Node> nodesArray=new ArrayList();
+		System.out.println("1");
+		
+		// remember weakLLX
+		Node n= root.left.left;
+		//nodeList.add(n);
+		char dir;
+		while(!n.isLeaf()){ // create list of nodes on the path + the directions taken
+			dir = (k.compareTo((K)n.key)<0) ? LEFT : RIGHT ;
+			dirList.add(dir);
+			nodeList.add(n);
+			if(dir==LEFT){
+				System.out.println("dir "+dir+" * " +n.key+ " "+n.gen);
+				n=n.left;
+				
+			}
+			else{
+				System.out.println("dir "+dir+" * " +n.key+ " "+n.gen);
+				n=n.right;
+			}
+		}
+		nodeList.add(n);
+		System.out.println("2");
+		int i=nodeList.size()-1;
+		int j=dirList.size()-1;
+		for(Node v : nodeList)
+			System.out.println("noden "+v.key+v.value);
+		// node to put in extra
+		Node oldNode=nodeList.get(i);
+		// node to put in live tree
+		Node holder=nodeList.get(i);
+		Node updatedNode = new Node(holder.key,value,holder.weight,holder.left,holder.right,holder.op,holder.gen);
+		System.out.println("nodee "+oldNode.key);
+		
+		//if (!weakLLX(nodeList.get(i), 0, opsArray, nodesArray)) return null;
+		
+		Node extraTree=null;
+		
+		//build live tree
+		i--;
+		// weak llx on sibling and parent
+		if (!weakLLX(nodeList.get(i), 0, opsArray, nodesArray)) return null;
+		System.out.println("llx "+nodeList.get(i).gen +" "+nodeList.get(i).key);
+		Node node= dirList.get(j)==LEFT ? nodeList.get(i).right : nodeList.get(i).left;
+		if (!weakLLX(node, 1, opsArray, nodesArray)) return null;
+		System.out.println("llx "+node.gen +" "+node.key);
+		// maybe also check the sibling
+		Node parent;
+		while(true){
+			System.out.println("node kg"+nodeList.get(i).key+" "+nodeList.get(i).gen);
+			parent=nodeList.get(i); // make copy so the live tree is not changed
+			char direction=dirList.get(j);
+			if(direction==RIGHT){
+				parent.right=updatedNode;// make sure the constructor copies every atribute
+			}else{
+				parent.left=updatedNode;
+			}
+			i--;
+			j--;
+			//weak llx on grand parent
+			if (!weakLLX(nodeList.get(i), 0, opsArray, nodesArray)) return null;
+			System.out.println("llx "+nodeList.get(i).key +" "+nodeList.get(i).gen);
+			if(parent.extra!=null)
+				extraTree=createExtraSubtree(parent.extra,oldNode);
+			else{
+				System.out.println("break");
+				break;}
+			updatedNode=parent;
+		}
+		
+		if(extraTree==null){
+			System.out.println("null ");
+			parent.extra=oldNode;
+		}else{
+			parent.extra=extraTree;
+		}
+		System.out.println("extra "+parent.extra.key+parent.extra.value);
+		System.out.println("parent "+parent.key+" "+parent.gen+" "+parent.left.key+parent.left.value+parent.right.key);
+		Node[] nodesArr = new Node[nodesArray.size()];
+		nodesArr = nodesArray.toArray(new Node[0]);
+
+		Operation[] opsArr = new Operation[opsArray.size()];
+		opsArr = opsArray.toArray(new Operation[0]);
+		
+		for(int x=0;x<nodesArr.length;x++)
+			System.out.println("nodex "+nodesArr[x].key+nodesArr[x].value);
+
+		return new Operation(nodesArr, opsArr, parent);
+		
+	}
+	
+	private Node createExtraSubtree(Node extra, Node newExtra){
+		final Comparable<? super K> k = comparable(newExtra.key);
+		Node n=extra;// make a copy so we still have reference to the root
+		char dir;
+		while(!n.isLeaf()){
+			dir = (k.compareTo((K)n.key)<0) ? LEFT : RIGHT ;
+			n = (dir==LEFT) ? n.left : n.right ;
+		}
+		if(k.compareTo((K)n.key)<0){
+			n.left=newExtra;
+			n.right=n;
+			return extra;
+		}else {
+			Node newRoot=newExtra;
+			while(!newRoot.isLeaf())
+				newRoot=newRoot.left;
+			Node r=newRoot;
+			r.left=extra;
+			r.right=newExtra;
+			return r;
+		}
+	}
+	
 
 	private Operation createReplaceOpSnapLoop(final Node gp,final Node p, final Node l,K key, V value , final int gen) {// same as old version except
 		/* final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
@@ -1381,25 +1513,25 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 
 		char dir = (p.left==l) ? LEFT : RIGHT;
-		Node newChild = new Node(l);
+		Node newChild = new Node(ll);
 		newChild.lastGen=newGen-1;
 		newChild.gen=newGen;
 
 		if(pp.extra==null){
 			// Build new sub-tree
 			//System.out.println("p: "+p.key+p.value);
-			final Node updated=new Node(key,value,l.weight,l.left,l.right,l.op,l.gen);
+			final Node updated=new Node(key,value,ll.weight,ll.left,ll.right,ll.op,ll.gen);
 			updated.lastGen=newGen;//new child has updated lastGen			
 			if(dir==LEFT)
-				subtree = new Node(p.key,p.value,p.weight,updated,p.right,p.op,p.gen);//make sure to use the correct constructor
+				subtree = new Node(pp.key,pp.value,pp.weight,updated,pp.right,pp.op,pp.gen);//make sure to use the correct constructor
 			else
-				subtree = new Node(p.key,p.value,p.weight,p.left,updated,p.op,p.gen);//make sure to use the correct constructor						
-			subtree.parent = p.parent;
+				subtree = new Node(pp.key,pp.value,pp.weight,pp.left,updated,pp.op,pp.gen);//make sure to use the correct constructor						
+			subtree.parent = pp.parent;
 
 			//put extra
 			subtree.extra=newChild;
 			subtree.extraDir=dir;
-			//System.out.println("if");
+			System.out.println("if");
 			//System.out.println(dir+" "+subtree.extra.key);
 		}else{			
 			while(pp.extra!=null){
@@ -1428,6 +1560,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						
 						Node updated=new Node(pp.key,pp.value,pp.weight,pp.left,pp.right,pp.op,pp.gen);
 						
+						System.out.println("1updated "+updated.key+"/"+updated.left.key+updated.left.value+"/"+updated.right.key+updated.right.value);
 						System.out.println("debug "+subtree.extra.key+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key);
 						System.out.println("debug2 "+parentExtra.key+"/"+parentExtra.left.key+"/"+parentExtra.right.key);
 						//newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);//original before fix
@@ -1446,11 +1579,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						//System.out.println("ifo");
 					}else{
 						//System.out.println("ll "+ll.key+" pp "+pp.key);
-						Node newSubtree=pp.right;
+						Node newSubtree=pp;
 						while(!newSubtree.isLeaf()){
 							newSubtree=newSubtree.left;
 						}
-						//System.out.println("new "+newSubtree.key);
+						System.out.println("new "+newSubtree.key);
 						parentExtra=new Node(newSubtree.key,newSubtree.value,newSubtree.weight,pp.extra,subtree.extra,subtree.extra.op);
 						/* Node parentRight=new Node(pp.extra);
 						Node parentLeft=new Node(pp.left);
@@ -1459,6 +1592,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						//create updated live tree
 						Node updated=new Node(pp.key,pp.value,pp.weight,pp.left,pp.right,pp.op,pp.gen);
 						newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);
+						
+						System.out.println("2updated "+updated.key+updated.value+"/"+updated.left.key+updated.left.value+"/"+updated.right.key+updated.right.key);
 
 						if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
 
@@ -1483,7 +1618,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						//create updated live tree
 						Node updated=new Node(key,value,ll.weight,ll.left,ll.right,ll.op,ll.gen);
 						newP=new Node(pp.key,pp.value,pp.weight,updated,pp.right,pp.op,pp.gen);
-						//System.out.println("else1");
+						System.out.println("else1 "+key +value);
+						//System.out.println("3updated "+updated.key+updated.value+"/"+updated.left.key+updated.left.value+"/"+updated.right.key+updated.right.key);
 
 					}else{
 						parentExtra=new Node(pp.right);
@@ -1495,7 +1631,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						//update the live tree
 						Node updated=new Node(key,value,ll.weight,ll.left,ll.right,ll.op,ll.gen);
 						newP=new Node(pp.key,pp.value,pp.weight,pp.left,updated,pp.op,pp.gen);
-						//System.out.println("else2");
+						System.out.println("else2");
+						//System.out.println("4updated "+updated.key+updated.value+"/"+updated.left.key+updated.left.value+"/"+updated.right.key+updated.right.key);
 					}
 				}
 				//create normal subtree
@@ -1519,9 +1656,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 
 				if(dir==LEFT){
+					System.out.println("d");
 					subtree=new Node(pp.key,pp.value,pp.weight,newP,pp.right,pp.op,pp.gen);
 				}
 				else{
+					System.out.println("f");
 					subtree=new Node(pp.key,pp.value,pp.weight,pp.left,newP,pp.op,pp.gen);
 				}
 
@@ -1531,10 +1670,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 
 
-				//System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
+				System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
 
 				if(subtree.extra.left!=null && subtree.extra.right!=null){
-					//System.out.println("subtree extra if: "+subtree.key+"/"+subtree.value+"/"+subtree.extra.key+"/"+subtree.extra.right.key+"/");
+					System.out.println("subtree extra if: "+subtree.key+"/"+subtree.value+"/"+subtree.extra.key+"/"+subtree.extra.left.key+
+					subtree.extra.left.value+"/"
+					+subtree.extra.right.key+subtree.extra.right.value);
 				}
 				//System.out.println("subtree extra: "+subtree.extra.key+"/"+subtree.extra.value+"/"+subtree.extra+"/"+subtree.extra+"/");
 
@@ -1719,7 +1860,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					}
 					else{
 
-						op = createReplaceOpSnapLoop(searchRecord.grandParent,searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
+						op = createReplaceOpReal(searchRecord.grandParent,searchRecord.parent, searchRecord.n, key,value,searchRecord.startGen);
 						//System.out.println("extra ordinary");
 					}
 				} else {
@@ -1744,6 +1885,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				// we may have found the key and replaced its value (and, if so, the old value is stored in the old node)
 				return (found ? (V) searchRecord.n.value : null);
 			}
+			System.out.println("fail");
 			//System.out.println("scx");
 			op = null;
 		}
@@ -1971,6 +2113,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		ops.add(i,weakLLX(r));
 		if ((ops.get(i)) == null) return false;
 		nodes.add(i,r);
+		//System.out.println("here "+ops[i].state+ " "+r.marked);
+		return true;
+	}
+	
+	private boolean weakLLX(final Node r, final ArrayList<Operation> ops, final ArrayList<Node> nodes) {
+		ops.add(weakLLX(r));
+		if ((ops.get(ops.size()-1)) == null) return false; // check -1
+		nodes.add(r);
 		//System.out.println("here "+ops[i].state+ " "+r.marked);
 		return true;
 	}
