@@ -883,11 +883,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
-		ArrayList<Node> nodeList = new ArrayList<Node>();//used to store list of nodes from root to the target node
-		ArrayList directionList = new ArrayList();
-		boolean updateSnapshot = false;
+		
 		while(true){
 			//System.out.println("while");
+			ArrayList<Node> nodeList = new ArrayList<Node>();//used to store list of nodes from root to the target node
+			ArrayList directionList = new ArrayList();
+			directionList.add(LEFT);
+			boolean updateSnapshot = false;
 			final Comparable<? super K> comp = comparable(key);
 			Node ggp=null,gp=null,p=null,n=null;
 			boolean retry;
@@ -895,6 +897,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			int gen=root.gen;
 			char dir=LEFT;
 			Node sentinel=GCAS_READ(root,dir);
+			nodeList.add(sentinel);
 			//System.out.println("while");
 			if(sentinel.gen==gen || readOp){
 				if(sentinel.left==null)
@@ -960,7 +963,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					}
 					//System.out.println("leaf "+key+": "+n.key+"*"+n.gen+"*"+n.lastGen+"*"+n.value);
 					if(n.gen==gen || (readOp && this.isReadOnly)){//live tree read here	
-						//System.out.println("print :"+n.key+" "+n.gen+gen);					
+						//System.out.println("print :"+n.key+" "+n.gen+gen);		
+						System.out.println("updating "+updateSnapshot);
 						return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, directionList, updateSnapshot);
 					}else{
 						//System.out.println("generation" +n.key+" "+n.gen+" "+p.gen);
@@ -1132,6 +1136,41 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 				op.state=Operation.STATE_COMMITTED;
 				System.out.println("commited");
+				
+				System.out.println("should not");
+		if(op.updateSnapshot){ // only do this when a gcas has happened
+			Node node=snapList.get(maxSnapId);
+			System.out.println("inside ");
+			for(int x=0;x<op.directionList.size() ;x++){
+				char dir=(char)op.directionList.get(x);
+				Node l=(dir==LEFT) ? node.left : node.right;
+				System.out.println("dir : "+dir+" l "+l.key +" p "+node.key);
+				if(node.gen==l.gen){
+					if(dir==LEFT){
+						node.left=op.nodeList.get(x);
+						System.out.println("print l "+node.left.key);
+						node=node.left;
+					}
+					else{
+						node.right=op.nodeList.get(x);
+						System.out.println("print r "+node.right.key);
+						node=node.right;
+					}
+				}else{
+					if(dir==LEFT)
+						node=node.left;
+					else
+						node=node.right;
+				}
+			}
+			System.out.println("should");
+			Node tr=snapList.get(maxSnapId);
+			while(!tr.isLeaf()){
+				System.out.println("ssx "+tr.key+" "+tr.value+" "+tr.gen+" "+tr.left.key+ " " + tr.right.key);
+			}
+		}
+				
+				
 				return true;
 			}
 		}
@@ -1935,6 +1974,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 				op.nodeList = searchRecord.nodeList;
 				op.directionList = searchRecord.directionList;
+				op.updateSnapshot=searchRecord.updateSnapshot;
 			}
 			if (helpSCXX(op)) {
 				// clean up violations if necessary
@@ -2233,29 +2273,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		op.nodes = null;
 		op.ops = null;
 		op.subtree = null;
-		if(op.updateSnapshot){ // only do this when a gcas has happened
-			Node node=snapList.get(maxSnapId);
-
-			for(int x=0;x<op.nodeList.size() ;x++){
-				char dir=(char)op.directionList.get(x);
-				Node l=(dir==LEFT) ? node.left : node.right;
-				if(node.gen==l.gen){
-					if(dir==LEFT){
-						node.left=op.nodeList.get(x);
-						node=node.left;
-					}
-					else{
-						node.right=op.nodeList.get(x);
-						node=node.right;
-					}
-				}else{
-					if(dir==LEFT)
-						node=node.left;
-					else
-						node=node.right;
-				}
-			}
-		}
+		
+		
 
 
 		return true;
