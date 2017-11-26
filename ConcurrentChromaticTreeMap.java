@@ -1164,25 +1164,37 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		if(op.updateSnapshot){ // only do this when a gcas has happened
 		System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
 			for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {
-				Node node=snapList.get(shots);
+				Node node=snapList.get(shots).left;
 				System.out.println("snap root *************** =  "+node.gen);
 				
-				for(int x=0;x<op.directionList.size() ;x++){
-					
-					char dir=(char)op.directionList.get(x);
+				//for(int x=0;x<op.directionList.size() ;x++){
+				int x=1,y=1;
+				while(true){
+					if(x==op.nodeList.size())
+						break;
+					char dir=(char)op.directionList.get(y);
 					Node l=(dir==LEFT) ? node.left : node.right;
-					//System.out.println("dir : "+dir+" l "+l.key +" p "+node.key);
+					//System.out.println(x+"dir : "+dir+" l "+l.key+"-"+l.value +" p "+node.key);
+					System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
+					Node n=op.nodeList.get(x);
 					if(node.gen>l.lastGen){
-						Node n=op.nodeList.get(x);
-						n.gen=node.gen;
-						n.lastGen=node.gen;
-						if(dir==LEFT)
-							node.left=n;
-						else
-							node=right=n;
-					}else{
+						System.out.println("if "+node.gen+"-"+l.lastGen);
 						
+						n.gen=node.gen;
+						n.lastGen=l.lastGen;
+						System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
+						
+						if(dir==LEFT){
+							node.left=n;
+							node=node.left;
+						}
+						else{
+							node.right=n;
+							node=node.right;
+						}
+						y++;
 					}
+					x++;
 					/* if(node.gen!=l.gen){
 						System.out.println("if "+node.key+node.gen);
 						if(dir==LEFT){
@@ -1415,6 +1427,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				//System.out.println("if");
 				Node left = GCAS_READ(root, LEFT);
 				Node sentinelL = GCAS_READ(root.left, LEFT);
+				//sentinelL.lastGen=root.gen;
 				Operation leftOp = weakLLX(left);
 				Node r=new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, root.gen+1);
 				int oldGen = root.gen;

@@ -7,7 +7,7 @@ class Main {
 		System.out.println("put "+tree.put(8,88));		
 		System.out.println("put "+tree.put(18,1818));
 		 // System.out.println("put "+tree.put(1,11));
-		System.out.println("put "+tree.put(2,22));
+		//System.out.println("put "+tree.put(2,22));
 		// System.out.println("put "+tree.put(15,1515));
 		// System.out.println("put "+tree.put(22,2222));
 		/*System.out.println("put "+tree.put(9,77));
