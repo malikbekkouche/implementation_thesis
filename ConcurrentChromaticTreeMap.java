@@ -1162,8 +1162,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				
 		
 		if(op.updateSnapshot){ // only do this when a gcas has happened
-			//for(int shots=op.lastGen; shots < maxSnapId ; shots++ ) {
-				Node node=snapList.get(maxSnapId);
+		System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
+			for(int shots=op.lastGen; shots < maxSnapId ; shots++ ) {
+				Node node=snapList.get(shots+1);
 				System.out.println("snap root *************** =  "+node.gen);
 				
 				for(int x=0;x<op.directionList.size() ;x++){
@@ -1191,7 +1192,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							node=node.right;
 					}
 				}
-			//}
+			}
 				System.out.println("should");
 				/* Node tr=snapList.get(maxSnapId);
 				while(!tr.isLeaf()){
