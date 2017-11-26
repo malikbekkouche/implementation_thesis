@@ -887,7 +887,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		boolean updateSnapshot = false;
 		while(true){
 			//System.out.println("while");
-			
+
 			final Comparable<? super K> comp = comparable(key);
 			Node ggp=null,gp=null,p=null,n=null;
 			boolean retry;
@@ -896,7 +896,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			char dir=LEFT;
 			System.out.println("sentinelo "+root.left.gen);
 			Node sentinel=GCAS_READ(root,dir);
-			
+
 			//System.out.println("while");
 			if(sentinel.gen==gen || readOp){
 				if(sentinel.left==null)
@@ -911,14 +911,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 				System.out.println("sentinel "+sentinel.gen);
 				nodeList.add(new Node(sentinel.left));
-				
+
 				directionList.add(LEFT);
 				while(true){
 					//System.out.println("inner");
 					n=GCAS_READ(p,dir);
-					
+
 					while(true){
-									
+
 						if((!this.isReadOnly && n.isLeaf()) || (this.isReadOnly && n.isLeaf() && n.extra == null))
 							break;												
 						if(n.gen==gen || this.isReadOnly){//if the tree is live tree -- n.gen==gen
@@ -932,9 +932,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							p=n;
 							//System.out.println("search node "+key+": "+n.key+"*"+n.gen);
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
-							
+
 							//add to list of nodes
-							
+
 							//System.out.println("searching n "+dir+n.key +" "+n.gen);
 							//System.out.println("node key = " + n.key + " - dir = " + dir);
 							//used if there is an extra pointer of a node
@@ -944,31 +944,31 @@ public class ConcurrentChromaticTreeMap<K,V> {
 								if(dir == LEFT && n.extraDir == LEFT || 
 										(dir == RIGHT && n.extraDir == RIGHT)){
 									//System.out.println("direction :"+dir+n.key);
-//									nodeList.add(n);
-//									directionList.add(dir);	
+									//									nodeList.add(n);
+									//									directionList.add(dir);	
 									n = n.extra;		
 									//System.out.println("direction :"+dir+ " " + n.key);
 
 								}else{//we should go left when we have extra right and vice versa
 									if(n.isLeaf())
 										break;
-									
+
 									n = (dir == LEFT ) ? n.left : n.right;
 									//System.out.println("dir n "+dir);
 								}
 							}else if(this.isReadOnly){//lack of case Snapshot get the element
-//								nodeList.add(n);
-//								directionList.add(dir);	
+								//								nodeList.add(n);
+								//								directionList.add(dir);	
 								n = (dir == LEFT) ? n.left : n.right;			
 								//System.out.println("direction :"+dir+ " " +n.key);
 							}
 							else{
-//								nodeList.add(n);
-//								directionList.add(dir);	
+								//								nodeList.add(n);
+								//								directionList.add(dir);	
 								n=GCAS_READ(n,dir);
 								//System.out.println("direction :"+dir+ " " +n.key);
 							}
-														
+
 
 							nodeList.add(new Node(n));
 							directionList.add(dir);	
@@ -993,7 +993,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						}
 						//System.out.println("generation" +n.key+" "+n.gen+" "+p.gen);
 					}
-
 				}
 			}
 			else{
@@ -1004,7 +1003,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				GCAS_COPY(root,sentinel,dir,gen);
 				updateSnapshot=true;
 				retry=true;//continue;//return retry;
-
 			}
 
 		}
@@ -1156,60 +1154,89 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 				op.state=Operation.STATE_COMMITTED;
 				System.out.println("commited");
-				
+
 				System.out.println("should not");
-				
-		
-//		if(op.updateSnapshot){ // only do this when a gcas has happened
-//			Node node=snapList.get(maxSnapId);
-//			System.out.println("snap root *************** =  "+node.gen);
-//			
-//			for(int x=0;x<op.directionList.size() ;x++){
-//				
-//				char dir=(char)op.directionList.get(x);
-//				Node l=(dir==LEFT) ? node.left : node.right;
-//				//System.out.println("dir : "+dir+" l "+l.key +" p "+node.key);
-//				if(node.gen!=l.gen){
-//					System.out.println("if "+node.key+node.gen);
-//					if(dir==LEFT){
-//						node.left=op.nodeList.get(x);
-//						System.out.println("print l "+node.left.key);
-//						node=node.left;
-//					}
-//					else{
-//						node.right=op.nodeList.get(x);
-//						System.out.println("print r "+node.right.key);
-//						node=node.right;
-//					}
-//				}else{
-//					System.out.println("else "+dir+node.key+node.gen+l.gen);
-//					if(dir==LEFT)
-//						node=node.left;
-//					else
-//						node=node.right;
-//				}
-//			}
-//			System.out.println("should");
-//			/* Node tr=snapList.get(maxSnapId);
-//			while(!tr.isLeaf()){
-//				System.out.println("ssx "+tr.key+" "+tr.value+" "+tr.gen+" "+tr.left.key+ " " + tr.right.key);
-//			} */
-//		}
-				
+
+
+				//		if(op.updateSnapshot){ // only do this when a gcas has happened
+				//			Node node=snapList.get(maxSnapId);
+				//			System.out.println("snap root *************** =  "+node.gen);
+				//			
+				//			for(int x=0;x<op.directionList.size() ;x++){
+				//				
+				//				char dir=(char)op.directionList.get(x);
+				//				Node l=(dir==LEFT) ? node.left : node.right;
+				//				//System.out.println("dir : "+dir+" l "+l.key +" p "+node.key);
+				//				if(node.gen!=l.gen){
+				//					System.out.println("if "+node.key+node.gen);
+				//					if(dir==LEFT){
+				//						node.left=op.nodeList.get(x);
+				//						System.out.println("print l "+node.left.key);
+				//						node=node.left;
+				//					}
+				//					else{
+				//						node.right=op.nodeList.get(x);
+				//						System.out.println("print r "+node.right.key);
+				//						node=node.right;
+				//					}
+				//				}else{
+				//					System.out.println("else "+dir+node.key+node.gen+l.gen);
+				//					if(dir==LEFT)
+				//						node=node.left;
+				//					else
+				//						node=node.right;
+				//				}
+				//			}
+				//			System.out.println("should");
+				//			/* Node tr=snapList.get(maxSnapId);
+				//			while(!tr.isLeaf()){
+				//				System.out.println("ssx "+tr.key+" "+tr.value+" "+tr.gen+" "+tr.left.key+ " " + tr.right.key);
+				//			} */
+				//		}
+
 				if(op.updateSnapshot){
 					Node node=snapList.get(maxSnapId);
 					node = node.left;
+
 					for(int i = 0; i < op.directionList.size() - 1; i++){
-						char dir=(char)op.directionList.get(i+1);
-						if(dir == LEFT){
-							node.left = op.nodeList.get(i+1);
-							node = node.left;
-							
-						}else{
-							node.right = op.nodeList.get(i+1);
-							node = node.right;
-						}
+						Node l = op.nodeList.get(i);
 						
+						if(node.key == null && l.key == null){
+							node = node.left;
+							continue;
+						}
+
+						if(node.key != null && l.key!=null){
+							Comparable<?super K> comp = comparable(node.key);
+							if(comp.compareTo((K)l.key)==0){
+								if((char)op.directionList.get(i) == LEFT)
+									node = node.left;
+								else
+									node = node.right;
+							}
+							else{
+								char dir=(char)op.directionList.get(i+1);
+
+								if(dir == LEFT){									
+									node.left = op.nodeList.get(i+1);	
+									node = node.left;
+								}else{
+									node.right = op.nodeList.get(i+1);			
+									node = node.right;
+								}	
+							}
+						}else{
+							char dir=(char)op.directionList.get(i+1);
+
+							if(dir == LEFT){									
+								node.left = op.nodeList.get(i+1);	
+								node = node.left;
+							}else{
+								node.right = op.nodeList.get(i+1);			
+								node = node.right;
+							}	
+
+						}
 					}
 				}
 				return true;
@@ -1379,8 +1406,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("return "+root.gen+" - "+r.gen);
 					//Node newRoot=new Node(null,null,1, left, null, dummy,oldGen);
 					//snapList.add(newRoot);
-//					return new ConcurrentChromaticTreeMap(newRoot, true);	
-					
+					//					return new ConcurrentChromaticTreeMap(newRoot, true);	
+
 					//Modify
 					Node sentinel =new Node(null,null,1, sentinelL, null, dummy,oldGen);
 					Node newRoot = new Node(null,null,1, sentinel, null, dummy,oldGen);
@@ -2322,8 +2349,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		op.nodes = null;
 		op.ops = null;
 		op.subtree = null;
-		
-		
+
+
 
 
 		return true;
