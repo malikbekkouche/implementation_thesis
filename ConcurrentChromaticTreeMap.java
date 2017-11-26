@@ -212,7 +212,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		SearchRecord searchRecord=search(key,true);
 		System.out.println("######### ");
 		for(Node n: searchRecord.nodeList){
-			System.out.println(n.key + " ");
+			System.out.println(n.key + " "+n.value);
 		}
 
 		System.out.println("********* " );
@@ -882,7 +882,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
-		ArrayList<Node> nodeList = new ArrayList<Node>();//used to store list of nodes from root to the target node
+		ArrayList<Node>   = new ArrayList<Node>();//used to store list of nodes from root to the target node
 		ArrayList directionList = new ArrayList();
 		boolean updateSnapshot = false;
 		while(true){
