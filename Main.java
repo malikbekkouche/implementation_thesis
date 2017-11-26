@@ -2,8 +2,9 @@ class Main {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
 		//tree.put(5,7);
-		System.out.println("put "+tree.put(8,88));
+		System.out.println("put "+tree.put(2,22));
 		System.out.println("put "+tree.put(4,44));
+		System.out.println("put "+tree.put(8,88));		
 		System.out.println("put "+tree.put(18,1818));
 		 // System.out.println("put "+tree.put(1,11));
 		System.out.println("put "+tree.put(2,22));
@@ -20,8 +21,14 @@ class Main {
 		System.out.println("-------------------------------");
 		//System.out.println("remove "+tree.remove(1));
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
+		System.out.println("update 8,8 "+tree.get(8));
+		System.out.println("update 8,8 "+tree.get(4));
+		System.out.println("update 8,8 "+tree.get(18));
+		System.out.println("update 8,8 "+tree.get(2));
 		System.out.println("-------------------------------");
+
 		System.out.println("snap "+snap.get(2)); 
+
 		System.out.println("-------------------------------");
 		//System.out.println("get "+tree.get(4)); 
 		System.out.println("-------------------------------");
