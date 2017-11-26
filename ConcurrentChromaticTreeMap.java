@@ -1163,8 +1163,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		
 		if(op.updateSnapshot){ // only do this when a gcas has happened
 		System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
-			for(int shots=op.lastGen; shots < maxSnapId ; shots++ ) {
-				Node node=snapList.get(shots+1);
+			for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {
+				Node node=snapList.get(shots);
 				System.out.println("snap root *************** =  "+node.gen);
 				
 				for(int x=0;x<op.directionList.size() ;x++){
@@ -2054,10 +2054,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					found = false;
 					//searchRecord.leafGen=searchRecord.n.gen;
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k,searchRecord.startGen);
+					
 				}
 				op.nodeList = searchRecord.nodeList;
 				op.directionList = searchRecord.directionList;
-				op.updateSnapshot = searchRecord.updateSnapshot;
+				if(found)
+					op.updateSnapshot = searchRecord.updateSnapshot;
+				else
+					op.updateSnapshot = false;
+				//System.out.println(op.updateSnapshot+" rrrrrrrrrrrrr");
 				op.lastGen=searchRecord.n.lastGen;
 
 			}
@@ -2380,7 +2385,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		// Build new sub-tree
 		final Node newLeaf = new Node(key, value, 1, null, null, dummy);
-		newLeaf.lastGen=generation;
+		newLeaf.lastGen=maxSnapId;
 		newLeaf.gen = generation;
 		final Node newL = new Node(l.key, l.value, 1, null, null, dummy);
 		//update generation
