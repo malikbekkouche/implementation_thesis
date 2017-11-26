@@ -2391,13 +2391,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		if (l.key == null || k.compareTo(l.key) < 0) {
 			newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);		
 			newP.gen = l.gen;//add generation
-			newP.lastGen = l.lastGen;//???
+			//newP.lastGen = l.lastGen;//???
 
 			//System.out.println("createInsertOp 1660 " + l.key + " " + l.value );
 		} else {
 			newP = new Node(key, value, newWeight, newL, newLeaf, dummy);
 			newP.gen = generation;//add generation
-			newP.lastGen = generation;//add generation
+			//newP.lastGen = generation;//add generation
 			//System.out.println("createInsertOp 1665 " );
 		}
 
@@ -2581,7 +2581,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		// Build new sub-tree
 		final Node subtree = new Node(l.key, value, l.weight, l.left, l.right, dummy);
 		subtree.gen = gen;
-		subtree.lastGen = gen;
 
 		//add parent pointer
 		subtree.parent = p;
