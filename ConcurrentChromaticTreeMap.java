@@ -985,11 +985,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							System.out.println(nodeList.get(d).key+" "+nodeList.get(d).value+" "+nodeList.get(d).gen+" "+nodeList.get(d).lastGen+" "+updateSnapshot);
 						return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, directionList, updateSnapshot);
 					}else{
-						if(!GCAS_COPY(p,n,dir,gen)){
+						if(!GCAS_COPY(p,n,dir,gen)){														
 							retry=true;//continue;//return RETRY; or continue maybe??
 							//System.out.println("retry");
-						}else {
-							System.out.println("update else");
+						}else {							
 							updateSnapshot = true;
 						}
 						//System.out.println("generation" +n.key+" "+n.gen+" "+p.gen);
@@ -1159,31 +1158,42 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 				System.out.println("should not");
 
-				
-		
-		if(op.updateSnapshot){ // only do this when a gcas has happened
-		System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
-			for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {
-				Node node=snapList.get(shots);
-				System.out.println("snap root *************** =  "+node.gen);
-				
-				for(int x=0;x<op.directionList.size() ;x++){
-					
-					char dir=(char)op.directionList.get(x);
-					Node l=(dir==LEFT) ? node.left : node.right;
-					//System.out.println("dir : "+dir+" l "+l.key +" p "+node.key);
-					if(node.gen>l.lastGen){
-						Node n=op.nodeList.get(x);
-						n.gen=node.gen;
-						n.lastGen=node.gen;
-						if(dir==LEFT)
-							node.left=n;
-						else
-							node=right=n;
-					}else{
-						
-					}
-					/* if(node.gen!=l.gen){
+				if(op.updateSnapshot){ // only do this when a gcas has happened
+					System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
+					for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {
+						Node node=snapList.get(shots);
+						System.out.println("snap root *************** =  "+node.gen);
+
+						//for(int x=0;x<op.directionList.size() ;x++){
+						int indexNodeList = 0;
+						int indexDirectionList = 0;
+						while(true){					
+							char dir=(char)op.directionList.get(indexDirectionList);
+							Node l=(dir==LEFT) ? node.left : node.right;
+							//System.out.println("dir : "+dir+" l "+l.key +" p "+node.key);
+
+							if(node.gen>l.lastGen){
+								Node n=op.nodeList.get(indexNodeList);
+								if(dir==LEFT){
+									node.left=op.nodeList.get(indexNodeList);
+									System.out.println("print l "+node.left.key);
+									node=node.left;
+								}
+								else{
+									node.right=op.nodeList.get(indexNodeList);
+									System.out.println("print r "+node.right.key);
+									node=node.right;
+								}
+								indexNodeList++;
+								indexDirectionList++;
+							}else{//skip Node
+								indexNodeList+=2;
+								indexDirectionList++;
+							}
+
+							if(indexNodeList == op.nodeList.size() - 1)
+								break;
+							/* if(node.gen!=l.gen){
 						System.out.println("if "+node.key+node.gen);
 						if(dir==LEFT){
 							node.left=op.nodeList.get(x);
@@ -1202,15 +1212,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						else
 							node=node.right;
 					} */
-				}
-			}
-				System.out.println("should");
-				/* Node tr=snapList.get(maxSnapId);
+						}
+					}
+					System.out.println("should");
+					/* Node tr=snapList.get(maxSnapId);
 				while(!tr.isLeaf()){
 					System.out.println("ssx "+tr.key+" "+tr.value+" "+tr.gen+" "+tr.left.key+ " " + tr.right.key);
 				} */
-		}
-				
+				}
+
 
 				/* if(op.updateSnapshot){
 
@@ -2065,7 +2075,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					found = false;
 					//searchRecord.leafGen=searchRecord.n.gen;
 					op = createInsertOp(searchRecord.parent, searchRecord.n, key, value, k,searchRecord.startGen);
-					
+
 				}
 				op.nodeList = searchRecord.nodeList;
 				op.directionList = searchRecord.directionList;
@@ -2978,7 +2988,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.subtree = subtree;
 			this.gen = gen;
 		}
-		
+
 		public Operation(final Node[] nodes, final Operation[] ops, final Node subtree) {
 			this.nodes = nodes;
 			this.ops = ops;
