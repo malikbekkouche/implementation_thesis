@@ -2384,7 +2384,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		if (l.key == null || k.compareTo(l.key) < 0) {
 			newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);		
 			newP.gen = l.gen;//add generation
-			newP.lastGen = l.gen;//???
+			newP.lastGen = l.lastGen;//???
 
 			//System.out.println("createInsertOp 1660 " + l.key + " " + l.value );
 		} else {
@@ -2573,11 +2573,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		// Build new sub-tree
 		final Node subtree = new Node(l.key, value, l.weight, l.left, l.right, dummy);
+		subtree.gen = gen;
+		subtree.lastGen = gen;
 
 		//add parent pointer
 		subtree.parent = p;
 
-		return new Operation(nodes, ops, subtree);
+		return new Operation(nodes, ops, subtree, gen);
 	}
 
 	private Operation createDeleteOp(final Node gp, final Node p, final Node l) {
@@ -2946,10 +2948,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			this.state = STATE_ABORTED;   // cheap trick to piggy-back on a pre-existing check for active operations
 		}
 
-		public Operation(final Node[] nodes, final Operation[] ops, final Node subtree) {
+		public Operation(final Node[] nodes, final Operation[] ops, final Node subtree, final int gen) {
 			this.nodes = nodes;
 			this.ops = ops;
 			this.subtree = subtree;
+			this.gen = gen;
+		}
+		
+		public Operation(final Node[] nodes, final Operation[] ops, final Node subtree) {
+			this.nodes = nodes;
+			this.ops = ops;
+			this.subtree = subtree;			
 		}
 
 		public Operation(int state) {     // added by me
