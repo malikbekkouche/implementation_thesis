@@ -1178,12 +1178,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println(x+"dir : "+dir+" l "+l.key+"-"+l.value +" p "+node.key);
 					//System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
 					Node n=op.nodeList.get(x);
-					//final Comparable<? super K> k = comparable(l.key);
+					final Comparable<? super K> k = comparable(l.key);
 					if(node.gen>l.lastGen ){
-						System.out.println("if "+node.gen+"-"+l.lastGen);
+						System.out.println("if "+node.gen+node.key+"-"+l.lastGen+l.key);
 						
 						n.gen=node.gen;
-						n.lastGen=l.lastGen;
+						n.lastGen=node.gen;
 						System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
 						
 						if(dir==LEFT){
@@ -1195,6 +1195,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							node=node.right;
 						}
 						y++;
+					}else{
+						node=l;
 					}
 					x++;
 					/* if(node.gen!=l.gen){
