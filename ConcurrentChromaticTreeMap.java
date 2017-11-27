@@ -1179,8 +1179,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					Node n=op.nodeList.get(x);
 					//final Comparable<? super K> k = comparable(l.key);
 					if(node.gen>l.lastGen ){
-						System.out.println("if "+node.gen+"-"+l.lastGen);
-						
+						System.out.println("if "+node.gen+"-"+l.lastGen);						
 						n.gen=node.gen;
 						n.lastGen=l.lastGen;
 						System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
@@ -1267,7 +1266,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 								node.right = op.nodeList.get(i+1);			
 								node = node.right;
 							}	
-
 						}
 					}
 				}*/
