@@ -39,9 +39,17 @@ class Main {
 		System.out.println("-------------------------------");
 		System.out.println("snap "+snap.get(0));
 		System.out.println("-------------------------------");
-		System.out.println("update "+tree.put(4,4));
-		System.out.println("-------------------------------");
 		System.out.println("update "+tree.put(2,2));
+		System.out.println("-------------------------------");
+		System.out.println("put "+tree.put(-20,-20));
+		System.out.println("-------------------------------");
+		System.out.println("tree "+tree.get(-20));
+		System.out.println("-------------------------------");
+		System.out.println("snap "+snap.get(-20));
+		System.out.println("-------------------------------");
+		System.out.println("remove "+tree.remove(4));
+		System.out.println("-------------------------------");
+		//System.out.println("update "+tree.put(2,2));
 		System.out.println("-------------------------------");
 		System.out.println("tree "+tree.get(2));
 		System.out.println("-------------------------------");
@@ -53,6 +61,9 @@ class Main {
 		System.out.println("-------------------------------");
 		//System.out.println("nooo "+snap.put(2,2));
 		System.out.println("-------------------------------");
+		
+		
+		
 		
 		//System.out.println("put "+tree.put(9,69));
 		//System.out.println("update "+tree.put(15,11));
