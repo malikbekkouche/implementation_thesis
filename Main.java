@@ -1,3 +1,4 @@
+import java.util.Random;
 class Main {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
@@ -40,17 +41,18 @@ class Main {
 		t.start();
 		
 	 	Thread t1=new Thread(() -> {
-			//Random r=new Random();
+			Random r=new Random();
 			while(true){
 				tree.put(8,4);
 				tree.put(18,9);
 				tree.put(4,2);
 				tree.put(2,1);
+				tree.put(r.nextInt(),r.nextInt());
 			}
 		});
 		t1.start(); 
 		
-		Thread t0=new Thread(() -> {
+		 Thread t0=new Thread(() -> {
 			//Random r=new Random();
 			while(true){
 				tree.remove(8);
@@ -59,7 +61,7 @@ class Main {
 				tree.remove(2);
 			}
 		});
-		t0.start(); 
+		t0.start();  
 
 		Thread t2=new Thread(() -> {
 			while(true){

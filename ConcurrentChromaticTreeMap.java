@@ -1018,6 +1018,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		Node subtree=op.subtree;
 		int gen=op.gen;
 		AtomicReferenceFieldUpdater genericUpdater;
+		if(op==null)
+			System.out.println("op null ");
+		if(ops==null)
+			System.out.println("ooops ");
 		for(int i=0;i<ops.length;i++){
 			if(!updateOp.compareAndSet(nodes[i],ops[i],op) && nodes[i].op != op){ // check order of cas
 				if(!op.allFrozen){
@@ -1178,7 +1182,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					////System.out.println(x+"dir : "+dir+" l "+l.key+"-"+l.value +" p "+node.key);
 					////System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
 					Node n=op.nodeList.get(x);
-					final Comparable<? super K> k = comparable(l.key);
+					//final Comparable<? super K> k = comparable(l.key);
 					//System.out.println("bbbbb "+node.gen+node.lastGen+node.key+" "+l.gen+l.lastGen+l.key);
 					if(node.gen>l.lastGen ){
 						//System.out.println("if "+node.gen+node.key+"-"+l.lastGen+l.key);
@@ -1400,12 +1404,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			if(p.right!=n)
 				return false;
 		}
-
+		if(ops==null)
+			System.out.println(" ops loop");
 		// Create copy of o, and create operation
 		Node node = new Node(n, gen);
 		Operation op = new Operation(nodes, ops, n);
 		op.gen=gen;
-		n.op = op;
+		//n.op = op;
 
 		if(newHelpSCXX(op)) {
 			// Copy operation was committed, and traversal can continue
@@ -2153,17 +2158,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					////System.out.println(searchRecord.n.lastGen+" - "+searchRecord.startGen);
 					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
 					////System.out.println("normal");
-				
-				op.nodeList = searchRecord.nodeList;
-				op.directionList = searchRecord.directionList;
-				op.updateSnapshot = searchRecord.updateSnapshot;
-				/* if(found)
+				if(op!=null){
+					op.nodeList = searchRecord.nodeList;
+					op.directionList = searchRecord.directionList;
 					op.updateSnapshot = searchRecord.updateSnapshot;
-				else
-					op.updateSnapshot = false; */
-				////System.out.println(op.updateSnapshot+" rrrrrrrrrrrrr");
-				op.lastGen=searchRecord.n.lastGen;
-				
+					/* if(found)
+						op.updateSnapshot = searchRecord.updateSnapshot;
+					else
+						op.updateSnapshot = false; */
+					////System.out.println(op.updateSnapshot+" rrrrrrrrrrrrr");
+					op.lastGen=searchRecord.n.lastGen;
+				}
 			}
 			if (helpSCXX(op)) {
 				// clean up violations if necessary
