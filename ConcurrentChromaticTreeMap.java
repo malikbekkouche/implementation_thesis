@@ -905,10 +905,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				gp=root;
 				p=sentinel;
 				int violations=0;
-				if(nodeList.size()==0){
+				/* if(nodeList.size()==0){
 					nodeList.add(new Node(sentinel));
 					directionList.add(LEFT);
-				}
+				} */
 				System.out.println("sentinel "+sentinel.gen);
 				nodeList.add(new Node(sentinel.left));
 
@@ -998,12 +998,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}
 			else{
 				//System.out.println("generation else"+" : root"+root.gen+root.marked+" sentinel " +sentinel.gen+sentinel.marked+ " left "+sentinel.left.key+" "+sentinel.left.gen+" "+sentinel.left.marked);
-				nodeList.add(new Node(sentinel));
-				directionList.add(LEFT);
+				//nodeList.add(new Node(sentinel));
+				//directionList.add(LEFT);
 				System.out.println("gcas sentinel");
 				GCAS_COPY(root,sentinel,dir,gen);
 				System.out.println("update else 2");
-				updateSnapshot=true;
+				//updateSnapshot=true;
 				retry=true;//continue;//return retry;
 			}
 
@@ -1168,16 +1168,18 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				System.out.println("snap root *************** =  "+node.gen);
 				
 				//for(int x=0;x<op.directionList.size() ;x++){
-				int x=1,y=1;
+				int x=0,y=0;
 				while(true){
+					System.out.println("qwerty "+node.value);
 					if(x==op.nodeList.size())
 						break;
 					char dir=(char)op.directionList.get(y);
 					Node l=(dir==LEFT) ? node.left : node.right;
 					//System.out.println(x+"dir : "+dir+" l "+l.key+"-"+l.value +" p "+node.key);
-					System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
+					//System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
 					Node n=op.nodeList.get(x);
-					if(node.gen>l.lastGen){
+					//final Comparable<? super K> k = comparable(l.key);
+					if(node.gen>l.lastGen ){
 						System.out.println("if "+node.gen+"-"+l.lastGen);
 						
 						n.gen=node.gen;
