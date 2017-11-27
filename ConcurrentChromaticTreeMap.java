@@ -1157,7 +1157,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				op.state=Operation.STATE_COMMITTED;
 				System.out.println("commited");
 
-				System.out.println("should not");
+				System.out.println("should not "+op.updateSnapshot);
 
 				
 		
@@ -1195,8 +1195,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							node=node.right;
 						}
 						y++;
-					}else{
+					}else if(node.gen==l.gen && node.lastGen==l.lastGen){
 						node=l;
+						y++;
 					}
 					x++;
 					/* if(node.gen!=l.gen){
@@ -2086,10 +2087,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 				op.nodeList = searchRecord.nodeList;
 				op.directionList = searchRecord.directionList;
-				if(found)
+				op.updateSnapshot = searchRecord.updateSnapshot;
+				/* if(found)
 					op.updateSnapshot = searchRecord.updateSnapshot;
 				else
-					op.updateSnapshot = false;
+					op.updateSnapshot = false; */
 				//System.out.println(op.updateSnapshot+" rrrrrrrrrrrrr");
 				op.lastGen=searchRecord.n.lastGen;
 
