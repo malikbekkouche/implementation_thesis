@@ -1179,6 +1179,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
 					Node n=op.nodeList.get(x);
 					final Comparable<? super K> k = comparable(l.key);
+					System.out.println("bbbbb "+node.gen+node.lastGen+node.key+" "+l.gen+l.lastGen+l.key);
 					if(node.gen>l.lastGen ){
 						System.out.println("if "+node.gen+node.key+"-"+l.lastGen+l.key);
 						
@@ -1196,6 +1197,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						}
 						y++;
 					}else if(node.gen==l.gen && node.lastGen==l.lastGen){
+						System.out.println("elseif");
 						node=l;
 						y++;
 					}
@@ -1434,6 +1436,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				Node sentinelL = GCAS_READ(root.left, LEFT);
 				//sentinelL.lastGen=root.gen;
 				Operation leftOp = weakLLX(left);
+				int newGen=root.gen+1;
 				Node r=new Node(null,null,1, left, null, /*true is sentinel ,*/ rootOp, root.gen+1);
 				int oldGen = root.gen;
 				if(RDCSS(root, leftOp /*was leftOp*/, r)) {
