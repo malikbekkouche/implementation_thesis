@@ -1,6 +1,9 @@
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.IntToDoubleFunction;
+
+import javax.xml.ws.Holder;
+
 import java.util.Random;
 public class TestChromaticTree{
 	public static AtomicIntegerArray _arrCounter; 
@@ -18,7 +21,7 @@ public class TestChromaticTree{
 		int threadCount = 16;
 		_arrCounter = new AtomicIntegerArray(threadCount);
 		
-		testMap(threadCount, 1000, 500, map);
+		testMap(threadCount, 1000, 899, map);
 		int []arrCounter = new int[threadCount];
 		for(int i = 0; i < threadCount; i++){
 			arrCounter[i] = 0;
@@ -106,17 +109,19 @@ public class TestChromaticTree{
 					}
 				}
 
-				for(int x = 0; x < perThread; x++){//REMOVE
-					Integer key = rand.nextInt(range);
-					String result = map.remove(key); 
-					//System.out.println("Thread " + myThread + " DELETE " + key + " value " + result);
-					sumOfRemove.incrementAndGet();
-					if(result != null){										
-						threadCounter.addAndGet(myThread, -key);
-						int index = Integer.parseInt(result.split("_")[0]);
-						arrayCounter.addAndGet(index, -1);	
-					}
-				}
+//				for(int x = 0; x < perThread; x++){//REMOVE
+//					Integer key = rand.nextInt(range);
+//					//String result = map.remove(key); 
+//					Holder<String> result = new Holder<String>();
+//					map.remove(key, result);
+//					//System.out.println("Thread " + myThread + " DELETE " + key + " value " + result);
+//					sumOfRemove.incrementAndGet();
+//					if(result != null){										
+//						threadCounter.addAndGet(myThread, -key);
+//						int index = Integer.parseInt(result.value.split("_")[0]);
+//						arrayCounter.addAndGet(index, -1);	
+//					}
+//				}
 
 			});
 		}
