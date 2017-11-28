@@ -22,11 +22,17 @@ class Main {
 		System.out.println("-------------------------------");
 		//System.out.println("remove "+tree.remove(1));
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
+//		while(true){
+//		System.out.println("REMOVE 2 = " + tree.remove(2));
+//		System.out.println("REMOVE 4 = " + tree.remove(4));
+//		System.out.println("REMOVE 8 = " + tree.remove(8));
+//		System.out.println("REMOVE 18 = " + tree.remove(18));
+//		}
 		/* System.out.println("update 8,8 "+tree.get(8));
 		System.out.println("update 8,8 "+tree.get(4));
 		System.out.println("update 8,8 "+tree.get(18));
 		System.out.println("update 8,8 "+tree.get(2)); */
-		System.out.println("-------------------------------");
+		//System.out.println("-------------------------------");
 
 		
 		Thread t=new Thread(() -> {
@@ -36,6 +42,9 @@ class Main {
 				tree.put(18,18);
 				tree.put(4,4);
 				tree.put(2,2);
+				tree.put(1,1);
+				tree.put(7,7);
+				tree.put(9,9);
 			}
 		});
 		t.start();
@@ -103,7 +112,7 @@ class Main {
 		 
 		//System.out.println("put "+tree.put(50,55)); 
 		
-		System.out.println("-------------------------------");
+		//System.out.println("-------------------------------");
 		/* System.out.println("snap "+snap.get(8));
 		System.out.println("snap "+snap.get(9));
 		System.out.println("snap "+snap.get(15));
