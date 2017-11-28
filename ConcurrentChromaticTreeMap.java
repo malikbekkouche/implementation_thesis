@@ -1179,6 +1179,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					////System.out.println(x+"dir : "+dir+" l "+l.key+"-"+l.value +" p "+node.key);
 					////System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
 					Node n=op.nodeList.get(x);
+					
 					//final Comparable<? super K> k = comparable(l.key);
 					//System.out.println("bbbbb "+node.gen+node.lastGen+node.key+" "+l.gen+l.lastGen+l.key);
 					//System.out.println("null "+l);
@@ -1187,7 +1188,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						System.out.println(x);
 						System.out.println(op.nodeList.get(0).key+" "+op.nodeList.get(1).key+" "+op.nodeList.get(2).key);
 					} */
-					if(l==null || node.gen>l.lastGen){
+					
+					if(l==null){
+						System.out.println("node "+node.key+" x:"+x+" "+op.nodeList.size());
+						for(Node no : op.nodeList)
+							System.out.println(no.key+" "+no.value);
+						break;
+					}
+					if( node.gen>l.lastGen){
 						//System.out.println("if "+node.gen+node.key+"-"+l.lastGen+l.key);
 						
 						n.gen=node.gen;
@@ -1198,9 +1206,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							/* node.left=n;
 							node=node.left; */
 							//System.out.println(Thread.currentThread()+"left "+node.key);
-							if(updateLeft.compareAndSet(node,l,n))
-								node=node.left;
-							else{
+							if(updateLeft.compareAndSet(node,l,n)){
+								synchronized(this){
+									node=node.left;
+								}
+							}else{
 								//System.out.println("continue1 "+Thread.currentThread());
 								x=0;
 								y=0;
@@ -1211,8 +1221,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							/* node.right=n;
 							node=node.right; */
 							//System.out.println(Thread.currentThread()+"right "+node.key);
-							if(updateRight.compareAndSet(node,l,n))
+							if(updateRight.compareAndSet(node,l,n)){
+								synchronized(this){
 								node=node.right;
+								}
+							}
 							else{
 								//System.out.println("continue2 "+Thread.currentThread());
 								x=0;

@@ -5,8 +5,8 @@ class Main {
 		//tree.put(5,7);
 		System.out.println("put "+tree.put(2,22));
 		System.out.println("put "+tree.put(4,44));
-		System.out.println("put "+tree.put(8,88));		
-		System.out.println("put "+tree.put(18,1818));
+		System.out.println("put "+tree.put(3000,30003000));		
+		System.out.println("put "+tree.put(-4000,-40004000));
 		 // System.out.println("put "+tree.put(1,11));
 		//System.out.println("put "+tree.put(2,22));
 		// System.out.println("put "+tree.put(15,1515));
@@ -32,8 +32,8 @@ class Main {
 		Thread t=new Thread(() -> {
 			//Random r=new Random();
 			while(true){
-				tree.put(8,8);
-				tree.put(18,18);
+				tree.put(-4000,-4000);
+				tree.put(3000,3000);
 				tree.put(4,4);
 				tree.put(2,2);
 			}
@@ -58,7 +58,7 @@ class Main {
 			//Random r=new Random();
 			while(true){
 				tree.remove(8);
-				tree.remove(18);
+				tree.remove(-4000);
 				tree.remove(4);
 				tree.remove(2);
 			}
@@ -68,17 +68,17 @@ class Main {
 	 	Thread t2=new Thread(() -> {
 			Random r=new Random();
 			while(true){
-				if(snap.get(8)==null)
+				if(snap.get(-4000)!=-40004000)
 					System.out.println("mismatch on 8");
-				if(snap.get(2)==null)
+				if(snap.get(2)!=22)
 					System.out.println("mismatch on 2");
-				if(snap.get(4)==null)
+				if(snap.get(4)!=44)
 					System.out.println("mismatch on 4");
-				if(snap.get(18)==null)
+				if(snap.get(3000)!=30003000)
 					System.out.println("mismatch on 18");
 				int i=r.nextInt();
 				Integer x=snap.get(i);
-				if(x!=null && (i!=8 || i!=2 || i!=4 || i!=18))
+				if(x!=null && (i!=3000 && i!=2 && i!=4 && i!=-4000))
 					System.out.println("mismatch on 0");
 			}
 		});
