@@ -43,7 +43,9 @@ class Main {
 	 	Thread t1=new Thread(() -> {
 			Random r=new Random();
 			while(true){
+				tree.put(r.nextInt(),r.nextInt());
 				tree.put(8,4);
+				tree.put(r.nextInt(),r.nextInt());
 				tree.put(18,9);
 				tree.put(4,2);
 				tree.put(2,1);
@@ -52,7 +54,7 @@ class Main {
 		});
 		t1.start(); 
 		
-		 Thread t0=new Thread(() -> {
+		    Thread t0=new Thread(() -> {
 			//Random r=new Random();
 			while(true){
 				tree.remove(8);
@@ -61,21 +63,26 @@ class Main {
 				tree.remove(2);
 			}
 		});
-		t0.start();  
+		t0.start();     
 
-		Thread t2=new Thread(() -> {
+	 	Thread t2=new Thread(() -> {
+			Random r=new Random();
 			while(true){
-				if(snap.get(8)!=88)
+				if(snap.get(8)==null)
 					System.out.println("mismatch on 8");
-				if(snap.get(2)!=22)
+				if(snap.get(2)==null)
 					System.out.println("mismatch on 2");
-				if(snap.get(4)!=44)
+				if(snap.get(4)==null)
 					System.out.println("mismatch on 4");
-				if(snap.get(18)!=1818)
+				if(snap.get(18)==null)
 					System.out.println("mismatch on 18");
+				int i=r.nextInt();
+				Integer x=snap.get(i);
+				if(x!=null && (i!=8 || i!=2 || i!=4 || i!=18))
+					System.out.println("mismatch on 0");
 			}
 		});
-		t2.start();
+		t2.start(); 
 		
 		
 		
