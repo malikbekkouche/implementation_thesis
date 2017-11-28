@@ -211,14 +211,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		SearchRecord searchRecord=search(key,true);
 		//System.out.println("######### ");
-		for(Node n: searchRecord.nodeList){
+		/* for(Node n: searchRecord.nodeList){
 			//System.out.println(n.key + " "+n.value);
 		}
 
 		//System.out.println("********* " );
 		for(Object n: searchRecord.directionList){
 			//System.out.println((char)n + " ");
-		}
+		} */
 
 
 		if(searchRecord.n.lastGen == this.root.gen){
@@ -386,6 +386,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return false;
 	}
 
+	public V remove(final K k,boolean b){
+		V result = newRemove(k, 0);
+		return result;
+	}
 	//C5
 	//set the default value of out (???)
 	// eturns true if the dictionary contains an entry
@@ -1154,6 +1158,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					nodes[i].marked=true;
 				}
 				op.state=Operation.STATE_COMMITTED;
+				op.nodes=null;
+				op.ops=null;
 				//System.out.println("commited");
 
 				//System.out.println("should not "+op.updateSnapshot);
@@ -1189,12 +1195,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						System.out.println(op.nodeList.get(0).key+" "+op.nodeList.get(1).key+" "+op.nodeList.get(2).key);
 					} */
 					
-					if(l==null){
-						System.out.println("node "+node.key+" x:"+x+" "+op.nodeList.size());
-						for(Node no : op.nodeList)
-							System.out.println(no.key+" "+no.value);
-						break;
-					}
+					
 					if( node.gen>l.lastGen){
 						//System.out.println("if "+node.gen+node.key+"-"+l.lastGen+l.key);
 						
@@ -1207,9 +1208,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							node=node.left; */
 							//System.out.println(Thread.currentThread()+"left "+node.key);
 							if(updateLeft.compareAndSet(node,l,n)){
-								synchronized(this){
+								
 									node=node.left;
-								}
+								
 							}else{
 								//System.out.println("continue1 "+Thread.currentThread());
 								x=0;
@@ -1222,9 +1223,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							node=node.right; */
 							//System.out.println(Thread.currentThread()+"right "+node.key);
 							if(updateRight.compareAndSet(node,l,n)){
-								synchronized(this){
+								
 								node=node.right;
-								}
+								
 							}
 							else{
 								//System.out.println("continue2 "+Thread.currentThread());
@@ -1432,7 +1433,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		op.gen=gen;
 		//n.op = op;
 
-		if(newHelpSCXX(op)) {
+		if(helpSCXX(op)) {
 			// Copy operation was committed, and traversal can continue
 			////System.out.println("true");
 			return true;
@@ -2365,7 +2366,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private Operation weakLLX(final Node r) {
 		final Operation rinfo = r.op;
 		final int state = rinfo.state;
-		if (state == Operation.STATE_ABORTED || (state == Operation.STATE_COMMITTED )) {//!r.marked
+		if (state == Operation.STATE_ABORTED || (state == Operation.STATE_COMMITTED && !r.marked)) {//!r.marked
 			////System.out.println("state "+state+" "+r.marked);
 			return rinfo;
 		}
