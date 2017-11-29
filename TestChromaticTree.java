@@ -109,19 +109,18 @@ public class TestChromaticTree{
 					}
 				}
 
-//				for(int x = 0; x < perThread; x++){//REMOVE
-//					Integer key = rand.nextInt(range);
-//					//String result = map.remove(key); 
-//					Holder<String> result = new Holder<String>();
-//					map.remove(key, result);
-//					//System.out.println("Thread " + myThread + " DELETE " + key + " value " + result);
-//					sumOfRemove.incrementAndGet();
-//					if(result != null){										
-//						threadCounter.addAndGet(myThread, -key);
-//						int index = Integer.parseInt(result.value.split("_")[0]);
-//						arrayCounter.addAndGet(index, -1);	
-//					}
-//				}
+
+				 for(int x = 0; x < perThread; x++){//REMOVE
+					Integer key = rand.nextInt(range);
+					String result = map.remove(key,true); 
+					//System.out.println("Thread " + myThread + " DELETE " + key + " value " + result);
+					sumOfRemove.incrementAndGet();
+					if(result != null){										
+						threadCounter.addAndGet(myThread, -key);
+						int index = Integer.parseInt(result.split("_")[0]);
+						arrayCounter.addAndGet(index, -1);	
+					}
+				} 
 
 			});
 		}
@@ -148,9 +147,9 @@ public class TestChromaticTree{
 		}
 		
 		System.out.println("Check array counter ");
-		for(int i = 0; i < threadCount; i++){
+		/* for(int i = 0; i < threadCount; i++){
 			System.out.println("Array counter " + arrayCounter.get(i));				
-		}
+		} */
 		
 		System.out.println("sumOfThreadCounter = " + sumOfArray);
 		//				System.out.println("Sum of PUT = " + sumOfPut.get());
