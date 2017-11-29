@@ -3,10 +3,8 @@ class Main {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
 		//tree.put(5,7);
-		System.out.println("put "+tree.put(2,22));
-		System.out.println("put "+tree.put(4,44));
-		System.out.println("put "+tree.put(3000,30003000));		
-		System.out.println("put "+tree.put(-4000,-40004000));
+		for(int j=0;j<1000;j++)
+			tree.put(j,j);
 		 // System.out.println("put "+tree.put(1,11));
 		//System.out.println("put "+tree.put(2,22));
 		// System.out.println("put "+tree.put(15,1515));
@@ -28,58 +26,45 @@ class Main {
 		System.out.println("update 8,8 "+tree.get(2)); */
 		System.out.println("-------------------------------");
 
-		
-		Thread t=new Thread(() -> {
-			//Random r=new Random();
-			while(true){
-				tree.put(-4000,-4000);
-				tree.put(3000,3000);
-				tree.put(4,4);
-				tree.put(2,2);
-			}
-		});
-		t.start();
-		
-	 	Thread t1=new Thread(() -> {
+		int threadCount=4;
+		Thread[] t=new Thread[threadCount];
+		for(int j=0;j<threadCount;j++){
+			t[j]=new Thread(() -> {
 			Random r=new Random();
 			while(true){
-				tree.put(r.nextInt(),r.nextInt());
-				tree.put(8,4);
-				tree.put(r.nextInt(),r.nextInt());
-				tree.put(18,9);
-				tree.put(4,2);
-				tree.put(2,1);
-				tree.put(r.nextInt(),r.nextInt());
+				int c=r.nextInt();
+				//tree.put(c,2*c);
+				//tree.put(r.nextInt(),r.nextInt());
+				//for(int i=500;i<1000;i++)
+					int x=r.nextInt();
+					System.out.println("removage "+x);
+					System.out.println(tree.remove(x));
 			}
 		});
-		t1.start(); 
+		}
 		
-		    Thread t0=new Thread(() -> {
-			//Random r=new Random();
-			while(true){
-				tree.remove(8);
-				tree.remove(-4000);
-				tree.remove(4);
-				tree.remove(2);
-			}
-		});
-		t0.start();     
+	 	for(int j=0;j<threadCount;j++){
+			t[j].start();
+		}
+		
+		        
 
 	 	Thread t2=new Thread(() -> {
 			Random r=new Random();
 			while(true){
-				if(snap.get(-4000)!=-40004000)
-					System.out.println("mismatch on 8");
-				if(snap.get(2)!=22)
-					System.out.println("mismatch on 2");
-				if(snap.get(4)!=44)
-					System.out.println("mismatch on 4");
-				if(snap.get(3000)!=30003000)
-					System.out.println("mismatch on 18");
+				for(int j=0;j<1000;j++)
+					assert snap.get(j)==j;
+				for(int j=-500;j<0;j++)
+					assert snap.get(j)==null;
+				for(int j=1000;j<1500;j++)
+					assert snap.get(j)==null;
 				int i=r.nextInt();
 				Integer x=snap.get(i);
 				if(x!=null && (i!=3000 && i!=2 && i!=4 && i!=-4000))
 					System.out.println("mismatch on 0");
+				if(snap.get(10000)!=null)
+					System.out.println("mismatch 33");
+				//assert (tree.get(i)==null || tree.get(i)==2*i);
 			}
 		});
 		t2.start(); 

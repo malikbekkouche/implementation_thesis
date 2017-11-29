@@ -11,6 +11,7 @@ class CountdownTest{
 
 		//for(volatile int i=0;i<nbrThreads.length;i++){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
+		
   	ArrayList<AtomicLong> results=new ArrayList<AtomicLong>();
 
 
