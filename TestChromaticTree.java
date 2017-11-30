@@ -10,6 +10,9 @@ public class TestChromaticTree{
 	public static int sumOfArray = 0;
 	public static void main(String []args){
 		ConcurrentChromaticTreeMap<Integer, String> map = new ConcurrentChromaticTreeMap<Integer, String>();
+		map.put(10,"-1_fuck");
+		map.put(40,"-1_fuck");
+		map.snapshot();
 		//LockbasedAVLTreeMap<Integer, String> map = new LockbasedAVLTreeMap<Integer, String>(); 
 		//LogicalOrderingAVL<Integer, String> map = new LogicalOrderingAVL<Integer, String>(Integer.MIN_VALUE, Integer.MAX_VALUE);
 		//SnapTreeMap<Integer, String> map = new SnapTreeMap<Integer, String>();
@@ -118,7 +121,8 @@ public class TestChromaticTree{
 					if(result != null){										
 						threadCounter.addAndGet(myThread, -key);
 						int index = Integer.parseInt(result.split("_")[0]);
-						arrayCounter.addAndGet(index, -1);	
+						if(index!=-1)
+							arrayCounter.addAndGet(index, -1);	
 					}
 				} 
 
