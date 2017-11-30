@@ -2302,7 +2302,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final Operation rinfo = r.op;
 		final int state = rinfo.state;
 		if (state == Operation.STATE_ABORTED || (state == Operation.STATE_COMMITTED && !r.marked)) {//!r.marked
-			////System.out.println("state "+state+" "+r.marked);
 			return rinfo;
 		}
 		if (rinfo.state == Operation.STATE_INPROGRESS) {
@@ -2381,8 +2380,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		op.nodes = null;
 		op.ops = null;
 		op.subtree = null;
-
-
 
 
 		return true;
