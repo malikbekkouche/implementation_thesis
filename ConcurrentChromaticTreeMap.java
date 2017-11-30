@@ -1086,7 +1086,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}
 	}
 
-	private boolean helpSCXX(Operation op){
+	private boolean helpSCXX(Operation op, int i){
 		final AtomicIntegerFieldUpdater<Operation> updateStep = 
 				AtomicIntegerFieldUpdater.newUpdater(Operation.class, "step");//need to be checked also		
 		Node[] nodes=op.nodes;
@@ -1095,7 +1095,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		int gen=op.gen;
 		AtomicReferenceFieldUpdater genericUpdater;
 		//System.out.println("before");
-		for(int i=0;i<ops.length;i++){
+		for(;i<ops.length;i++){
 			if(!updateOp.compareAndSet(nodes[i],ops[i],op) && nodes[i].op != op){ // check order of cas
 				if(!op.allFrozen){
 					op.state=Operation.STATE_ABORTED;
@@ -1103,6 +1103,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 			}
 		}
+		
 		//System.out.println("after");
 		op.allFrozen=true;
 		boolean left;
@@ -1154,6 +1155,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 			}else if(step==Operation.STEP_COMMIT){
 				
+				
 				//System.out.println("commited");
 
 				//System.out.println("should not "+op.updateSnapshot);
@@ -1186,7 +1188,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						System.out.println(op.nodeList.get(0).key+" "+op.nodeList.get(1).key+" "+op.nodeList.get(2).key);
 					} */
 
-
+							if(l==null)
+								break;
 							if( node.gen>l.lastGen){
 								//System.out.println("if "+node.gen+node.key+"-"+l.lastGen+l.key);
 
@@ -1199,7 +1202,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							node=node.left; */
 									//System.out.println(Thread.currentThread()+"left "+node.key);
 									if(updateLeft.compareAndSet(node,l,n)){
-				
+										
 										node=node.left;
 
 									}else{
@@ -1237,12 +1240,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					}
 					
 				}
-				for(int i=1;i<nodes.length;i++){
-					nodes[i].marked=true;
+				for(int t=1;i<nodes.length;i++){
+					nodes[t].marked=true;
 				}
+				
 				op.state=Operation.STATE_COMMITTED;
-				op.nodes=null;
-				op.ops=null;
+				//op.nodes=null;
+				//op.ops=null;
 
 
 				
@@ -1336,18 +1340,18 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 
 		Operation[] ops = new Operation[] { null, null};
-		Node[] nodes = new Node[] { null, null };
+		Node[] nodes = new Node[] { null, n };
 
 		if(!weakLLX(p, 0, ops, nodes)) {
 			////System.out.println("false1");
 			return false;
 		}
 
-		if(!weakLLX(n, 1, ops, nodes)) {
+		/* if(!weakLLX(n, 1, ops, nodes)) {
 			////System.out.println("false2");
 			////System.out.println(ops[1].state);
 			return false;
-		} 
+		}  */
 
 		if(dir==LEFT){
 			if(p.left!=n)
@@ -1364,7 +1368,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		op.gen=gen;
 		//n.op = op;
 
-		if(helpSCXX(op)) {
+		if(helpSCXX(op,0)) {
 			// Copy operation was committed, and traversal can continue
 			////System.out.println("true");
 			return true;
@@ -2075,7 +2079,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					op.deleteOp=false;
 				}
 			}
-			if (helpSCXX(op)) {
+			if (helpSCXX(op,0)) {
 				// clean up violations if necessary
 				if (d == 0) {
 					if (!found && (searchRecord.parent.weight == 0 )&& searchRecord.n.weight == 1) fixToKey(k);
@@ -2127,7 +2131,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					op.lastGen=searchRecord.n.lastGen;
 				}
 			}
-			if (helpSCXX(op)) {
+			if (helpSCXX(op,0)) {
 				//System.out.println("4");
 				// clean up violations if necessary
 				if (d == 0) {
@@ -2305,9 +2309,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return rinfo;
 		}
 		if (rinfo.state == Operation.STATE_INPROGRESS) {
-			helpSCX(rinfo, 1);
+			helpSCXX(rinfo, 1);
 		} else if (r.op.state == Operation.STATE_INPROGRESS) {
-			helpSCX(r.op, 1);
+			helpSCXX(r.op, 1);
 		}
 		////System.out.println("node "+state+" "+r.marked);
 		////System.out.println("null");

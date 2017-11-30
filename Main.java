@@ -69,14 +69,16 @@ class Main {
 		}			       
 
 
-		Thread t3 = new Thread(() -> {
+
+	 	Thread t2=new Thread(() -> {
+			int s=0;
 			while(true){
 				for(int j=0;j<1000;j++){
 					Integer x =snap.get(j);
 					if(x==null )
 						System.out.println(j +" is null");
 					else if(x!=j)
-						System.out.println(j +" is not x "+x);
+						System.out.println(j +" is not x "+x+" s: "+s);
 				}
 				for(int j=-500;j<0;j++)
 					assert snap.get(j)==null;
@@ -94,7 +96,7 @@ class Main {
 
 		//t3.start();
 
-		Thread t2=new Thread(() -> {
+		Thread t5=new Thread(() -> {
 			//Random r=new Random();
 			while(true){
 				for(int i = 0; i < 50; i++){
