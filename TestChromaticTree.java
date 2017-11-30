@@ -1,6 +1,9 @@
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.IntToDoubleFunction;
+
+import javax.xml.ws.Holder;
+
 import java.util.Random;
 public class TestChromaticTree{
 	public static AtomicIntegerArray _arrCounter; 
@@ -21,7 +24,7 @@ public class TestChromaticTree{
 		int threadCount = 16;
 		_arrCounter = new AtomicIntegerArray(threadCount);
 		
-		testMap(threadCount, 1000, 500, map);
+		testMap(threadCount, 1000, 899, map);
 		int []arrCounter = new int[threadCount];
 		for(int i = 0; i < threadCount; i++){
 			arrCounter[i] = 0;
@@ -108,6 +111,7 @@ public class TestChromaticTree{
 						sumOfGet.incrementAndGet();
 					}
 				}
+
 
 				 for(int x = 0; x < perThread; x++){//REMOVE
 					Integer key = rand.nextInt(range);

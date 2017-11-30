@@ -3,8 +3,10 @@ class Main {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
 		//tree.put(5,7);
-		for(int j=0;j<1000;j++)
+		for(int j=0;j<1000;j++){
+			//System.out.println("PUT "+j);
 			tree.put(j,j);
+		}
 		 // System.out.println("put "+tree.put(1,11));
 		//System.out.println("put "+tree.put(2,22));
 		// System.out.println("put "+tree.put(15,1515));
@@ -20,25 +22,42 @@ class Main {
 		System.out.println("-------------------------------");
 		//System.out.println("remove "+tree.remove(1));
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
+//		while(true){
+//		System.out.println("REMOVE 2 = " + tree.remove(2));
+//		System.out.println("REMOVE 4 = " + tree.remove(4));
+//		System.out.println("REMOVE 8 = " + tree.remove(8));
+//		System.out.println("REMOVE 18 = " + tree.remove(18));
+//		}
 		/* System.out.println("update 8,8 "+tree.get(8));
 		System.out.println("update 8,8 "+tree.get(4));
 		System.out.println("update 8,8 "+tree.get(18));
 		System.out.println("update 8,8 "+tree.get(2)); */
-		System.out.println("-------------------------------");
+		//System.out.println("-------------------------------");
+
 
 		int threadCount=4;
 		Thread[] t=new Thread[threadCount];
 		for(int j=0;j<threadCount;j++){
 			t[j]=new Thread(() -> {
+
 			Random r=new Random();
 			while(true){
-				int c=r.nextInt();
+				//int c=r.nextInt();
 				//tree.put(c,2*c);
 				//tree.put(r.nextInt(),r.nextInt());
 				//for(int i=500;i<1000;i++)
-					int x=r.nextInt();
-					System.out.println("removage "+x);
-					System.out.println(tree.remove(x));
+					int x=r.nextInt(1000);
+					//System.out.println("removage "+x);
+					//System.out.println("remove "+x+" "+tree.remove(x));
+					tree.put(x,x+1);
+					//tree.remove(x);
+					/* if(tree.get(x)!=null)
+						System.out.println("tree error "+x); */
+					Integer c=snap.get(x);
+					 if(c==null )
+						System.out.println("snap null error "+x);
+					/*else if(c!=x)
+						System.out.println(c +" is not x thread1"); */
 			}
 		});
 		}
@@ -52,8 +71,13 @@ class Main {
 	 	Thread t2=new Thread(() -> {
 			Random r=new Random();
 			while(true){
-				for(int j=0;j<1000;j++)
-					assert snap.get(j)==j;
+				for(int j=0;j<1000;j++){
+					Integer x =snap.get(j);
+					if(x==null )
+						System.out.println(j +" is null");
+					else if(x!=j)
+						System.out.println(j +" is not x "+x);
+				}
 				for(int j=-500;j<0;j++)
 					assert snap.get(j)==null;
 				for(int j=1000;j<1500;j++)
@@ -88,7 +112,7 @@ class Main {
 		 
 		//System.out.println("put "+tree.put(50,55)); 
 		
-		System.out.println("-------------------------------");
+		//System.out.println("-------------------------------");
 		/* System.out.println("snap "+snap.get(8));
 		System.out.println("snap "+snap.get(9));
 		System.out.println("snap "+snap.get(15));
