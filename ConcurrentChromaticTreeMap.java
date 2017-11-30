@@ -229,11 +229,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				return null;
 			}
 		}
-		//		if(searchRecord.n.gen > this.root.gen){
-		//			System.out.println("SSSS  searchRecord.n.gen > this.root.gen");
-		//			return null;
-		//		}
-		//System.out.println("SSSS  ELSE");
 		if(searchRecord.grandParent == null){
 			//System.out.println("SSSS  searchRecord.grandParent == null");
 		}else{
@@ -1423,7 +1418,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return false;
 		} 
 
-
 		if(dir==LEFT){
 			if(p.left!=n)
 				return false;
@@ -1448,7 +1442,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			////System.out.println("false");
 			return false;
 		}
-
 	}
 
 	private ConcurrentChromaticTreeMap DoReadOnlySnapshot() {

@@ -100,8 +100,6 @@ class MyCountdown extends TimerTask{
       threads[j].start();
     }
 
-
-
   }
 
 }
