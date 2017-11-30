@@ -70,13 +70,14 @@ class Main {
 
 	 	Thread t2=new Thread(() -> {
 			Random r=new Random();
+			int s=0;
 			while(true){
 				for(int j=0;j<1000;j++){
 					Integer x =snap.get(j);
 					if(x==null )
 						System.out.println(j +" is null");
 					else if(x!=j)
-						System.out.println(j +" is not x "+x);
+						System.out.println(j +" is not x "+x+" s: "+s);
 				}
 				for(int j=-500;j<0;j++)
 					assert snap.get(j)==null;
