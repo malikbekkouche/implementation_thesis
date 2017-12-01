@@ -1153,9 +1153,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("aborted");
 					return false;
 				}
-			}else if(step==Operation.STEP_COMMIT){
-				
-				
+			}else if(step==Operation.STEP_COMMIT){								
 				//System.out.println("commited");
 
 				//System.out.println("should not "+op.updateSnapshot);
@@ -1234,8 +1232,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 								node=l;
 								y++;
 							}
-							x++;
-					
+							x++;					
 						}
 					}
 					
@@ -1246,10 +1243,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				
 				op.state=Operation.STATE_COMMITTED;
 				//op.nodes=null;
-				//op.ops=null;
-
-
-				
+				//op.ops=null;			
 				return true; 
 			}
 		}
@@ -1347,11 +1341,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return false;
 		}
 
-		/* if(!weakLLX(n, 1, ops, nodes)) {
+		if(!weakLLX(n, 1, ops, nodes)) {
 			////System.out.println("false2");
 			////System.out.println(ops[1].state);
 			return false;
-		}  */
+		}  
 
 		if(dir==LEFT){
 			if(p.left!=n)
@@ -2082,9 +2076,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			if (helpSCXX(op,0)) {
 				// clean up violations if necessary
 				if (d == 0) {
-					if (!found && (searchRecord.parent.weight == 0 )&& searchRecord.n.weight == 1) fixToKey(k);
+					//if (!found && (searchRecord.parent.weight == 0 )&& searchRecord.n.weight == 1) fixToKey(k);
 				} else {
-					if (searchRecord.violations >= d) fixToKey(k);
+					//if (searchRecord.violations >= d) fixToKey(k);
 				}
 
 				////System.out.println("help "+op.state+ " "+ searchRecord.n.gen+searchRecord.n.marked);
@@ -2111,8 +2105,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				searchRecord=search(key,false); // check loop (ifra method or outter)
 				// the key was not in the tree at the linearization point, so no value was removed
 				//System.out.println("2");
-				if (searchRecord.grandParent == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
-
+				if (searchRecord.grandParent.key == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
 
 				////System.out.println(searchRecord.n.lastGen+" - "+searchRecord.startGen);
 				op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
@@ -2135,9 +2128,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				//System.out.println("4");
 				// clean up violations if necessary
 				if (d == 0) {
-					if (searchRecord.parent.weight > 0 && searchRecord.n.weight > 0 && !isSentinel(searchRecord.parent)) fixToKey(k);
+					//if (searchRecord.parent.weight > 0 && searchRecord.n.weight > 0 && !isSentinel(searchRecord.parent)) fixToKey(k);
 				} else {
-					if (searchRecord.violations >= d) fixToKey(k);
+					//if (searchRecord.violations >= d) fixToKey(k);
 				}
 
 				
