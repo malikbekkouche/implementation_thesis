@@ -386,7 +386,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	// returns true if the dictionary contains an entry whose key
 	// equals k and if so removes that entry; otherwise returns false.
 	public boolean remove(final K k){
-		V result = remove(k, 0);
+		V result = newRemove(k, 0);
 		if(result != null)
 			return true;
 		return false;
@@ -1342,13 +1342,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			return false;
 		}
 
-
-		/*	if(!weakLLX(n, 1, ops, nodes)) {
+		if(!weakLLX(n, 1, ops, nodes)) {
 			////System.out.println("false2");
 			////System.out.println(ops[1].state);
 			return false;
-
-		}  */
+		}  
 
 		if(dir==LEFT){
 			if(p.left!=n)
@@ -2368,63 +2366,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		op.allFrozen = true;
 		for (i=1; i<ops.length; ++i) nodes[i].marked = true; // finalize all but first node
 
-
-		if(op.deleteOp){
-			Node root = snapList.get(1);//root of snapshot
-			SearchRecord searchOnSnap = (new ConcurrentChromaticTreeMap(root, true)).search((K)op.subtree.key, true);
-			if(op.nodeList.size() != searchOnSnap.nodeList.size()){//if they don't have same path
-				if(op.nodeList.get(op.nodeList.size()-1).gen != searchOnSnap.nodeList.get(searchOnSnap.nodeList.size()-1).gen){
-
-				}
-			}else{//if they have the same path
-				if(op.nodeList.get(op.nodeList.size()-1).gen != searchOnSnap.nodeList.get(searchOnSnap.nodeList.size()-1).gen){
-					//already copy to the snapshot - do nothing
-										
-				}else{
-					Node node=snapList.get(1).left;
-					int x=0,y=0;
-					while(true){
-						//System.out.println("qwerty "+node.value);
-						if(x==op.nodeList.size())
-							break;
-						char dir=(char)op.directionList.get(y);
-						Node l=(dir==LEFT) ? node.left : node.right;
-						Node n=op.nodeList.get(x);
-						if(l==null)
-							break;
-						if( node.gen>l.lastGen){
-							n.gen=node.gen;
-							n.lastGen=node.gen;							
-							if(dir==LEFT){
-								if(updateLeft.compareAndSet(node,l,n)){
-									node=node.left;
-								}else{
-									x=0;
-									y=0;
-									continue;
-								}
-							}
-							else{
-								if(updateRight.compareAndSet(node,l,n)){
-									node=node.right;
-								}
-								else{
-									x=0;
-									y=0;
-									continue;
-								}
-							}
-							y++;
-						}else if(node.gen==l.gen && node.lastGen==l.lastGen){
-							node=l;
-							y++;
-						}
-						x++;
-					}
-				}
-			}
-		}
-
 		// CAS in the new sub-tree (child-cas)
 		if (nodes[0].left == nodes[1]) {
 			updateLeft.compareAndSet(nodes[0], nodes[1], subtree);     // splice in new sub-tree (as a left child)
@@ -2437,78 +2378,146 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {
 				Node node=snapList.get(shots).left;
 
-				//System.out.println("snap root *************** =  "+node.gen);
+				if(op.deleteOp){
+					//System.out.println("1");
+					int x=0,y=0;
+					while(true){ 
+						//System.out.println("qwerty "+node.value);
+						if(x==op.nodeList.size())
+							break;
+						char dir=(char)op.directionList.get(y);
+						Node l=(dir==LEFT) ? node.left : node.right;
+						Node n=op.nodeList.get(x);
+						n.gen=node.gen;
+						n.lastGen=node.gen;
 
-				//for(int x=0;x<op.directionList.size() ;x++){
-				int x=0,y=0;
-				while(true){
-					//System.out.println("qwerty "+node.value);
-					if(x==op.nodeList.size())
-						break;
-					char dir=(char)op.directionList.get(y);
-					Node l=(dir==LEFT) ? node.left : node.right;
-					////System.out.println(x+"dir : "+dir+" l "+l.key+"-"+l.value +" p "+node.key);
-					////System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
-					Node n=op.nodeList.get(x);
+						if(l==null)
+							break;
+						final Comparable<? super K> comp = comparable(l.key);
+						if( node.gen>l.lastGen){
+							//System.out.println("2");
+							//System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
 
-					//final Comparable<? super K> k = comparable(l.key);
-					//System.out.println("bbbbb "+node.gen+node.lastGen+node.key+" "+l.gen+l.lastGen+l.key);
-					//System.out.println("null "+l);
-					/* if(l==null){
+							if(dir==LEFT){
+								/* node.left=n;
+							node=node.left; */
+								//System.out.println(Thread.currentThread()+"left "+node.key);
+								if(updateLeft.compareAndSet(node,l,n)){
+
+									node=node.left;
+
+								}else{
+									//System.out.println("continue1 "+Thread.currentThread());
+									x=0;
+									y=0;
+									continue;
+								}
+							}
+							else{
+								/* node.right=n;
+							node=node.right; */
+								//System.out.println(Thread.currentThread()+"right "+node.key);
+								if(updateRight.compareAndSet(node,l,n)){
+
+									node=node.right;
+
+								}
+								else{
+									//System.out.println("continue2 "+Thread.currentThread());
+									x=0;
+									y=0;
+									continue;
+								}
+							}
+							y++;
+						}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)==0){
+							//System.out.println("3 ");
+							node=l;
+							y++;
+						}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
+							if(comp.compareTo((K)n.key)<0){
+								if(l.right.gen!=l.gen){
+									//System.out.println("4");
+									updateRight.compareAndSet(l,l.right,n);
+								}
+							}else{
+								if(l.left.gen!=l.gen){
+									//System.out.println("5");
+									updateLeft.compareAndSet(l,l.right,n);
+								}
+							}
+
+						}
+						x++;
+					}
+
+				}
+				else {
+					int x=0,y=0;
+					while(true){ 
+						//System.out.println("qwerty "+node.value);
+						if(x==op.nodeList.size())
+							break;
+						////System.out.println(x+"dir : "+dir+" l "+l.key+"-"+l.value +" p "+node.key);
+						////System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
+						char dir=(char)op.directionList.get(y);
+						Node l=(dir==LEFT) ? node.left : node.right;
+						Node n=op.nodeList.get(x);					
+						//final Comparable<? super K> k = comparable(l.key);
+						//System.out.println("bbbbb "+node.gen+node.lastGen+node.key+" "+l.gen+l.lastGen+l.key);
+						//System.out.println("null "+l);
+						/* if(l==null){
 
 						System.out.println(node.key+" "+node.value+node.gen+node.lastGen+" "+op.nodeList.size()+op.directionList.size());
 						System.out.println(x);
 						System.out.println(op.nodeList.get(0).key+" "+op.nodeList.get(1).key+" "+op.nodeList.get(2).key);
 					} */
 
-					if(l==null)
-						break;
-					if( node.gen>l.lastGen){
-						//System.out.println("if "+node.gen+node.key+"-"+l.lastGen+l.key);
+						if(l==null)
+							break;
+						if( node.gen>l.lastGen){
+							//System.out.println("if "+node.gen+node.key+"-"+l.lastGen+l.key);
 
-						n.gen=node.gen;
-						n.lastGen=node.gen;
-						//System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
+							n.gen=node.gen;
+							n.lastGen=node.gen;
+							//System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
 
-						if(dir==LEFT){
-							/* node.left=n;
+							if(dir==LEFT){
+								/* node.left=n;
 							node=node.left; */
-							//System.out.println(Thread.currentThread()+"left "+node.key);
-							if(updateLeft.compareAndSet(node,l,n)){
+								//System.out.println(Thread.currentThread()+"left "+node.key);
+								if(updateLeft.compareAndSet(node,l,n)){
 
-								node=node.left;
+									node=node.left;
 
-							}else{
-								//System.out.println("continue1 "+Thread.currentThread());
-								x=0;
-								y=0;
-								continue;
-							}
-						}
-						else{
-							/* node.right=n;
-							node=node.right; */
-							//System.out.println(Thread.currentThread()+"right "+node.key);
-							if(updateRight.compareAndSet(node,l,n)){
-
-								node=node.right;
-
+								}else{
+									//System.out.println("continue1 "+Thread.currentThread());
+									x=0;
+									y=0;
+									continue;
+								}
 							}
 							else{
-								//System.out.println("continue2 "+Thread.currentThread());
-								x=0;
-								y=0;
-								continue;
+								/* node.right=n;
+							node=node.right; */
+								//System.out.println(Thread.currentThread()+"right "+node.key);
+								if(updateRight.compareAndSet(node,l,n)){
+									node=node.right;
+								}
+								else{
+									//System.out.println("continue2 "+Thread.currentThread());
+									x=0;
+									y=0;
+									continue;
+								}
 							}
+							y++;
+						}else if(node.gen==l.gen && node.lastGen==l.lastGen){
+							//System.out.println("elseif ");
+							node=l;
+							y++;
 						}
-						y++;
-					}else if(node.gen==l.gen && node.lastGen==l.lastGen){
-						//System.out.println("elseif ");
-						node=l;
-						y++;
-					}
-					x++;
-
+					}				
 				}
 			}
 
@@ -2523,906 +2532,905 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		return true;
 	}
+private Operation createInsertOp(final Node p, final Node l, final K key, final V value, Comparable k,int generation) {
+	final Operation[] ops = new Operation[]{null};
+	final Node[] nodes = new Node[]{null, l};
 
-	private Operation createInsertOp(final Node p, final Node l, final K key, final V value, Comparable k,int generation) {
-		final Operation[] ops = new Operation[]{null};
-		final Node[] nodes = new Node[]{null, l};
+	if (!weakLLX(p, 0, ops, nodes)) return null;
+	////System.out.println("insertOp"+ops[0].state+" "+p.marked);
 
-		if (!weakLLX(p, 0, ops, nodes)) return null;
-		////System.out.println("insertOp"+ops[0].state+" "+p.marked);
+	if (l != p.left && l != p.right) return null;
 
-		if (l != p.left && l != p.right) return null;
-
-		// Compute the weight for the new parent node
-		final int newWeight = (isSentinel(l) ? 1 : l.weight - 1);               // (maintain sentinel weights at 1)
-
-
-		// Build new sub-tree
-		final Node newLeaf = new Node(key, value, 1, null, null, dummy);
-		newLeaf.lastGen=maxSnapId;
-		newLeaf.gen = generation;
-		final Node newL = new Node(l.key, l.value, 1, null, null, dummy);
-		//update generation
-		newL.gen = l.gen;
-		newL.lastGen = l.lastGen;
-
-		final Node newP;
-		if (l.key == null || k.compareTo(l.key) < 0) {
-			newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);		
-			newP.gen = l.gen;//add generation
-			newP.lastGen = l.lastGen;
-
-			////System.out.println("createInsertOp 1660 " + l.key + " " + l.value );
-		} else {
-			newP = new Node(key, value, newWeight, newL, newLeaf, dummy);
-			newP.gen = generation;//generation;//add generation
-			newP.lastGen = maxSnapId;
-			////System.out.println("createInsertOp 1665 " );
-		}
+	// Compute the weight for the new parent node
+	final int newWeight = (isSentinel(l) ? 1 : l.weight - 1);               // (maintain sentinel weights at 1)
 
 
+	// Build new sub-tree
+	final Node newLeaf = new Node(key, value, 1, null, null, dummy);
+	newLeaf.lastGen=maxSnapId;
+	newLeaf.gen = generation;
+	final Node newL = new Node(l.key, l.value, 1, null, null, dummy);
+	//update generation
+	newL.gen = l.gen;
+	newL.lastGen = l.lastGen;
 
+	final Node newP;
+	if (l.key == null || k.compareTo(l.key) < 0) {
+		newP = new Node(l.key, l.value, newWeight, newLeaf, newL, dummy);		
+		newP.gen = l.gen;//add generation
+		newP.lastGen = l.lastGen;
 
-		////System.out.println();
-		return new Operation( nodes, ops, newP);
+		////System.out.println("createInsertOp 1660 " + l.key + " " + l.value );
+	} else {
+		newP = new Node(key, value, newWeight, newL, newLeaf, dummy);
+		newP.gen = generation;//generation;//add generation
+		newP.lastGen = maxSnapId;
+		////System.out.println("createInsertOp 1665 " );
 	}
 
-	private Operation createDeleteOpSnap(final Node gp, final Node p, final Node l,int gen) {
-		final Operation[] ops = new Operation[]{null, null, null};
-		final Node[] nodes = new Node[]{null, null, null};
-
-		if (!weakLLX(gp, 0, ops, nodes)) return null;
-		if (!weakLLX(p, 1, ops, nodes)) return null;
-
-		if (p != gp.left && p != gp.right) return null;
-		final boolean left = (l == p.left);
-		if (!left && l != p.right) return null;
-
-		// Read fields for the sibling of l into ops[2], nodes[2] = s
-		if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
-		final Node s = nodes[2];
-
-		// Now, if the op. succeeds, all structure is guaranteed to be just as we verified
-
-		// Compute weight for the new node (to replace to deleted leaf l and parent p)
-		final int newWeight = (isSentinel(p) ? 1 : p.weight + s.weight); // weights of parent + sibling of deleted leaf
-
-		// Build new sub-tree
-		final Node newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
-		newP.gen=gen;
-
-
-		newP.parent = gp;
-
-		//create extra
-		Node extra=new Node(l);
-		extra.gen=gen;
-		extra.lastGen=gen-1;
-		newP.extra=extra;
-		Comparable<K> k = (Comparable<K>) comparable(l.key);
-		if(k.compareTo((K)newP.key) >= 0){
-			newP.extraDir = RIGHT;
-		}else{
-			newP.extraDir = LEFT;
-		}
-
-		//newP.extraDir = ???
-		//		//System.out.println("deletion baby "+newP.extra.key+" "+newP.extra.lastGen+" "+newP.extra.gen);
-		//		//System.out.println("all :"+newP.key
-		//				+" "+newP.left+
-		//				" "+newP.right+" "+
-		//				newP.extra.key);
 
 
 
-		return new Operation(nodes, ops, newP);
+	////System.out.println();
+	return new Operation( nodes, ops, newP);
+}
+
+private Operation createDeleteOpSnap(final Node gp, final Node p, final Node l,int gen) {
+	final Operation[] ops = new Operation[]{null, null, null};
+	final Node[] nodes = new Node[]{null, null, null};
+
+	if (!weakLLX(gp, 0, ops, nodes)) return null;
+	if (!weakLLX(p, 1, ops, nodes)) return null;
+
+	if (p != gp.left && p != gp.right) return null;
+	final boolean left = (l == p.left);
+	if (!left && l != p.right) return null;
+
+	// Read fields for the sibling of l into ops[2], nodes[2] = s
+	if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
+	final Node s = nodes[2];
+
+	// Now, if the op. succeeds, all structure is guaranteed to be just as we verified
+
+	// Compute weight for the new node (to replace to deleted leaf l and parent p)
+	final int newWeight = (isSentinel(p) ? 1 : p.weight + s.weight); // weights of parent + sibling of deleted leaf
+
+	// Build new sub-tree
+	final Node newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
+	newP.gen=gen;
+
+
+	newP.parent = gp;
+
+	//create extra
+	Node extra=new Node(l);
+	extra.gen=gen;
+	extra.lastGen=gen-1;
+	newP.extra=extra;
+	Comparable<K> k = (Comparable<K>) comparable(l.key);
+	if(k.compareTo((K)newP.key) >= 0){
+		newP.extraDir = RIGHT;
+	}else{
+		newP.extraDir = LEFT;
 	}
 
-	private Operation createDeleteOpSnapLoop(final Node gp, final Node p, final Node l,int gen) {
-		final Operation[] ops = new Operation[]{null, null, null};
-		final Node[] nodes = new Node[]{null, null, null};
+	//newP.extraDir = ???
+	//		//System.out.println("deletion baby "+newP.extra.key+" "+newP.extra.lastGen+" "+newP.extra.gen);
+	//		//System.out.println("all :"+newP.key
+	//				+" "+newP.left+
+	//				" "+newP.right+" "+
+	//				newP.extra.key);
 
-		if (!weakLLX(gp, 0, ops, nodes)) return null;
-		if (!weakLLX(p, 1, ops, nodes)) return null;
 
-		if (p != gp.left && p != gp.right) return null;
-		final boolean left = (l == p.left);
-		if (!left && l != p.right) return null;
 
-		//traverse the tree to get the list of node from root to the target node l
+	return new Operation(nodes, ops, newP);
+}
 
-		Node temp = root.left.left;
-		ArrayList listDirection = new ArrayList();//list of direction from root to target node l
-		ArrayList<Node> listNodes = new ArrayList<Node>();//list of node from root to l
-		Comparable<?super K> comp = comparable(l.key);
-		while(temp!=null){
-			char dir= (comp.compareTo((K)temp.key)<0) ? LEFT : RIGHT;
-			listNodes.add(temp);
-			if(dir == LEFT)
-				temp = temp.left;
-			else
-				temp = temp.right;
-			listDirection.add(dir);						
-		}
-		int indexListDirection = listDirection.size() - 1;
-		int indexListNodes = listNodes.size() - 1;
+private Operation createDeleteOpSnapLoop(final Node gp, final Node p, final Node l,int gen) {
+	final Operation[] ops = new Operation[]{null, null, null};
+	final Node[] nodes = new Node[]{null, null, null};
 
-		if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
+	if (!weakLLX(gp, 0, ops, nodes)) return null;
+	if (!weakLLX(p, 1, ops, nodes)) return null;
 
-		//if node's parent extra pointer is null
-		final Node s = nodes[2];
+	if (p != gp.left && p != gp.right) return null;
+	final boolean left = (l == p.left);
+	if (!left && l != p.right) return null;
 
-		// Compute weight for the new node (to replace to deleted leaf l and parent p)
-		final int newWeight = (isSentinel(p) ? 1 : p.weight + s.weight); // weights of parent + sibling of deleted leaf
+	//traverse the tree to get the list of node from root to the target node l
 
-		final Node newP;
-		if(l.extra == null && p.extra == null){// ***if the node l does not have extra pointer and so does its parent						
-			// Build new sub-tree
-			newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy, s.gen);
-			newP.lastGen = s.gen;
-			final Node newExtraChild = new Node(l.key, l.value, l.weight, l.left, l.right, dummy, l.gen);//need to be checked newExtraChild.left and newExtraChild.right
-			newExtraChild.lastGen = l.lastGen;
-			newP.extra = newExtraChild;
-			newP.extraDir = left ? LEFT:RIGHT;		
+	Node temp = root.left.left;
+	ArrayList listDirection = new ArrayList();//list of direction from root to target node l
+	ArrayList<Node> listNodes = new ArrayList<Node>();//list of node from root to l
+	Comparable<?super K> comp = comparable(l.key);
+	while(temp!=null){
+		char dir= (comp.compareTo((K)temp.key)<0) ? LEFT : RIGHT;
+		listNodes.add(temp);
+		if(dir == LEFT)
+			temp = temp.left;
+		else
+			temp = temp.right;
+		listDirection.add(dir);						
+	}
+	int indexListDirection = listDirection.size() - 1;
+	int indexListNodes = listNodes.size() - 1;
 
-			return new Operation(nodes, ops, newP);	
+	if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
 
-		}else if (l.extra != null && s.extra == null){// ***if the node l has extra pointer and its parent does not
-			if(p.extra == null){
-				newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
-				final Node newExtraChild;
-				if(l.extraDir == LEFT){
-					newExtraChild = new Node(l.key, l.value, l.weight, l.extra, l, dummy, l.gen);
-					newExtraChild.lastGen = l.lastGen;
-				}else{
-					newExtraChild = new Node(l.extra.key, l.extra.value, l.extra.weight, l, l.extra.right, dummy, l.extra.gen);
-					newExtraChild.lastGen = l.extra.lastGen;
-				}
-				newP.extra = newExtraChild;
-				newP.extraDir = left ? LEFT: RIGHT;				
-				return new Operation(nodes, ops, newP);
-			}
+	//if node's parent extra pointer is null
+	final Node s = nodes[2];
 
-		}else if (l.extra != null && s.extra != null){// ***if the node l has extra pointer and so does its sibling
+	// Compute weight for the new node (to replace to deleted leaf l and parent p)
+	final int newWeight = (isSentinel(p) ? 1 : p.weight + s.weight); // weights of parent + sibling of deleted leaf
+
+	final Node newP;
+	if(l.extra == null && p.extra == null){// ***if the node l does not have extra pointer and so does its parent						
+		// Build new sub-tree
+		newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy, s.gen);
+		newP.lastGen = s.gen;
+		final Node newExtraChild = new Node(l.key, l.value, l.weight, l.left, l.right, dummy, l.gen);//need to be checked newExtraChild.left and newExtraChild.right
+		newExtraChild.lastGen = l.lastGen;
+		newP.extra = newExtraChild;
+		newP.extraDir = left ? LEFT:RIGHT;		
+
+		return new Operation(nodes, ops, newP);	
+
+	}else if (l.extra != null && s.extra == null){// ***if the node l has extra pointer and its parent does not
+		if(p.extra == null){
 			newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
-			final Node lExtra;
-			if(l.extraDir == LEFT){
-				lExtra = new Node(l.key, l.value, l.weight, l.extra, l , dummy);
-			}else{
-				lExtra = new Node(l.extra.key, l.extra.value, l.weight, l, l.extra.right , dummy);
-			}
 			final Node newExtraChild;
-			if(left){
-				newExtraChild = new Node(p.key, p.value, newWeight, lExtra, s.extra, dummy);//should be checked		
+			if(l.extraDir == LEFT){
+				newExtraChild = new Node(l.key, l.value, l.weight, l.extra, l, dummy, l.gen);
+				newExtraChild.lastGen = l.lastGen;
 			}else{
-				newExtraChild = new Node(p.key, p.value, newWeight, s.extra, lExtra, dummy);//should be checked
+				newExtraChild = new Node(l.extra.key, l.extra.value, l.extra.weight, l, l.extra.right, dummy, l.extra.gen);
+				newExtraChild.lastGen = l.extra.lastGen;
 			}
-			newExtraChild.lastGen = p.lastGen;
 			newP.extra = newExtraChild;
-			newP.extraDir = (left) ? LEFT: RIGHT;
+			newP.extraDir = left ? LEFT: RIGHT;				
 			return new Operation(nodes, ops, newP);
-
 		}
-		return null;
 
-	}
-
-
-	// Just like insert, except this replaces any existing value.
-	private Operation createReplaceOp(final Node p, final Node l, final K key, final V value) {
-		final Operation[] ops = new Operation[]{null};
-		final Node[] nodes = new Node[]{null, l};
-
-		if (!weakLLX(p, 0, ops, nodes)) return null;
-
-		if (l != p.left && l != p.right) return null;
-
-		// Build new sub-tree
-		final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
-
-		//add parent pointer
-		subtree.parent = p;
-
-		return new Operation(nodes, ops, subtree);
-	}
-
-	// Just like insert, except this replaces any existing value.
-	private Operation createReplaceOp(final Node p, final Node l, final V value,final int gen) {
-		final Operation[] ops = new Operation[]{null};
-		final Node[] nodes = new Node[]{null, l};
-
-		if (!weakLLX(p, 0, ops, nodes)) return null;
-
-		if (l != p.left && l != p.right) return null;
-
-		// Build new sub-tree
-		final Node subtree = new Node(l.key, value, l.weight, l.left, l.right, dummy);
-		subtree.gen = gen;
-		subtree.lastGen = maxSnapId;
-
-		//add parent pointer
-		subtree.parent = p;
-
-		return new Operation(nodes, ops, subtree, gen);
-	}
-
-	private Operation createDeleteOp(final Node gp, final Node p, final Node l) {
-		final Operation[] ops = new Operation[]{null, null, null};
-		final Node[] nodes = new Node[]{null, null, null};
-
-		if (!weakLLX(gp, 0, ops, nodes)) return null;
-		if (!weakLLX(p, 1, ops, nodes)) return null;
-
-		if (p != gp.left && p != gp.right) return null;
-		final boolean left = (l == p.left);
-		if (!left && l != p.right) return null;
-
-		// Read fields for the sibling of l into ops[2], nodes[2] = s
-		if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
-		final Node s = nodes[2];
-
-		// Now, if the op. succeeds, all structure is guaranteed to be just as we verified
-
-		// Compute weight for the new node (to replace to deleted leaf l and parent p)
-		final int newWeight = (isSentinel(p) ? 1 : p.weight + s.weight); // weights of parent + sibling of deleted leaf
-
-		// Build new sub-tree
-		final Node newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
-		newP.gen=s.gen;
-		newP.lastGen=s.lastGen;
-
-
+	}else if (l.extra != null && s.extra != null){// ***if the node l has extra pointer and so does its sibling
+		newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
+		final Node lExtra;
+		if(l.extraDir == LEFT){
+			lExtra = new Node(l.key, l.value, l.weight, l.extra, l , dummy);
+		}else{
+			lExtra = new Node(l.extra.key, l.extra.value, l.weight, l, l.extra.right , dummy);
+		}
+		final Node newExtraChild;
+		if(left){
+			newExtraChild = new Node(p.key, p.value, newWeight, lExtra, s.extra, dummy);//should be checked		
+		}else{
+			newExtraChild = new Node(p.key, p.value, newWeight, s.extra, lExtra, dummy);//should be checked
+		}
+		newExtraChild.lastGen = p.lastGen;
+		newP.extra = newExtraChild;
+		newP.extraDir = (left) ? LEFT: RIGHT;
 		return new Operation(nodes, ops, newP);
+
 	}
+	return null;
 
-	private Operation createBalancingOp(final Node f, final Node fX, final Node fXX, final Node fXXX) {
-		final Operation opf = weakLLX(f);
-		if (opf == null || !f.hasChild(fX)) return null;
+}
 
-		final Operation opfX = weakLLX(fX);
-		if (opfX == null) return null;
-		final Node fXL = fX.left;
-		final Node fXR = fX.right;
-		final boolean fXXleft = (fXX == fXL);
-		if (!fXXleft && fXX != fXR) return null;
 
-		final Operation opfXX = weakLLX(fXX);
-		if (opfXX == null) return null;
-		final Node fXXL = fXX.left;
-		final Node fXXR = fXX.right;
-		final boolean fXXXleft = (fXXX == fXXL);
-		if (!fXXXleft && fXXX != fXXR) return null;
+// Just like insert, except this replaces any existing value.
+private Operation createReplaceOp(final Node p, final Node l, final K key, final V value) {
+	final Operation[] ops = new Operation[]{null};
+	final Node[] nodes = new Node[]{null, l};
 
-		// Overweight violation
-		if (fXXX.weight > 1) {
-			if (fXXXleft) {
-				final Operation opfXXL = weakLLX(fXXL);
-				if (opfXXL == null) return null;
-				return createOverweightLeftOp(f, fX, fXX, fXXL, opf, opfX, opfXX, opfXXL, fXL, fXR, fXXR, fXXleft);
+	if (!weakLLX(p, 0, ops, nodes)) return null;
+
+	if (l != p.left && l != p.right) return null;
+
+	// Build new sub-tree
+	final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
+
+	//add parent pointer
+	subtree.parent = p;
+
+	return new Operation(nodes, ops, subtree);
+}
+
+// Just like insert, except this replaces any existing value.
+private Operation createReplaceOp(final Node p, final Node l, final V value,final int gen) {
+	final Operation[] ops = new Operation[]{null};
+	final Node[] nodes = new Node[]{null, l};
+
+	if (!weakLLX(p, 0, ops, nodes)) return null;
+
+	if (l != p.left && l != p.right) return null;
+
+	// Build new sub-tree
+	final Node subtree = new Node(l.key, value, l.weight, l.left, l.right, dummy);
+	subtree.gen = gen;
+	subtree.lastGen = maxSnapId;
+
+	//add parent pointer
+	subtree.parent = p;
+
+	return new Operation(nodes, ops, subtree, gen);
+}
+
+private Operation createDeleteOp(final Node gp, final Node p, final Node l) {
+	final Operation[] ops = new Operation[]{null, null, null};
+	final Node[] nodes = new Node[]{null, null, null};
+
+	if (!weakLLX(gp, 0, ops, nodes)) return null;
+	if (!weakLLX(p, 1, ops, nodes)) return null;
+
+	if (p != gp.left && p != gp.right) return null;
+	final boolean left = (l == p.left);
+	if (!left && l != p.right) return null;
+
+	// Read fields for the sibling of l into ops[2], nodes[2] = s
+	if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
+	final Node s = nodes[2];
+
+	// Now, if the op. succeeds, all structure is guaranteed to be just as we verified
+
+	// Compute weight for the new node (to replace to deleted leaf l and parent p)
+	final int newWeight = (isSentinel(p) ? 1 : p.weight + s.weight); // weights of parent + sibling of deleted leaf
+
+	// Build new sub-tree
+	final Node newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
+	newP.gen=s.gen;
+	newP.lastGen=s.lastGen;
+
+
+	return new Operation(nodes, ops, newP);
+}
+
+private Operation createBalancingOp(final Node f, final Node fX, final Node fXX, final Node fXXX) {
+	final Operation opf = weakLLX(f);
+	if (opf == null || !f.hasChild(fX)) return null;
+
+	final Operation opfX = weakLLX(fX);
+	if (opfX == null) return null;
+	final Node fXL = fX.left;
+	final Node fXR = fX.right;
+	final boolean fXXleft = (fXX == fXL);
+	if (!fXXleft && fXX != fXR) return null;
+
+	final Operation opfXX = weakLLX(fXX);
+	if (opfXX == null) return null;
+	final Node fXXL = fXX.left;
+	final Node fXXR = fXX.right;
+	final boolean fXXXleft = (fXXX == fXXL);
+	if (!fXXXleft && fXXX != fXXR) return null;
+
+	// Overweight violation
+	if (fXXX.weight > 1) {
+		if (fXXXleft) {
+			final Operation opfXXL = weakLLX(fXXL);
+			if (opfXXL == null) return null;
+			return createOverweightLeftOp(f, fX, fXX, fXXL, opf, opfX, opfXX, opfXXL, fXL, fXR, fXXR, fXXleft);
+
+		} else {
+			final Operation opfXXR = weakLLX(fXXR);
+			if (opfXXR == null) return null;
+			return createOverweightRightOp(f, fX, fXX, fXXR, opf, opfX, opfXX, opfXXR, fXR, fXL, fXXL, !fXXleft);
+		}
+		// Red-red violation
+	} else {
+		if (fXXleft) {
+			if (fXR.weight == 0) {
+				final Operation opfXR = weakLLX(fXR);
+				if (opfXR == null) return null;
+				return createBlkOp(new Node[] {f, fX, fXX, fXR}, new Operation[] {opf, opfX, opfXX, opfXR});
+
+			} else if (fXXXleft) {
+				return createRb1Op(new Node[] {f, fX, fXX}, new Operation[] {opf, opfX, opfXX});
 
 			} else {
 				final Operation opfXXR = weakLLX(fXXR);
 				if (opfXXR == null) return null;
-				return createOverweightRightOp(f, fX, fXX, fXXR, opf, opfX, opfXX, opfXXR, fXR, fXL, fXXL, !fXXleft);
+				return createRb2Op(new Node[] {f, fX, fXX, fXXR}, new Operation[] {opf, opfX, opfXX, opfXXR});
 			}
-			// Red-red violation
 		} else {
-			if (fXXleft) {
+			if (fXL.weight == 0) {
+				final Operation opfXL = weakLLX(fXL);
+				if (opfXL == null) return null;
+				return createBlkOp(new Node[] {f, fX, fXL, fXX}, new Operation[] {opf, opfX, opfXL, opfXX});
+
+			} else if (!fXXXleft) {
+				return createRb1SymOp(new Node[] {f, fX, fXX}, new Operation[] {opf, opfX, opfXX});
+
+			} else {
+				final Operation opfXXL = weakLLX(fXXL);
+				if (opfXXL == null) return null;
+				return createRb2SymOp(new Node[] {f, fX, fXX, fXXL}, new Operation[] {opf, opfX, opfXX, opfXXL});
+			}
+		}
+	}
+}
+
+private Operation createOverweightLeftOp(final Node f,
+		final Node fX,
+		final Node fXX,
+		final Node fXXL,
+		final Operation opf,
+		final Operation opfX,
+		final Operation opfXX,
+		final Operation opfXXL,
+		final Node fXL,
+		final Node fXR,
+		final Node fXXR,
+		final boolean fXXlef) {
+	if (fXXR.weight == 0) {
+		if (fXX.weight == 0) {
+			if (fXXlef) {
 				if (fXR.weight == 0) {
 					final Operation opfXR = weakLLX(fXR);
 					if (opfXR == null) return null;
 					return createBlkOp(new Node[] {f, fX, fXX, fXR}, new Operation[] {opf, opfX, opfXX, opfXR});
-
-				} else if (fXXXleft) {
-					return createRb1Op(new Node[] {f, fX, fXX}, new Operation[] {opf, opfX, opfXX});
-
-				} else {
+				} else { // assert: fXR.weight > 0
 					final Operation opfXXR = weakLLX(fXXR);
 					if (opfXXR == null) return null;
 					return createRb2Op(new Node[] {f, fX, fXX, fXXR}, new Operation[] {opf, opfX, opfXX, opfXXR});
 				}
-			} else {
+			} else { // assert: fXX == fXR
 				if (fXL.weight == 0) {
 					final Operation opfXL = weakLLX(fXL);
 					if (opfXL == null) return null;
 					return createBlkOp(new Node[] {f, fX, fXL, fXX}, new Operation[] {opf, opfX, opfXL, opfXX});
-
-				} else if (!fXXXleft) {
-					return createRb1SymOp(new Node[] {f, fX, fXX}, new Operation[] {opf, opfX, opfXX});
-
 				} else {
-					final Operation opfXXL = weakLLX(fXXL);
-					if (opfXXL == null) return null;
-					return createRb2SymOp(new Node[] {f, fX, fXX, fXXL}, new Operation[] {opf, opfX, opfXX, opfXXL});
+					return createRb1SymOp(new Node[] {f, fX, fXX}, new Operation[] {opf, opfX, opfXX});
 				}
 			}
-		}
-	}
-
-	private Operation createOverweightLeftOp(final Node f,
-			final Node fX,
-			final Node fXX,
-			final Node fXXL,
-			final Operation opf,
-			final Operation opfX,
-			final Operation opfXX,
-			final Operation opfXXL,
-			final Node fXL,
-			final Node fXR,
-			final Node fXXR,
-			final boolean fXXlef) {
-		if (fXXR.weight == 0) {
-			if (fXX.weight == 0) {
-				if (fXXlef) {
-					if (fXR.weight == 0) {
-						final Operation opfXR = weakLLX(fXR);
-						if (opfXR == null) return null;
-						return createBlkOp(new Node[] {f, fX, fXX, fXR}, new Operation[] {opf, opfX, opfXX, opfXR});
-					} else { // assert: fXR.weight > 0
-						final Operation opfXXR = weakLLX(fXXR);
-						if (opfXXR == null) return null;
-						return createRb2Op(new Node[] {f, fX, fXX, fXXR}, new Operation[] {opf, opfX, opfXX, opfXXR});
-					}
-				} else { // assert: fXX == fXR
-					if (fXL.weight == 0) {
-						final Operation opfXL = weakLLX(fXL);
-						if (opfXL == null) return null;
-						return createBlkOp(new Node[] {f, fX, fXL, fXX}, new Operation[] {opf, opfX, opfXL, opfXX});
-					} else {
-						return createRb1SymOp(new Node[] {f, fX, fXX}, new Operation[] {opf, opfX, opfXX});
-					}
-				}
-			} else { // assert: fXX.weight > 0
-				final Operation opfXXR = weakLLX(fXXR);
-				if (opfXXR == null) return null;
-
-				final Node fXXRL = fXXR.left;
-				final Operation opfXXRL = weakLLX(fXXRL);
-				if (opfXXRL == null) return null;
-
-				if (fXXRL.weight > 1) {
-					return createW1Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRL}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRL});
-				} else if (fXXRL.weight == 0) {
-					return createRb2SymOp(new Node[] {fX, fXX, fXXR, fXXRL}, new Operation[] {opfX, opfXX, opfXXR, opfXXRL});
-				} else { // assert: fXXRL.weight == 1
-					final Node fXXRLR = fXXRL.right;
-					if (fXXRLR == null) return null;
-					if (fXXRLR.weight == 0) {
-						final Operation opfXXRLR = weakLLX(fXXRLR);
-						if (opfXXRLR == null) return null;
-						return createW4Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRL, fXXRLR}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRL, opfXXRLR});
-					} else { // assert: fXXRLR.weight > 0
-						final Node fXXRLL = fXXRL.left;
-						if (fXXRLL == null) return null;
-						if (fXXRLL.weight == 0) {
-							final Operation opfXXRLL = weakLLX(fXXRLL);
-							if (opfXXRLL == null) return null;
-							return createW3Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRL, fXXRLL}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRL, opfXXRLL});
-						} else { // assert: fXXRLL.weight > 0
-							return createW2Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRL}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRL});
-						}
-					}
-				}
-			}
-		} else if (fXXR.weight == 1) {
+		} else { // assert: fXX.weight > 0
 			final Operation opfXXR = weakLLX(fXXR);
 			if (opfXXR == null) return null;
 
 			final Node fXXRL = fXXR.left;
-			if (fXXRL == null) return null;
-			final Node fXXRR = fXXR.right; // note: if fXXRR is null, then fXXRL is null, since tree is always a full binary tree, and children of leaves don't change
-			if (fXXRR.weight == 0) {
-				final Operation opfXXRR = weakLLX(fXXRR);
-				if (opfXXRR == null) return null;
-				return createW5Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRR}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRR});
+			final Operation opfXXRL = weakLLX(fXXRL);
+			if (opfXXRL == null) return null;
+
+			if (fXXRL.weight > 1) {
+				return createW1Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRL}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRL});
 			} else if (fXXRL.weight == 0) {
-				final Operation opfXXRL = weakLLX(fXXRL);
-				if (opfXXRL == null) return null;
-				return createW6Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRL}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRL});
-			} else {
-				return createPushOp(new Node[] {fX, fXX, fXXL, fXXR}, new Operation[] {opfX, opfXX, opfXXL, opfXXR});
+				return createRb2SymOp(new Node[] {fX, fXX, fXXR, fXXRL}, new Operation[] {opfX, opfXX, opfXXR, opfXXRL});
+			} else { // assert: fXXRL.weight == 1
+				final Node fXXRLR = fXXRL.right;
+				if (fXXRLR == null) return null;
+				if (fXXRLR.weight == 0) {
+					final Operation opfXXRLR = weakLLX(fXXRLR);
+					if (opfXXRLR == null) return null;
+					return createW4Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRL, fXXRLR}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRL, opfXXRLR});
+				} else { // assert: fXXRLR.weight > 0
+					final Node fXXRLL = fXXRL.left;
+					if (fXXRLL == null) return null;
+					if (fXXRLL.weight == 0) {
+						final Operation opfXXRLL = weakLLX(fXXRLL);
+						if (opfXXRLL == null) return null;
+						return createW3Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRL, fXXRLL}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRL, opfXXRLL});
+					} else { // assert: fXXRLL.weight > 0
+						return createW2Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRL}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRL});
+					}
+				}
 			}
+		}
+	} else if (fXXR.weight == 1) {
+		final Operation opfXXR = weakLLX(fXXR);
+		if (opfXXR == null) return null;
+
+		final Node fXXRL = fXXR.left;
+		if (fXXRL == null) return null;
+		final Node fXXRR = fXXR.right; // note: if fXXRR is null, then fXXRL is null, since tree is always a full binary tree, and children of leaves don't change
+		if (fXXRR.weight == 0) {
+			final Operation opfXXRR = weakLLX(fXXRR);
+			if (opfXXRR == null) return null;
+			return createW5Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRR}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRR});
+		} else if (fXXRL.weight == 0) {
+			final Operation opfXXRL = weakLLX(fXXRL);
+			if (opfXXRL == null) return null;
+			return createW6Op(new Node[] {fX, fXX, fXXL, fXXR, fXXRL}, new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXRL});
 		} else {
-			final Operation opfXXR = weakLLX(fXXR);
-			if (opfXXR == null) return null;
-			return createW7Op(new Node[] {fX, fXX, fXXL, fXXR}, new Operation[] {opfX, opfXX, opfXXL, opfXXR});
+			return createPushOp(new Node[] {fX, fXX, fXXL, fXXR}, new Operation[] {opfX, opfXX, opfXXL, opfXXR});
 		}
+	} else {
+		final Operation opfXXR = weakLLX(fXXR);
+		if (opfXXR == null) return null;
+		return createW7Op(new Node[] {fX, fXX, fXXL, fXXR}, new Operation[] {opfX, opfXX, opfXXL, opfXXR});
+	}
+}
+
+public static class Gen {
+	private static int counter=0;
+	public int gen;
+	public Gen(){
+		gen=counter;
+		counter++;
+	}
+}
+
+public static class Node {//this class first is declared as final
+	public final int weight;
+	public final Object value;
+	public volatile boolean marked;
+	public volatile Operation op;
+	public final Object key;
+	public volatile Node left, right;
+	public volatile Node parent;
+	// added for snapshot
+	public volatile Node prev;
+	public volatile boolean failed;
+	public volatile int gen;
+	public volatile int lastGen=-1;
+	public volatile Node extra;
+	public volatile char extraDir;
+
+	public Node(final Object key, final Object value, final int weight, final Node left, final Node right, final Operation op) {
+		this.key = key;
+		this.value = value;
+		this.weight = weight;
+		this.left = left;
+		this.right = right;
+		this.op = op;
+		this.extra = null;
 	}
 
-	public static class Gen {
-		private static int counter=0;
-		public int gen;
-		public Gen(){
-			gen=counter;
-			counter++;
-		}
+	public Node(final Object key, final Object value, final int weight, final Node left, final Node right, final Operation op, final int gen) {
+		this.key = key;
+		this.value = value;
+		this.weight = weight;
+		this.left = left;
+		this.right = right;
+		this.op = op;
+		this.gen=gen;
+		this.extra = null;
 	}
 
-	public static class Node {//this class first is declared as final
-		public final int weight;
-		public final Object value;
-		public volatile boolean marked;
-		public volatile Operation op;
-		public final Object key;
-		public volatile Node left, right;
-		public volatile Node parent;
-		// added for snapshot
-		public volatile Node prev;
-		public volatile boolean failed;
-		public volatile int gen;
-		public volatile int lastGen=-1;
-		public volatile Node extra;
-		public volatile char extraDir;
+	public Node(Node n,boolean failed) { // only use when failed
+		this.key = n.key;
+		this.value = n.value;
+		this.weight = n.weight;
+		this.left = n.left;
+		this.right = n.right;
+		this.op = n.op;
+		this.prev=n.prev;
+		this.failed=failed;
+		this.extra = null;
+	}
 
-		public Node(final Object key, final Object value, final int weight, final Node left, final Node right, final Operation op) {
-			this.key = key;
-			this.value = value;
-			this.weight = weight;
-			this.left = left;
-			this.right = right;
-			this.op = op;
-			this.extra = null;
-		}
+	public Node(Node n,int gen) { 
+		this.key = n.key;
+		this.value = n.value;
+		this.weight = n.weight;
+		this.left = n.left;
+		this.right = n.right;
+		this.op = n.op;
+		this.prev=n.prev;
+		this.gen=gen;
+		this.extra = null;
+	}
 
-		public Node(final Object key, final Object value, final int weight, final Node left, final Node right, final Operation op, final int gen) {
-			this.key = key;
-			this.value = value;
-			this.weight = weight;
-			this.left = left;
-			this.right = right;
-			this.op = op;
-			this.gen=gen;
-			this.extra = null;
-		}
+	public Node(Node n){
+		this.key = n.key;
+		this.value = n.value;
+		this.weight = n.weight;
+		this.left = n.left;
+		this.right = n.right;
+		this.op = n.op;
+		this.prev=n.prev;
+		this.gen=n.gen;
+		this.extra = n.extra;
+		this.lastGen=n.lastGen;
+	}
 
-		public Node(Node n,boolean failed) { // only use when failed
-			this.key = n.key;
-			this.value = n.value;
-			this.weight = n.weight;
-			this.left = n.left;
-			this.right = n.right;
-			this.op = n.op;
-			this.prev=n.prev;
-			this.failed=failed;
-			this.extra = null;
-		}
+	public final boolean hasChild(final Node node) {
+		return node == left || node == right;
+	}
 
-		public Node(Node n,int gen) { 
-			this.key = n.key;
-			this.value = n.value;
-			this.weight = n.weight;
-			this.left = n.left;
-			this.right = n.right;
-			this.op = n.op;
-			this.prev=n.prev;
-			this.gen=gen;
-			this.extra = null;
-		}
+	//added by us
+	public boolean isLeaf(){
+		return left==null && right==null;
+	}
 
-		public Node(Node n){
-			this.key = n.key;
-			this.value = n.value;
-			this.weight = n.weight;
-			this.left = n.left;
-			this.right = n.right;
-			this.op = n.op;
-			this.prev=n.prev;
-			this.gen=n.gen;
-			this.extra = n.extra;
-			this.lastGen=n.lastGen;
-		}
-
-		public final boolean hasChild(final Node node) {
-			return node == left || node == right;
-		}
-
-		//added by us
-		public boolean isLeaf(){
-			return left==null && right==null;
-		}
-
-		public boolean equals(Node o) 
+	public boolean equals(Node o) 
+	{
+		if (o instanceof Node) 
 		{
-			if (o instanceof Node) 
-			{
-				Node c = (Node) o;
-				if(this.key.equals(c.key) && this.value.equals(c.value))
-					return true;
-			}
-			return false;
+			Node c = (Node) o;
+			if(this.key.equals(c.key) && this.value.equals(c.value))
+				return true;
 		}
+		return false;
+	}
+}
+
+public static final class SearchRecord {
+	public Node greatGrandParent;
+	public Node grandParent;
+	public Node parent;
+	public Node n;
+	public int startGen;
+	public int violations;
+	public int leafGen;
+	public ArrayList<Node> nodeList;
+	public ArrayList directionList;
+	public boolean updateSnapshot = false;
+
+	public SearchRecord(Node ggp,Node gp,Node p,Node n,int gen,int viol, ArrayList nodeList, ArrayList directionList, boolean updateSnapshot){
+		greatGrandParent=ggp;
+		grandParent=gp;
+		parent=p;
+		this.n=n;
+		startGen=gen;
+		violations=viol;
+		this.nodeList = nodeList;
+		this.directionList = directionList;
+		this.updateSnapshot = updateSnapshot;			
 	}
 
-	public static final class SearchRecord {
-		public Node greatGrandParent;
-		public Node grandParent;
-		public Node parent;
-		public Node n;
-		public int startGen;
-		public int violations;
-		public int leafGen;
-		public ArrayList<Node> nodeList;
-		public ArrayList directionList;
-		public boolean updateSnapshot = false;
-
-		public SearchRecord(Node ggp,Node gp,Node p,Node n,int gen,int viol, ArrayList nodeList, ArrayList directionList, boolean updateSnapshot){
-			greatGrandParent=ggp;
-			grandParent=gp;
-			parent=p;
-			this.n=n;
-			startGen=gen;
-			violations=viol;
-			this.nodeList = nodeList;
-			this.directionList = directionList;
-			this.updateSnapshot = updateSnapshot;			
-		}
-
-		public SearchRecord(Node ggp,Node gp,Node p,Node n,int gen){
-			greatGrandParent=ggp;
-			grandParent=gp;
-			parent=p;
-			this.n=n;
-			startGen=gen;
-			violations=0;
-		}
-
+	public SearchRecord(Node ggp,Node gp,Node p,Node n,int gen){
+		greatGrandParent=ggp;
+		grandParent=gp;
+		parent=p;
+		this.n=n;
+		startGen=gen;
+		violations=0;
 	}
 
-	//class Descriptor
-	public static final class Descriptor extends Operation {
-		//old: INode[K, V], expectedmain: MainNode[K, V], nv: INode[K, V]
-		public Node oldValue;
-		public Operation sentinelOp;
-		public Node newValue;
-		public volatile boolean committed  = false;
-		public Descriptor(Node old, Operation exp, Node nv){
-			//super(null,null,0,null,null,null);//call super class constructor
-			super();
-			oldValue = old;
-			sentinelOp = exp;
-			newValue = nv;
-		}
+}
+
+//class Descriptor
+public static final class Descriptor extends Operation {
+	//old: INode[K, V], expectedmain: MainNode[K, V], nv: INode[K, V]
+	public Node oldValue;
+	public Operation sentinelOp;
+	public Node newValue;
+	public volatile boolean committed  = false;
+	public Descriptor(Node old, Operation exp, Node nv){
+		//super(null,null,0,null,null,null);//call super class constructor
+		super();
+		oldValue = old;
+		sentinelOp = exp;
+		newValue = nv;
+	}
+}
+
+public static class Operation {
+	final static int STATE_INPROGRESS = 0;
+	final static int STATE_ABORTED = 1;
+	final static int STATE_COMMITTED = 2;
+	// added steps
+	final static int STEP_SUBTREE=0;
+	final static int STEP_GENERATION=1;
+	final static int STEP_COMMIT=2;
+	final static int STEP_ABORT=3;
+
+
+	volatile Node subtree;
+	volatile Node[] nodes;
+	volatile Operation[] ops;
+	volatile int state;
+	volatile int step;
+
+	volatile int gen;
+	volatile int lastGen;
+	volatile boolean allFrozen;
+
+	ArrayList<Node> nodeList;
+	ArrayList<Character> directionList;
+	boolean updateSnapshot;
+	boolean deleteOp;
+
+	public Operation() {            // create an inactive operation (a no-op) [[ we do this to avoid the overhead of inheritance ]]
+		nodes = null; ops = null; subtree = null;
+		this.state = STATE_ABORTED;   // cheap trick to piggy-back on a pre-existing check for active operations
 	}
 
-	public static class Operation {
-		final static int STATE_INPROGRESS = 0;
-		final static int STATE_ABORTED = 1;
-		final static int STATE_COMMITTED = 2;
-		// added steps
-		final static int STEP_SUBTREE=0;
-		final static int STEP_GENERATION=1;
-		final static int STEP_COMMIT=2;
-		final static int STEP_ABORT=3;
-
-
-		volatile Node subtree;
-		volatile Node[] nodes;
-		volatile Operation[] ops;
-		volatile int state;
-		volatile int step;
-
-		volatile int gen;
-		volatile int lastGen;
-		volatile boolean allFrozen;
-
-		ArrayList<Node> nodeList;
-		ArrayList<Character> directionList;
-		boolean updateSnapshot;
-		boolean deleteOp;
-
-		public Operation() {            // create an inactive operation (a no-op) [[ we do this to avoid the overhead of inheritance ]]
-			nodes = null; ops = null; subtree = null;
-			this.state = STATE_ABORTED;   // cheap trick to piggy-back on a pre-existing check for active operations
-		}
-
-		public Operation(final Node[] nodes, final Operation[] ops, final Node subtree, final int gen) {
-			this.nodes = nodes;
-			this.ops = ops;
-			this.subtree = subtree;
-			this.gen = gen;
-		}
-
-		public Operation(final Node[] nodes, final Operation[] ops, final Node subtree) {
-			this.nodes = nodes;
-			this.ops = ops;
-			this.subtree = subtree;			
-		}
-
-		public Operation(int state) {     // added by me
-			nodes = null; ops = null; subtree = null;
-			this.state = state;   
-		}
+	public Operation(final Node[] nodes, final Operation[] ops, final Node subtree, final int gen) {
+		this.nodes = nodes;
+		this.ops = ops;
+		this.subtree = subtree;
+		this.gen = gen;
 	}
 
-	/**
-	 *
-	 * Computer generated code
-	 *
-	 */
+	public Operation(final Node[] nodes, final Operation[] ops, final Node subtree) {
+		this.nodes = nodes;
+		this.ops = ops;
+		this.subtree = subtree;			
+	}
 
-	private Operation createOverweightRightOp(final Node f,
-			final Node fX,
-			final Node fXX,
-			final Node fXXR,
-			final Operation opf,
-			final Operation opfX,
-			final Operation opfXX,
-			final Operation opfXXR,
-			final Node fXR,
-			final Node fXL,
-			final Node fXXL,
-			final boolean fXXright) {
-		if (fXXL.weight == 0) {
-			if (fXX.weight == 0) {
-				if (fXXright) {
-					if (fXL.weight == 0) {
-						final Operation opfXL = weakLLX(fXL);
-						if (opfXL == null) return null;
-						return createBlkOp(new Node[] {f, fX, fXL, fXX},
-								new Operation[] {opf, opfX, opfXL, opfXX});
-					} else { // assert: fXL.weight > 0
-						final Operation opfXXL = weakLLX(fXXL);
-						if (opfXXL == null) return null;
-						return createRb2SymOp(new Node[] {f, fX, fXX, fXXL},
-								new Operation[] {opf, opfX, opfXX, opfXXL});
-					}
-				} else { // assert: fXX == fXL
-					if (fXR.weight == 0) {
-						final Operation opfXR = weakLLX(fXR);
-						if (opfXR == null) return null;
-						return createBlkOp(new Node[] {f, fX, fXX, fXR},
-								new Operation[] {opf, opfX, opfXX, opfXR});
-					} else {
-						return createRb1Op(new Node[] {f, fX, fXX},
-								new Operation[] {opf, opfX, opfXX});
-					}
+	public Operation(int state) {     // added by me
+		nodes = null; ops = null; subtree = null;
+		this.state = state;   
+	}
+}
+
+/**
+ *
+ * Computer generated code
+ *
+ */
+
+private Operation createOverweightRightOp(final Node f,
+		final Node fX,
+		final Node fXX,
+		final Node fXXR,
+		final Operation opf,
+		final Operation opfX,
+		final Operation opfXX,
+		final Operation opfXXR,
+		final Node fXR,
+		final Node fXL,
+		final Node fXXL,
+		final boolean fXXright) {
+	if (fXXL.weight == 0) {
+		if (fXX.weight == 0) {
+			if (fXXright) {
+				if (fXL.weight == 0) {
+					final Operation opfXL = weakLLX(fXL);
+					if (opfXL == null) return null;
+					return createBlkOp(new Node[] {f, fX, fXL, fXX},
+							new Operation[] {opf, opfX, opfXL, opfXX});
+				} else { // assert: fXL.weight > 0
+					final Operation opfXXL = weakLLX(fXXL);
+					if (opfXXL == null) return null;
+					return createRb2SymOp(new Node[] {f, fX, fXX, fXXL},
+							new Operation[] {opf, opfX, opfXX, opfXXL});
 				}
-			} else { // assert: fXX.weight > 0
-				final Operation opfXXL = weakLLX(fXXL);
-				if (opfXXL == null) return null;
-
-				final Node fXXLR = fXXL.right;
-				final Operation opfXXLR = weakLLX(fXXLR);
-				if (opfXXLR == null) return null;
-
-				if (fXXLR.weight > 1) {
-					return createW1SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR},
-							new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR});
-				} else if (fXXLR.weight == 0) {
-					return createRb2Op(new Node[] {fX, fXX, fXXL, fXXLR},
-							new Operation[] {opfX, opfXX, opfXXL, opfXXLR});
-				} else { // assert: fXXLR.weight == 1
-					final Node fXXLRL = fXXLR.left;
-					if (fXXLRL == null) return null;
-					if (fXXLRL.weight == 0) {
-						final Operation opfXXLRL = weakLLX(fXXLRL);
-						if (opfXXLRL == null) return null;
-						return createW4SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR, fXXLRL},
-								new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR, opfXXLRL});
-					} else { // assert: fXXLRL.weight > 0
-						final Node fXXLRR = fXXLR.right;
-						if (fXXLRR == null) return null;
-						if (fXXLRR.weight == 0) {
-							final Operation opfXXLRR = weakLLX(fXXLRR);
-							if (opfXXLRR == null) return null;
-							return createW3SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR, fXXLRR},
-									new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR, opfXXLRR});
-						} else { // assert: fXXLRR.weight > 0
-							return createW2SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR},
-									new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR});
-						}
-					}
+			} else { // assert: fXX == fXL
+				if (fXR.weight == 0) {
+					final Operation opfXR = weakLLX(fXR);
+					if (opfXR == null) return null;
+					return createBlkOp(new Node[] {f, fX, fXX, fXR},
+							new Operation[] {opf, opfX, opfXX, opfXR});
+				} else {
+					return createRb1Op(new Node[] {f, fX, fXX},
+							new Operation[] {opf, opfX, opfXX});
 				}
 			}
-		} else if (fXXL.weight == 1) {
+		} else { // assert: fXX.weight > 0
 			final Operation opfXXL = weakLLX(fXXL);
 			if (opfXXL == null) return null;
 
 			final Node fXXLR = fXXL.right;
-			if (fXXLR == null) return null;
-			final Node fXXLL = fXXL.left; // note: if fXXLL is null, then fXXLR is null, since tree is always a full binary tree, and children of leaves don't change
-			if (fXXLL.weight == 0) {
-				final Operation opfXXLL = weakLLX(fXXLL);
-				if (opfXXLL == null) return null;
-				return createW5SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLL},
-						new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLL});
-			} else if (fXXLR.weight == 0) {
-				final Operation opfXXLR = weakLLX(fXXLR);
-				if (opfXXLR == null) return null;
-				return createW6SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR},
+			final Operation opfXXLR = weakLLX(fXXLR);
+			if (opfXXLR == null) return null;
+
+			if (fXXLR.weight > 1) {
+				return createW1SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR},
 						new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR});
-			} else {
-				return createPushSymOp(new Node[] {fX, fXX, fXXL, fXXR},
-						new Operation[] {opfX, opfXX, opfXXL, opfXXR});
+			} else if (fXXLR.weight == 0) {
+				return createRb2Op(new Node[] {fX, fXX, fXXL, fXXLR},
+						new Operation[] {opfX, opfXX, opfXXL, opfXXLR});
+			} else { // assert: fXXLR.weight == 1
+				final Node fXXLRL = fXXLR.left;
+				if (fXXLRL == null) return null;
+				if (fXXLRL.weight == 0) {
+					final Operation opfXXLRL = weakLLX(fXXLRL);
+					if (opfXXLRL == null) return null;
+					return createW4SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR, fXXLRL},
+							new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR, opfXXLRL});
+				} else { // assert: fXXLRL.weight > 0
+					final Node fXXLRR = fXXLR.right;
+					if (fXXLRR == null) return null;
+					if (fXXLRR.weight == 0) {
+						final Operation opfXXLRR = weakLLX(fXXLRR);
+						if (opfXXLRR == null) return null;
+						return createW3SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR, fXXLRR},
+								new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR, opfXXLRR});
+					} else { // assert: fXXLRR.weight > 0
+						return createW2SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR},
+								new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR});
+					}
+				}
 			}
+		}
+	} else if (fXXL.weight == 1) {
+		final Operation opfXXL = weakLLX(fXXL);
+		if (opfXXL == null) return null;
+
+		final Node fXXLR = fXXL.right;
+		if (fXXLR == null) return null;
+		final Node fXXLL = fXXL.left; // note: if fXXLL is null, then fXXLR is null, since tree is always a full binary tree, and children of leaves don't change
+		if (fXXLL.weight == 0) {
+			final Operation opfXXLL = weakLLX(fXXLL);
+			if (opfXXLL == null) return null;
+			return createW5SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLL},
+					new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLL});
+		} else if (fXXLR.weight == 0) {
+			final Operation opfXXLR = weakLLX(fXXLR);
+			if (opfXXLR == null) return null;
+			return createW6SymOp(new Node[] {fX, fXX, fXXL, fXXR, fXXLR},
+					new Operation[] {opfX, opfXX, opfXXL, opfXXR, opfXXLR});
 		} else {
-			final Operation opfXXL = weakLLX(fXXL);
-			if (opfXXL == null) return null;
-			return createW7SymOp(new Node[] {fX, fXX, fXXL, fXXR},
+			return createPushSymOp(new Node[] {fX, fXX, fXXL, fXXR},
 					new Operation[] {opfX, opfXX, opfXXL, opfXXR});
 		}
+	} else {
+		final Operation opfXXL = weakLLX(fXXL);
+		if (opfXXL == null) return null;
+		return createW7SymOp(new Node[] {fX, fXX, fXXL, fXXR},
+				new Operation[] {opfX, opfXX, opfXXL, opfXXR});
 	}
+}
 
-	private Operation createBlkOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXL = new Node(nodes[2].key, nodes[2].value, 1, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXR = new Node(nodes[3].key, nodes[3].value, 1, nodes[3].left, nodes[3].right, dummy);
-		final int weight = (isSentinel(nodes[1]) ? 1 : nodes[1].weight-1); // root of old subtree is a sentinel
-		final Node nodeX = new Node(nodes[1].key, nodes[1].value, weight, nodeXL, nodeXR, dummy);
-		return new Operation(nodes, ops, nodeX);
-	}
+private Operation createBlkOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXL = new Node(nodes[2].key, nodes[2].value, 1, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXR = new Node(nodes[3].key, nodes[3].value, 1, nodes[3].left, nodes[3].right, dummy);
+	final int weight = (isSentinel(nodes[1]) ? 1 : nodes[1].weight-1); // root of old subtree is a sentinel
+	final Node nodeX = new Node(nodes[1].key, nodes[1].value, weight, nodeXL, nodeXR, dummy);
+	return new Operation(nodes, ops, nodeX);
+}
 
-	private Operation createRb1Op(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXR = new Node(nodes[1].key, nodes[1].value, 0, nodes[2].right, nodes[1].right, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeX = new Node(nodes[2].key, nodes[2].value, weight, nodes[2].left, nodeXR, dummy);
-		return new Operation(nodes, ops, nodeX);
-	}
+private Operation createRb1Op(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXR = new Node(nodes[1].key, nodes[1].value, 0, nodes[2].right, nodes[1].right, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeX = new Node(nodes[2].key, nodes[2].value, weight, nodes[2].left, nodeXR, dummy);
+	return new Operation(nodes, ops, nodeX);
+}
 
-	private Operation createRb2Op(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXL = new Node(nodes[2].key, nodes[2].value, 0, nodes[2].left, nodes[3].left, dummy);
-		final Node nodeXR = new Node(nodes[1].key, nodes[1].value, 0, nodes[3].right, nodes[1].right, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeX = new Node(nodes[3].key, nodes[3].value, weight, nodeXL, nodeXR, dummy);
-		return new Operation(nodes, ops, nodeX);
-	}
+private Operation createRb2Op(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXL = new Node(nodes[2].key, nodes[2].value, 0, nodes[2].left, nodes[3].left, dummy);
+	final Node nodeXR = new Node(nodes[1].key, nodes[1].value, 0, nodes[3].right, nodes[1].right, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeX = new Node(nodes[3].key, nodes[3].value, weight, nodeXL, nodeXR, dummy);
+	return new Operation(nodes, ops, nodeX);
+}
 
-	private Operation createPushOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, 0, nodes[3].left, nodes[3].right, dummy);
-		final int weight = (isSentinel(nodes[1]) ? 1 : nodes[1].weight+1); // root of old subtree is a sentinel
-		final Node nodeXX = new Node(nodes[1].key, nodes[1].value, weight, nodeXXL, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createPushOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, 0, nodes[3].left, nodes[3].right, dummy);
+	final int weight = (isSentinel(nodes[1]) ? 1 : nodes[1].weight+1); // root of old subtree is a sentinel
+	final Node nodeXX = new Node(nodes[1].key, nodes[1].value, weight, nodeXXL, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW1Op(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXXLR = new Node(nodes[4].key, nodes[4].value, nodes[4].weight-1, nodes[4].left, nodes[4].right, dummy);
-		final Node nodeXXL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLL, nodeXXLR, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[3].key, nodes[3].value, weight, nodeXXL, nodes[3].right, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW1Op(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXXLR = new Node(nodes[4].key, nodes[4].value, nodes[4].weight-1, nodes[4].left, nodes[4].right, dummy);
+	final Node nodeXXL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLL, nodeXXLR, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[3].key, nodes[3].value, weight, nodeXXL, nodes[3].right, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW2Op(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXXLR = new Node(nodes[4].key, nodes[4].value, 0, nodes[4].left, nodes[4].right, dummy);
-		final Node nodeXXL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLL, nodeXXLR, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[3].key, nodes[3].value, weight, nodeXXL, nodes[3].right, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW2Op(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXXLR = new Node(nodes[4].key, nodes[4].value, 0, nodes[4].left, nodes[4].right, dummy);
+	final Node nodeXXL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLL, nodeXXLR, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[3].key, nodes[3].value, weight, nodeXXL, nodes[3].right, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW3Op(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXLLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXXLL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLLL, nodes[5].left, dummy);
-		final Node nodeXXLR = new Node(nodes[4].key, nodes[4].value, 1, nodes[5].right, nodes[4].right, dummy);
-		final Node nodeXXL = new Node(nodes[5].key, nodes[5].value, 0, nodeXXLL, nodeXXLR, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[3].key, nodes[3].value, weight, nodeXXL, nodes[3].right, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW3Op(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXLLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXXLL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLLL, nodes[5].left, dummy);
+	final Node nodeXXLR = new Node(nodes[4].key, nodes[4].value, 1, nodes[5].right, nodes[4].right, dummy);
+	final Node nodeXXL = new Node(nodes[5].key, nodes[5].value, 0, nodeXXLL, nodeXXLR, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[3].key, nodes[3].value, weight, nodeXXL, nodes[3].right, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW4Op(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXXL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLL, nodes[4].left, dummy);
-		final Node nodeXXRL = new Node(nodes[5].key, nodes[5].value, 1, nodes[5].left, nodes[5].right, dummy);
-		final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, 0, nodeXXRL, nodes[3].right, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[4].key, nodes[4].value, weight, nodeXXL, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW4Op(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXXL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLL, nodes[4].left, dummy);
+	final Node nodeXXRL = new Node(nodes[5].key, nodes[5].value, 1, nodes[5].left, nodes[5].right, dummy);
+	final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, 0, nodeXXRL, nodes[3].right, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[4].key, nodes[4].value, weight, nodeXXL, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW5Op(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXXL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLL, nodes[3].left, dummy);
-		final Node nodeXXR = new Node(nodes[4].key, nodes[4].value, 1, nodes[4].left, nodes[4].right, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[3].key, nodes[3].value, weight, nodeXXL, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW5Op(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXXL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLL, nodes[3].left, dummy);
+	final Node nodeXXR = new Node(nodes[4].key, nodes[4].value, 1, nodes[4].left, nodes[4].right, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[3].key, nodes[3].value, weight, nodeXXL, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW6Op(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXXL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLL, nodes[4].left, dummy);
-		final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, 1, nodes[4].right, nodes[3].right, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[4].key, nodes[4].value, weight, nodeXXL, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW6Op(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXLL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXXL = new Node(nodes[1].key, nodes[1].value, 1, nodeXXLL, nodes[4].left, dummy);
+	final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, 1, nodes[4].right, nodes[3].right, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[4].key, nodes[4].value, weight, nodeXXL, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW7Op(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
-		final int weight = (isSentinel(nodes[1]) ? 1 : nodes[1].weight+1); // root of old subtree is a sentinel
-		final Node nodeXX = new Node(nodes[1].key, nodes[1].value, weight, nodeXXL, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW7Op(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
+	final int weight = (isSentinel(nodes[1]) ? 1 : nodes[1].weight+1); // root of old subtree is a sentinel
+	final Node nodeXX = new Node(nodes[1].key, nodes[1].value, weight, nodeXXL, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createRb1SymOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXL = new Node(nodes[1].key, nodes[1].value, 0, nodes[1].left, nodes[2].left, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeX = new Node(nodes[2].key, nodes[2].value, weight, nodeXL, nodes[2].right, dummy);
-		return new Operation(nodes, ops, nodeX);
-	}
+private Operation createRb1SymOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXL = new Node(nodes[1].key, nodes[1].value, 0, nodes[1].left, nodes[2].left, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeX = new Node(nodes[2].key, nodes[2].value, weight, nodeXL, nodes[2].right, dummy);
+	return new Operation(nodes, ops, nodeX);
+}
 
-	private Operation createRb2SymOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXL = new Node(nodes[1].key, nodes[1].value, 0, nodes[1].left, nodes[3].left, dummy);
-		final Node nodeXR = new Node(nodes[2].key, nodes[2].value, 0, nodes[3].right, nodes[2].right, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeX = new Node(nodes[3].key, nodes[3].value, weight, nodeXL, nodeXR, dummy);
-		return new Operation(nodes, ops, nodeX);
-	}
+private Operation createRb2SymOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXL = new Node(nodes[1].key, nodes[1].value, 0, nodes[1].left, nodes[3].left, dummy);
+	final Node nodeXR = new Node(nodes[2].key, nodes[2].value, 0, nodes[3].right, nodes[2].right, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeX = new Node(nodes[3].key, nodes[3].value, weight, nodeXL, nodeXR, dummy);
+	return new Operation(nodes, ops, nodeX);
+}
 
-	private Operation createPushSymOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, 0, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
-		final int weight = (isSentinel(nodes[1]) ? 1 : nodes[1].weight+1); // root of old subtree is a sentinel
-		final Node nodeXX = new Node(nodes[1].key, nodes[1].value, weight, nodeXXL, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createPushSymOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, 0, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
+	final int weight = (isSentinel(nodes[1]) ? 1 : nodes[1].weight+1); // root of old subtree is a sentinel
+	final Node nodeXX = new Node(nodes[1].key, nodes[1].value, weight, nodeXXL, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW1SymOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXRL = new Node(nodes[4].key, nodes[4].value, nodes[4].weight-1, nodes[4].left, nodes[4].right, dummy);
-		final Node nodeXXRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
-		final Node nodeXXR = new Node(nodes[1].key, nodes[1].value, 1, nodeXXRL, nodeXXRR, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[2].key, nodes[2].value, weight, nodes[2].left, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW1SymOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXRL = new Node(nodes[4].key, nodes[4].value, nodes[4].weight-1, nodes[4].left, nodes[4].right, dummy);
+	final Node nodeXXRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
+	final Node nodeXXR = new Node(nodes[1].key, nodes[1].value, 1, nodeXXRL, nodeXXRR, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[2].key, nodes[2].value, weight, nodes[2].left, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW2SymOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXRL = new Node(nodes[4].key, nodes[4].value, 0, nodes[4].left, nodes[4].right, dummy);
-		final Node nodeXXRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
-		final Node nodeXXR = new Node(nodes[1].key, nodes[1].value, 1, nodeXXRL, nodeXXRR, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[2].key, nodes[2].value, weight, nodes[2].left, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW2SymOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXRL = new Node(nodes[4].key, nodes[4].value, 0, nodes[4].left, nodes[4].right, dummy);
+	final Node nodeXXRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
+	final Node nodeXXR = new Node(nodes[1].key, nodes[1].value, 1, nodeXXRL, nodeXXRR, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[2].key, nodes[2].value, weight, nodes[2].left, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW3SymOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXRL = new Node(nodes[4].key, nodes[4].value, 1, nodes[4].left, nodes[5].left, dummy);
-		final Node nodeXXRRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
-		final Node nodeXXRR = new Node(nodes[1].key, nodes[1].value, 1, nodes[5].right, nodeXXRRR, dummy);
-		final Node nodeXXR = new Node(nodes[5].key, nodes[5].value, 0, nodeXXRL, nodeXXRR, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[2].key, nodes[2].value, weight, nodes[2].left, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW3SymOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXRL = new Node(nodes[4].key, nodes[4].value, 1, nodes[4].left, nodes[5].left, dummy);
+	final Node nodeXXRRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
+	final Node nodeXXRR = new Node(nodes[1].key, nodes[1].value, 1, nodes[5].right, nodeXXRRR, dummy);
+	final Node nodeXXR = new Node(nodes[5].key, nodes[5].value, 0, nodeXXRL, nodeXXRR, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[2].key, nodes[2].value, weight, nodes[2].left, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW4SymOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXLR = new Node(nodes[5].key, nodes[5].value, 1, nodes[5].left, nodes[5].right, dummy);
-		final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, 0, nodes[2].left, nodeXXLR, dummy);
-		final Node nodeXXRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
-		final Node nodeXXR = new Node(nodes[1].key, nodes[1].value, 1, nodes[4].right, nodeXXRR, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[4].key, nodes[4].value, weight, nodeXXL, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW4SymOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXLR = new Node(nodes[5].key, nodes[5].value, 1, nodes[5].left, nodes[5].right, dummy);
+	final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, 0, nodes[2].left, nodeXXLR, dummy);
+	final Node nodeXXRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
+	final Node nodeXXR = new Node(nodes[1].key, nodes[1].value, 1, nodes[4].right, nodeXXRR, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[4].key, nodes[4].value, weight, nodeXXL, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW5SymOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXL = new Node(nodes[4].key, nodes[4].value, 1, nodes[4].left, nodes[4].right, dummy);
-		final Node nodeXXRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
-		final Node nodeXXR = new Node(nodes[1].key, nodes[1].value, 1, nodes[2].right, nodeXXRR, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[2].key, nodes[2].value, weight, nodeXXL, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW5SymOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXL = new Node(nodes[4].key, nodes[4].value, 1, nodes[4].left, nodes[4].right, dummy);
+	final Node nodeXXRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
+	final Node nodeXXR = new Node(nodes[1].key, nodes[1].value, 1, nodes[2].right, nodeXXRR, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[2].key, nodes[2].value, weight, nodeXXL, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW6SymOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, 1, nodes[2].left, nodes[4].left, dummy);
-		final Node nodeXXRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
-		final Node nodeXXR = new Node(nodes[1].key, nodes[1].value, 1, nodes[4].right, nodeXXRR, dummy);
-		final int weight = nodes[1].weight;
-		final Node nodeXX = new Node(nodes[4].key, nodes[4].value, weight, nodeXXL, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW6SymOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, 1, nodes[2].left, nodes[4].left, dummy);
+	final Node nodeXXRR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
+	final Node nodeXXR = new Node(nodes[1].key, nodes[1].value, 1, nodes[4].right, nodeXXRR, dummy);
+	final int weight = nodes[1].weight;
+	final Node nodeXX = new Node(nodes[4].key, nodes[4].value, weight, nodeXXL, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
-	private Operation createW7SymOp(final Node[] nodes, final Operation[] ops) {
-		final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
-		final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
-		final int weight = (isSentinel(nodes[1]) ? 1 : nodes[1].weight+1); // root of old subtree is a sentinel
-		final Node nodeXX = new Node(nodes[1].key, nodes[1].value, weight, nodeXXL, nodeXXR, dummy);
-		return new Operation(nodes, ops, nodeXX);
-	}
+private Operation createW7SymOp(final Node[] nodes, final Operation[] ops) {
+	final Node nodeXXL = new Node(nodes[2].key, nodes[2].value, nodes[2].weight-1, nodes[2].left, nodes[2].right, dummy);
+	final Node nodeXXR = new Node(nodes[3].key, nodes[3].value, nodes[3].weight-1, nodes[3].left, nodes[3].right, dummy);
+	final int weight = (isSentinel(nodes[1]) ? 1 : nodes[1].weight+1); // root of old subtree is a sentinel
+	final Node nodeXX = new Node(nodes[1].key, nodes[1].value, weight, nodeXXL, nodeXXR, dummy);
+	return new Operation(nodes, ops, nodeXX);
+}
 
 }
