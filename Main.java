@@ -2,7 +2,10 @@ import java.util.Random;
 class Main {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
+
+		Random r=new Random();
 		//tree.put(5,7);
+
 		for(int j=0;j<1000;j++){
 			//System.out.println("PUT "+j);
 			tree.put(j,j);
@@ -39,8 +42,7 @@ class Main {
 		Thread[] t=new Thread[threadCount];
 		for(int j=0;j<threadCount;j++){
 			t[j]=new Thread(() -> {
-
-			Random r=new Random();
+			
 			while(true){
 				//for(int k=0;k<10000;k++){
 				//int c=r.nextInt();
@@ -68,12 +70,11 @@ class Main {
 		
 	 	for(int j=0;j<threadCount;j++){
 			t[j].start();
-		}
-		
-		        
+		}			       
+
+
 
 	 	Thread t2=new Thread(() -> {
-			Random r=new Random();
 			int s=0;
 			while(true){
 				//System.out.println("while");
@@ -100,6 +101,7 @@ class Main {
 				//assert (tree.get(i)==null || tree.get(i)==2*i);
 			}
 		});
+
 		t2.start(); 
 		
 		
@@ -151,6 +153,7 @@ class Main {
 		//System.out.println("update "+tree.put(8,8));
 		//System.out.println("get snap "+tree.get(8));
 		//System.out.println(tree.search(8,true).n.value);
+
 	}
 }
 

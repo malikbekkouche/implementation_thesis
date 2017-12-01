@@ -1348,11 +1348,13 @@ public int transformTreeToList(final Node node, List<K> list){
 			return false;
 		}
 
-		if(!weakLLX(n, 1, ops, nodes)) {
+	/*	if(!weakLLX(n, 1, ops, nodes)) {
 			////System.out.println("false2");
 			////System.out.println(ops[1].state);
 			return false;
-		}  
+
+		}  */
+
 
 		if(dir==LEFT){
 			if(p.left!=n)
