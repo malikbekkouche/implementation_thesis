@@ -21,8 +21,7 @@ public class TestChromaticTree{
 		int numOfThread = (int)Math.pow(2, 4);
 		int threadCount = 16;
 		_arrCounter = new AtomicIntegerArray(threadCount);
-		
-		testMap(threadCount, 100, 10000, map);
+		testMap(threadCount, 1000, 1000, map);
 		int []arrCounter = new int[threadCount];
 		for(int i = 0; i < threadCount; i++){
 			arrCounter[i] = 0;
@@ -51,7 +50,11 @@ public class TestChromaticTree{
 		assert(summ == sumOfArray);
 		for(int i = 0; i < threadCount; i++){
 			assert(arrCounter[i] == _arrCounter.get(i));
-		}		
+
+		}
+		//				//System.out.println(map.put(2, "abc"));		
+		//				//System.out.println(map.put(7, "def"));		
+		//				//System.out.println(map.put(8, "xyz"));		
 		return;
 	}
 	private static double testMap(int threadCount, int perThread, int range,
@@ -65,7 +68,10 @@ public class TestChromaticTree{
 		AtomicIntegerArray threadCounter = new AtomicIntegerArray(threadCount);
 		AtomicIntegerArray arrayCounter = new AtomicIntegerArray(threadCount);	
 
-		
+		/* AtomicInteger sumOfPut = new AtomicInteger(0);
+		AtomicInteger sumOfGet = new AtomicInteger(0);
+		AtomicInteger sumOfRemove = new AtomicInteger(0); */
+
 		for(int t = 0; t < threadCount; t++){
 			final int myThread = t;		
 			Random rand = new Random();
@@ -82,6 +88,8 @@ public class TestChromaticTree{
 						threadCounter.addAndGet(myThread, key);
 					}
 					arrayCounter.addAndGet(myThread, 1);
+
+					//sumOfPut.incrementAndGet();
 					////System.out.println("Thread " + myThread + "_" + i + " PUT " + key + " value " + result);
 					if(result == null){//this depend on every implementation
 					//if(result != null){//this depend on every implementation						
@@ -89,24 +97,26 @@ public class TestChromaticTree{
 					}
 				}
 
-				for(int k = 0; k < perThread; k++){//GET
+				  for(int k = 0; k < perThread; k++){//GET
 					Integer key = rand.nextInt(range);
 					String result = map.get(key); 
-					if(result !=null){
-					}
+					/* if(result !=null){
+						sumOfGet.incrementAndGet();
+					} */
 				}
 
-//				 for(int x = 0; x < perThread; x++){//REMOVE
-//					Integer key = rand.nextInt(range);
-//					String result = map.remove(key,true); 
-//					////System.out.println("Thread " + myThread + " DELETE " + key + " value " + result);
-//					if(result != null){										
-//						threadCounter.addAndGet(myThread, -key);
-//						int index = Integer.parseInt(result.split("_")[0]);
-//						if(index!=-1)
-//							arrayCounter.addAndGet(index, -1);	
-//					}
-//				} 
+
+				  for(int x = 0; x < perThread; x++){//REMOVE
+					Integer key = rand.nextInt(range);
+					String result = map.remove(key,true); 
+					////System.out.println("Thread " + myThread + " DELETE " + key + " value " + result);
+					//sumOfRemove.incrementAndGet();
+					if(result != null){										
+						threadCounter.addAndGet(myThread, -key);
+						int index = Integer.parseInt(result.split("_")[0]);
+							arrayCounter.addAndGet(index, -1);	
+					}
+				}  
 
 			});
 		}

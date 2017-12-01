@@ -19,16 +19,28 @@ class SeqMain{
 		System.out.println("-------------------------------");
 		//System.out.println("remove "+tree.remove(1));
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
-		for(int i=0;i<100;i++)
-			tree.remove(i);
-		System.out.println("-------------------------------");
 		for(int i=0;i<100;i++){
+			tree.remove(i);
+			Integer x=snap.get(i);
+			if(x==null)
+				System.out.println(i+" is null");
+		}
+		/* for(int i=100;i<200;i++)
+			tree.put(i,i+1); */
+		System.out.println("-------------------------------");
+		for(int i=0;i<1000;i++){
 			Integer x=snap.get(i);
 			if(x==null)
 				System.out.println(i+" is null");
 			else if (i!=x)
 				System.out.println(i+" is different than "+x);
 		}
+		/* for(int i=100;i<200;i++)
+			assert tree.get(i)==i+1; */
+		for(int i=00;i<100;i++)
+			assert tree.get(i)==null;
+		for(int i=200;i<1000;i++)
+			assert tree.get(i)==i;
 		System.out.println("-------------------------------");
 	/* 	System.out.println("get 8,88 "+snap.get(8));
 		System.out.println("get 4,44 "+snap.get(4));

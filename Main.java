@@ -44,20 +44,24 @@ class Main {
 			t[j]=new Thread(() -> {
 			
 			while(true){
+				//for(int k=0;k<10000;k++){
 				//int c=r.nextInt();
 				//tree.put(c,2*c);
 				//tree.put(r.nextInt(),r.nextInt());
 				//for(int i=500;i<1000;i++)
-					int x=r.nextInt(1000);
+					int x=r.nextInt(10000);
+				//System.out.println("thread");
 					//System.out.println("removage "+x);
 					//System.out.println("remove "+x+" "+tree.remove(x));
-					tree.put(x,x+1);
-					//tree.remove(x);
+					//System.out.println("put "+tree.put(x,x+1));
+					//tree.put(x,x+1);
+					//x=r.nextInt(1000);
+					tree.remove(x);
 					/* if(tree.get(x)!=null)
 						System.out.println("tree error "+x); */
-					Integer c=snap.get(x);
-					 if(c==null )
-						System.out.println("snap null error "+x);
+					//Integer c=snap.get(x);
+					 /* if(c==null )
+						System.out.println("snap null error "+x); */
 					/*else if(c!=x)
 						System.out.println(c +" is not x thread1"); */
 			}
@@ -73,12 +77,16 @@ class Main {
 	 	Thread t2=new Thread(() -> {
 			int s=0;
 			while(true){
+				//System.out.println("while");
 				for(int j=0;j<1000;j++){
 					Integer x =snap.get(j);
 					if(x==null )
 						System.out.println(j +" is null");
 					else if(x!=j)
 						System.out.println(j +" is not x "+x+" s: "+s);
+					Integer y=tree.get(j);
+					/* if(y!=j+1)
+						System.out.println(y+" (tree) is different than "+(j+1)); */
 				}
 				for(int j=-500;j<0;j++)
 					assert snap.get(j)==null;
@@ -94,42 +102,58 @@ class Main {
 			}
 		});
 
-		//t3.start();
+		t2.start(); 
+		
+		
+		
+		//System.out.println("put "+tree.put(9,69));
+		//System.out.println("update "+tree.put(15,11));
+		
+		
+		
+		//System.out.println("update "+tree.put(1,77));
+		//System.out.println("put "+tree.put(9,69));
+	/* 	System.out.println("put "+tree.put(22,69));
+		System.out.println("put "+tree.put(25,22));
+		System.out.println("put "+tree.put(30,33));
+		System.out.println("put "+tree.put(50,55));
+		 System.out.println("put "+tree.put(40,44));
+		 System.out.println("put "+tree.put(3,951)); */
+		 
+		//System.out.println("put "+tree.put(50,55)); 
+		
+		//System.out.println("-------------------------------");
+		/* System.out.println("snap "+snap.get(8));
+		System.out.println("snap "+snap.get(9));
+		System.out.println("snap "+snap.get(15));
+		System.out.println("snap "+snap.get(18));
+		System.out.println("snap "+snap.get(1));
+		System.out.println("snap "+snap.get(22));
+		System.out.println("snap "+snap.get(25));
+		System.out.println("snap "+snap.get(30));
+		System.out.println("snap "+snap.get(40));
+		System.out.println("snap "+snap.get(50)); 
+		System.out.println("snap "+snap.get(3)); 
+		System.out.println("-------------------------------");
+		System.out.println("tree "+tree.get(8));
+		System.out.println("tree "+tree.get(15));
+		System.out.println("tree "+tree.get(18));
+		System.out.println("tree "+tree.get(1));
+		System.out.println("tree "+tree.get(9));
+		
+		System.out.println("tree "+tree.get(30));
+		System.out.println("tree "+tree.get(25));
+		System.out.println("tree "+tree.get(50));
+		System.out.println("tree "+tree.get(40));
+		System.out.println("tree "+tree.get(3)); */
+		
+		//System.out.println("get "+snap.get(8));
+		//System.out.println("remove "+tree.remove(8));
+		//System.out.println("get "+tree.get(8));
+		//System.out.println("update "+tree.put(8,8));
+		//System.out.println("get snap "+tree.get(8));
+		//System.out.println(tree.search(8,true).n.value);
 
-		Thread t5=new Thread(() -> {
-			//Random r=new Random();
-			while(true){
-				for(int i = 0; i < 50; i++){
-					System.out.println("CCCCCCCCCCCCCCCC");										
-					if(snap.get(i)!=i){
-						//System.out.println("Mismatch on " + i);
-					}
-					if(snap.get(i+1000)!=null){
-						//System.out.println("Wrong put on " + i);
-					}
-					if(tree.get(i)!=null){
-						//System.out.println(i + " is on live tree ");
-					}else{
-						//System.out.println(i + " is NOT on live tree ");
-					}
-				}							
-			}
-		});
-
-		//t2.start(); 
-
-
-		Thread t4 = new Thread(()->{
-			System.out.println("RUNNING REMOVE ");
-			while(true){
-				for(int i = 0; i < 50; i++){				
-					System.out.println("TREE GET " + tree.remove(i,i));
-				}
-				System.out.println("TREE REMOVE ");
-			}			
-		});
-
-		//t4.start();
 	}
 }
 
