@@ -386,7 +386,7 @@ public int transformTreeToList(final Node node, List<K> list){
 	// returns true if the dictionary contains an entry whose key
 	// equals k and if so removes that entry; otherwise returns false.
 	public boolean remove(final K k){
-		V result = remove(k, 0);
+		V result = newRemove(k, 0);
 		if(result != null)
 			return true;
 		return false;
@@ -1348,13 +1348,11 @@ public int transformTreeToList(final Node node, List<K> list){
 			return false;
 		}
 
-	/*	if(!weakLLX(n, 1, ops, nodes)) {
+		if(!weakLLX(n, 1, ops, nodes)) {
 			////System.out.println("false2");
 			////System.out.println(ops[1].state);
 			return false;
-
-		}  */
-
+		}  
 
 		if(dir==LEFT){
 			if(p.left!=n)
@@ -2386,19 +2384,94 @@ public int transformTreeToList(final Node node, List<K> list){
 					//System.out.println("updating snapshot");
 					for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {
 						Node node=snapList.get(shots).left;
-						//System.out.println("snap root *************** =  "+node.gen);
-
-						//for(int x=0;x<op.directionList.size() ;x++){
-						int x=0,y=0;
-						while(true){
+						
+						if(op.deleteOp){
+							//System.out.println("1");
+							int x=0,y=0;
+						while(true){ 
 							//System.out.println("qwerty "+node.value);
 							if(x==op.nodeList.size())
 								break;
 							char dir=(char)op.directionList.get(y);
 							Node l=(dir==LEFT) ? node.left : node.right;
+							Node n=op.nodeList.get(x);
+							n.gen=node.gen;
+							n.lastGen=node.gen;
+							
+							if(l==null)
+								break;
+							final Comparable<? super K> comp = comparable(l.key);
+							if( node.gen>l.lastGen){
+								//System.out.println("2");
+								//System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
+
+								if(dir==LEFT){
+									/* node.left=n;
+							node=node.left; */
+									//System.out.println(Thread.currentThread()+"left "+node.key);
+									if(updateLeft.compareAndSet(node,l,n)){
+										
+										node=node.left;
+
+									}else{
+										//System.out.println("continue1 "+Thread.currentThread());
+										x=0;
+										y=0;
+										continue;
+									}
+								}
+								else{
+									/* node.right=n;
+							node=node.right; */
+									//System.out.println(Thread.currentThread()+"right "+node.key);
+									if(updateRight.compareAndSet(node,l,n)){
+						
+										node=node.right;
+
+									}
+									else{
+										//System.out.println("continue2 "+Thread.currentThread());
+										x=0;
+										y=0;
+										continue;
+									}
+								}
+								y++;
+							}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)==0){
+								//System.out.println("3 ");
+								node=l;
+								y++;
+								}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
+									if(comp.compareTo((K)n.key)<0){
+										if(l.right.gen!=l.gen){
+											//System.out.println("4");
+											updateRight.compareAndSet(l,l.right,n);
+										}
+									}else{
+										if(l.left.gen!=l.gen){
+											//System.out.println("5");
+											updateLeft.compareAndSet(l,l.right,n);
+										}
+									}
+									
+								}
+							x++;
+						}
+							
+						}
+						else {
+						int x=0,y=0;
+						while(true){ 
+							//System.out.println("qwerty "+node.value);
+							if(x==op.nodeList.size())
+								break;
+							
 							////System.out.println(x+"dir : "+dir+" l "+l.key+"-"+l.value +" p "+node.key);
 							////System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
+							char dir=(char)op.directionList.get(y);
+							Node l=(dir==LEFT) ? node.left : node.right;
 							Node n=op.nodeList.get(x);
+							
 
 							//final Comparable<? super K> k = comparable(l.key);
 							//System.out.println("bbbbb "+node.gen+node.lastGen+node.key+" "+l.gen+l.lastGen+l.key);
@@ -2459,6 +2532,7 @@ public int transformTreeToList(final Node node, List<K> list){
 							x++;
 					
 						}
+					}
 					}
 					
 				}

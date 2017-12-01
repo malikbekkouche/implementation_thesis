@@ -2,10 +2,7 @@ import java.util.Random;
 class Main {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
-
-		Random r=new Random();
 		//tree.put(5,7);
-
 		for(int j=0;j<1000;j++){
 			//System.out.println("PUT "+j);
 			tree.put(j,j);
@@ -42,14 +39,15 @@ class Main {
 		Thread[] t=new Thread[threadCount];
 		for(int j=0;j<threadCount;j++){
 			t[j]=new Thread(() -> {
-			
+
+			Random r=new Random();
 			while(true){
 				//for(int k=0;k<10000;k++){
 				//int c=r.nextInt();
 				//tree.put(c,2*c);
 				//tree.put(r.nextInt(),r.nextInt());
 				//for(int i=500;i<1000;i++)
-					int x=r.nextInt(10000);
+					int x=r.nextInt(1000);
 				//System.out.println("thread");
 					//System.out.println("removage "+x);
 					//System.out.println("remove "+x+" "+tree.remove(x));
@@ -70,17 +68,18 @@ class Main {
 		
 	 	for(int j=0;j<threadCount;j++){
 			t[j].start();
-		}			       
-
-
+		}
+		
+		        
 
 	 	Thread t2=new Thread(() -> {
+			Random r=new Random();
 			int s=0;
 			while(true){
 				//System.out.println("while");
 				for(int j=0;j<1000;j++){
 					Integer x =snap.get(j);
-					if(x==null )
+					if(x==null)
 						System.out.println(j +" is null");
 					else if(x!=j)
 						System.out.println(j +" is not x "+x+" s: "+s);
@@ -101,7 +100,6 @@ class Main {
 				//assert (tree.get(i)==null || tree.get(i)==2*i);
 			}
 		});
-
 		t2.start(); 
 		
 		
@@ -153,7 +151,6 @@ class Main {
 		//System.out.println("update "+tree.put(8,8));
 		//System.out.println("get snap "+tree.get(8));
 		//System.out.println(tree.search(8,true).n.value);
-
 	}
 }
 

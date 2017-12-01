@@ -2,8 +2,14 @@ class SeqMain{
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
 		//tree.put(5,7);
-		for(int i=0;i<1000;i++)
-			tree.put(i,i);
+		 for(int i=0;i<100;i++)
+			tree.put(i,i); 
+		/* tree.put(8,8);
+		tree.put(4,4);
+		tree.put(18,18);
+		tree.put(2,2);
+		tree.put(22,22);
+		tree.put(1,1); */
 		 // System.out.println("put "+tree.put(1,11));
 		//System.out.println("put "+tree.put(2,22));
 		// System.out.println("put "+tree.put(15,1515));
@@ -19,28 +25,49 @@ class SeqMain{
 		System.out.println("-------------------------------");
 		//System.out.println("remove "+tree.remove(1));
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
-		for(int i=0;i<100;i++){
+		for(int i=0;i<50;i++){
 			tree.remove(i);
-			Integer x=snap.get(i);
+			 
+		} 
+		for(int i=0;i<100;i++){
+			
+			 Integer x=snap.get(i);
 			if(x==null)
 				System.out.println(i+" is null");
-		}
-		/* for(int i=100;i<200;i++)
-			tree.put(i,i+1); */
+			if(x!=i)
+				System.out.println(x+" is different than "+i);
+		} 
+		
+		 /* for(int i=100;i<200;i++)
+			tree.put(i,i+1); */ 
+	/* 	tree.remove(8);
 		System.out.println("-------------------------------");
-		for(int i=0;i<1000;i++){
+		tree.remove(18);
+		System.out.println("-------------------------------");
+		tree.remove(22);
+		System.out.println("-------------------------------");
+		for(int i=0;i<20;i++){
 			Integer x=snap.get(i);
-			if(x==null)
-				System.out.println(i+" is null");
-			else if (i!=x)
-				System.out.println(i+" is different than "+x);
+			if(i==8 || i==18 ||i==22)
+				assert x==i;
+			else if(i==4 || i==1  || i==2)
+				assert x==i;
+			else 
+				assert x==null;
+			
+			
 		}
-		/* for(int i=100;i<200;i++)
-			assert tree.get(i)==i+1; */
-		for(int i=00;i<100;i++)
-			assert tree.get(i)==null;
-		for(int i=200;i<1000;i++)
-			assert tree.get(i)==i;
+		 for(int i=100;i<200;i++)
+			assert tree.get(i)==i+1; 
+		for(int i=00;i<20;i++){
+			if(i==8 || i==18 || i==22)
+				assert tree.get(i)==null;
+			else if(i==4 || i==1 || i==2)
+				assert tree.get(i)==i;
+			else 
+				assert tree.get(i)==null;
+		} */
+		
 		System.out.println("-------------------------------");
 	/* 	System.out.println("get 8,88 "+snap.get(8));
 		System.out.println("get 4,44 "+snap.get(4));
