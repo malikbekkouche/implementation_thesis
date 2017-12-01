@@ -34,7 +34,6 @@ class Main {
 		System.out.println("update 8,8 "+tree.get(2)); */
 		//System.out.println("-------------------------------");
 
-
 		int threadCount=4;
 		Thread[] t=new Thread[threadCount];
 		for(int j=0;j<threadCount;j++){
