@@ -2454,6 +2454,15 @@ public int transformTreeToList(final Node node, List<K> list){
 										}
 									}
 									
+									/* if(x==op.nodeList.size()-3){
+										if(op.directionList.get(op.directionList.size()-1)==LEFT){
+											updateRight.compareAndSet(l,l.right,op.subtree);
+										}else{
+											updateLeft.compareAndSet(l,l.left,op.subtree);
+										}
+										break;
+									}  */
+									
 								}
 							x++;
 						}
