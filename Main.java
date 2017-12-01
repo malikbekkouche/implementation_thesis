@@ -42,20 +42,24 @@ class Main {
 
 			Random r=new Random();
 			while(true){
+				//for(int k=0;k<10000;k++){
 				//int c=r.nextInt();
 				//tree.put(c,2*c);
 				//tree.put(r.nextInt(),r.nextInt());
 				//for(int i=500;i<1000;i++)
-					int x=r.nextInt(1000);
+					int x=r.nextInt(10000);
+				//System.out.println("thread");
 					//System.out.println("removage "+x);
 					//System.out.println("remove "+x+" "+tree.remove(x));
-					tree.put(x,x+1);
-					//tree.remove(x);
+					//System.out.println("put "+tree.put(x,x+1));
+					//tree.put(x,x+1);
+					//x=r.nextInt(1000);
+					tree.remove(x);
 					/* if(tree.get(x)!=null)
 						System.out.println("tree error "+x); */
-					Integer c=snap.get(x);
-					 if(c==null )
-						System.out.println("snap null error "+x);
+					//Integer c=snap.get(x);
+					 /* if(c==null )
+						System.out.println("snap null error "+x); */
 					/*else if(c!=x)
 						System.out.println(c +" is not x thread1"); */
 			}
@@ -72,12 +76,16 @@ class Main {
 			Random r=new Random();
 			int s=0;
 			while(true){
+				//System.out.println("while");
 				for(int j=0;j<1000;j++){
 					Integer x =snap.get(j);
 					if(x==null )
 						System.out.println(j +" is null");
 					else if(x!=j)
 						System.out.println(j +" is not x "+x+" s: "+s);
+					Integer y=tree.get(j);
+					/* if(y!=j+1)
+						System.out.println(y+" (tree) is different than "+(j+1)); */
 				}
 				for(int j=-500;j<0;j++)
 					assert snap.get(j)==null;
@@ -93,7 +101,6 @@ class Main {
 			}
 		});
 		t2.start(); 
-		
 		
 		
 		
