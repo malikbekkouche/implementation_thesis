@@ -933,7 +933,7 @@ public int transformTreeToList(final Node node, List<K> list){
 						if((n.gen==gen || readOp)|| this.isReadOnly){//if the tree is live tree -- n.gen==gen
 							//on the snapshot we don't care about violation
 							if(!this.isReadOnly){
-								if(n.weight>1 || (n.left.weight==0 && p.weight==0)) // was originally only l
+								if(n.weight>1 || (n.weight==0 && p.weight==0)) // was originally only l
 									violations++;
 							}
 							ggp=gp;
@@ -2083,9 +2083,9 @@ public int transformTreeToList(final Node node, List<K> list){
 			if (helpSCX(op,0)) {
 				// clean up violations if necessary
 				if (d == 0) {
-					//if (!found && (searchRecord.parent.weight == 0 )&& searchRecord.n.weight == 1) fixToKey(k);
+					if (!found && (searchRecord.parent.weight == 0 )&& searchRecord.n.weight == 1) fixToKey(k);
 				} else {
-					//if (searchRecord.violations >= d) fixToKey(k);
+					if (searchRecord.violations >= d) fixToKey(k);
 				}
 
 				////System.out.println("help "+op.state+ " "+ searchRecord.n.gen+searchRecord.n.marked);
@@ -2105,18 +2105,28 @@ public int transformTreeToList(final Node node, List<K> list){
 		Operation op = null;
 		int count = 0;
 		SearchRecord searchRecord=null;
+		boolean notFoundElement;
 
 		while (true) {
+			notFoundElement=false;
 			while (op == null) {
 				//System.out.println("1");
 				searchRecord=search(key,false); // check loop (ifra method or outter)
 				// the key was not in the tree at the linearization point, so no value was removed
 				//System.out.println("2");
-				if (searchRecord.grandParent == null || k.compareTo((K) searchRecord.n.key) != 0) return null;
+				notFoundElement=false;
+				if (searchRecord.grandParent == null || k.compareTo((K) searchRecord.n.key) != 0) 
+					notFoundElement=true;
+				//return null;
 
-
+				
 				////System.out.println(searchRecord.n.lastGen+" - "+searchRecord.startGen);
-				op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
+				if(!notFoundElement)
+					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
+				else{
+					op=new Operation();
+					op.notFoundElement=notFoundElement;
+				}
 				////System.out.println("normal");
 				//System.out.println("3");
 				if(op!=null){
@@ -2143,7 +2153,7 @@ public int transformTreeToList(final Node node, List<K> list){
 
 				
 				// we deleted a key, so we return the removed value (saved in the old node)
-				return (V) searchRecord.n.value;
+				 return  notFoundElement ? null : (V) searchRecord.n.value;
 			}
 			op = null;
 		}
@@ -2258,6 +2268,7 @@ public int transformTreeToList(final Node node, List<K> list){
 	}
 
 	public final void fixToKey(final Comparable<? super K> k) {
+		//System.out.println("chleg");
 		while (true) {
 			Node ggp, gp, p, l = root.left;
 			if (l.left == null) return; // only sentinels in tree...
@@ -2353,6 +2364,7 @@ public int transformTreeToList(final Node node, List<K> list){
 		// if we see aborted or committed, no point in helping (already done).
 		// further, if committed, variables may have been nulled out to help the garbage collector.
 		// so, we return.
+		if(!op.notFoundElement){
 		if (op.state != Operation.STATE_INPROGRESS) return true;
 
 		// freeze sub-tree -- vlx
@@ -2379,15 +2391,19 @@ public int transformTreeToList(final Node node, List<K> list){
 		} else { // assert: nodes[0].right == nodes[1]
 			updateRight.compareAndSet(nodes[0], nodes[1], subtree);    // splice in new sub-tree (as a right child)
 		}
+		
+		
+	}
 		if(op.updateSnapshot){ // only do this when a gcas has happened
 					//System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
 					//System.out.println("updating snapshot");
+					//System.out.println("0");
 					for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {
 						Node node=snapList.get(shots).left;
 						
 						if(op.deleteOp){
 							
-							//System.out.println("1");
+						//	System.out.println("1");
 							int x=0,y=0;
 						while(true){ 
 							//System.out.println("qwerty "+node.value);
@@ -2403,7 +2419,7 @@ public int transformTreeToList(final Node node, List<K> list){
 								break;
 							final Comparable<? super K> comp = comparable(l.key);
 							if( node.gen>l.lastGen){
-								//System.out.println("2");
+							//	System.out.println("2");
 								//System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
 
 								if(dir==LEFT){
@@ -2445,13 +2461,13 @@ public int transformTreeToList(final Node node, List<K> list){
 								}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
 									if(comp.compareTo((K)n.key)<0){
 										if(l.right.gen!=l.gen){
-											//System.out.println("4");
+											System.out.println("4");
 											updateRight.compareAndSet(l,l.right,n);
 										}
 									}else{
 										if(l.left.gen!=l.gen){
-											//System.out.println("5");
-											updateLeft.compareAndSet(l,l.right,n);
+											System.out.println("5");
+											updateLeft.compareAndSet(l,l.left,n);
 										}
 									}
 									
@@ -3142,6 +3158,7 @@ public int transformTreeToList(final Node node, List<K> list){
 		ArrayList<Character> directionList;
 		boolean updateSnapshot;
 		boolean deleteOp;
+		boolean notFoundElement;
 
 		public Operation() {            // create an inactive operation (a no-op) [[ we do this to avoid the overhead of inheritance ]]
 			nodes = null; ops = null; subtree = null;
