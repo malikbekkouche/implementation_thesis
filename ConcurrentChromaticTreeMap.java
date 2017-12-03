@@ -2136,9 +2136,9 @@ public int transformTreeToList(final Node node, List<K> list){
 				//System.out.println("4");
 				// clean up violations if necessary
 				if (d == 0) {
-					//if (searchRecord.parent.weight > 0 && searchRecord.n.weight > 0 && !isSentinel(searchRecord.parent)) fixToKey(k);
+					if (searchRecord.parent.weight > 0 && searchRecord.n.weight > 0 && !isSentinel(searchRecord.parent)) fixToKey(k);
 				} else {
-					//if (searchRecord.violations >= d) fixToKey(k);
+					if (searchRecord.violations >= d) fixToKey(k);
 				}
 
 				
@@ -2386,6 +2386,7 @@ public int transformTreeToList(final Node node, List<K> list){
 						Node node=snapList.get(shots).left;
 						
 						if(op.deleteOp){
+							
 							//System.out.println("1");
 							int x=0,y=0;
 						while(true){ 
