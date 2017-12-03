@@ -1,15 +1,17 @@
+import java.util.Random;
+
 class SeqMain{
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
 		//tree.put(5,7);
-		 for(int i=0;i<100;i++)
-			tree.put(i,i); 
-		/* tree.put(8,8);
+		 /* for(int i=0;i<100;i++)
+			tree.put(i,i);  */
+		 tree.put(8,8);
 		tree.put(4,4);
 		tree.put(18,18);
 		tree.put(2,2);
 		tree.put(22,22);
-		tree.put(1,1); */
+		tree.put(1,1); 
 		 // System.out.println("put "+tree.put(1,11));
 		//System.out.println("put "+tree.put(2,22));
 		// System.out.println("put "+tree.put(15,1515));
@@ -25,8 +27,11 @@ class SeqMain{
 		System.out.println("-------------------------------");
 		//System.out.println("remove "+tree.remove(1));
 		ConcurrentChromaticTreeMap<Integer,Integer> snap=tree.snapshot();
-		for(int i=0;i<50;i++){
-			tree.remove(i);
+		/* Random r=new Random();
+		for(int i=0;i<15;i++){
+		//while(true){
+			int v=r.nextInt(200);
+			System.out.println(v+"delete "+tree.remove(v,true));
 			 
 		} 
 		for(int i=0;i<100;i++){
@@ -36,11 +41,11 @@ class SeqMain{
 				System.out.println(i+" is null");
 			if(x!=i)
 				System.out.println(x+" is different than "+i);
-		} 
+		}  */
 		
 		 /* for(int i=100;i<200;i++)
 			tree.put(i,i+1); */ 
-	/* 	tree.remove(8);
+	 	tree.remove(8);
 		System.out.println("-------------------------------");
 		tree.remove(18);
 		System.out.println("-------------------------------");
@@ -57,7 +62,7 @@ class SeqMain{
 			
 			
 		}
-		 for(int i=100;i<200;i++)
+	/*	 for(int i=100;i<200;i++)
 			assert tree.get(i)==i+1; 
 		for(int i=00;i<20;i++){
 			if(i==8 || i==18 || i==22)
