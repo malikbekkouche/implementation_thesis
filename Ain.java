@@ -8,17 +8,6 @@ class Ain {
 			tree.put(j,j);
 		}
 		
-		
-		 // System.out.println("put "+tree.put(1,11));
-		//System.out.println("put "+tree.put(2,22));
-		// System.out.println("put "+tree.put(15,1515));
-		// System.out.println("put "+tree.put(22,2222));
-		/*System.out.println("put "+tree.put(9,77));
-		System.out.println("put "+tree.put(25,25));
-		System.out.println("put "+tree.put(30,30));
-		System.out.println("put "+tree.put(40,40));
-		System.out.println("put "+tree.put(50,50));
-		System.out.println("put "+tree.put(3,11)); */
 		System.out.println("-------------------------------");
 		System.out.println("-----------END OF PUT----------");
 		System.out.println("-------------------------------");
@@ -72,90 +61,90 @@ class Ain {
 		 */
 		 
 		 System.out.println("remove "+ 19+" "+tree.remove(19));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 6+" "+tree.remove(6));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 19+" "+tree.remove(19));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 6+" "+tree.remove(6));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 19+" "+tree.remove(19));
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 20+" "+tree.remove(20));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 14+" "+tree.remove(14));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 14+" "+tree.remove(14));
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 29+" "+tree.remove(29));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 19+" "+tree.remove(19));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 19+" "+tree.remove(19));
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 28+" "+tree.remove(28));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 20+" "+tree.remove(20));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 4+" "+tree.remove(4));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 3+" "+tree.remove(3));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 20+" "+tree.remove(20));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 4+" "+tree.remove(4));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 3+" "+tree.remove(3));
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 23+" "+tree.remove(23));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 21+" "+tree.remove(21));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 8+" "+tree.remove(8));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 2+" "+tree.remove(2));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 2+" "+tree.remove(2));
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 24+" "+tree.remove(24));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 11+" "+tree.remove(11));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 0+" "+tree.remove(0));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 2+" "+tree.remove(2));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 28+" "+tree.remove(28));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 0+" "+tree.remove(0));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 2+" "+tree.remove(2));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 28+" "+tree.remove(28));
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 17+" "+tree.remove(17));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 28+" "+tree.remove(28));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 0+" "+tree.remove(0));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 28+" "+tree.remove(28));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 0+" "+tree.remove(0));
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 25+" "+tree.remove(25));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 14+" "+tree.remove(14));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 7+" "+tree.remove(7));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 2+" "+tree.remove(2));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 3+" "+tree.remove(3));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 17+" "+tree.remove(17));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 14+" "+tree.remove(14));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 1+" "+tree.remove(1));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 4+" "+tree.remove(4));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 14+" "+tree.remove(14));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 7+" "+tree.remove(7));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 2+" "+tree.remove(2));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 3+" "+tree.remove(3));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 17+" "+tree.remove(17));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 14+" "+tree.remove(14));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 1+" "+tree.remove(1));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 4+" "+tree.remove(4));
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 16+" "+tree.remove(16));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 24+" "+tree.remove(24));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 24+" "+tree.remove(24));
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 27+" "+tree.remove(27));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 18+" "+tree.remove(18));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 6+" "+tree.remove(6));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 6+" "+tree.remove(6));
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 26+" "+tree.remove(26));
-		 System.out.println("---------------------------------");
+		 //System.out.println("---------------------------------");
 		 System.out.println("remove "+ 22+" "+tree.remove(22));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 1+" "+tree.remove(1));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 17+" "+tree.remove(17));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 27+" "+tree.remove(27));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 28+" "+tree.remove(28));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 1+" "+tree.remove(1));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 17+" "+tree.remove(17));
+		 //System.out.println("---------------------------------");
+		 //System.out.println("remove "+ 27+" "+tree.remove(27));
+		 //System.out.println("---------------------------------");
+		// System.out.println("remove "+ 28+" "+tree.remove(28));
 		 System.out.println("---------------------------------");
 		 System.out.println("remove "+ 10+" "+tree.remove(10));
 		 System.out.println("---------------------------------");
@@ -169,30 +158,30 @@ class Ain {
 			
 			//System.out.println("GET " + i + " FROM SNAP = " + snap.get(50));	
 		}
-		System.out.println("---------------------------------");
-		System.out.println("---------------------------------");
-		System.out.println("---------------------------------");
-		 System.out.println("remove "+ 18+" "+tree.remove(18));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 11+" "+tree.remove(11));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 23+" "+tree.remove(23));
-		 System.out.println("---------------------------------");
-		 System.out.println("remove "+ 6+" "+tree.remove(6));
-		 System.out.println("---------------------------------");
-		 System.out.println("---------------------------------");
-		 System.out.println("---------------------------------");
-		 System.out.println("---------------------------------");
-		 for(int j = 0; j < 30; j++){
-			Integer c=snap.get(j);
-			if(c!=null && c!=j){
-				System.out.println("Error on snap get " + j);
-			}else if(c==null){
-				System.out.println("Error on snap get null " + j);
-			}
-			
-			//System.out.println("GET " + i + " FROM SNAP = " + snap.get(50));	
-		}
+//		System.out.println("---------------------------------");
+//		System.out.println("---------------------------------");
+//		System.out.println("---------------------------------");
+//		 System.out.println("remove "+ 18+" "+tree.remove(18));
+//		 System.out.println("---------------------------------");
+//		 System.out.println("remove "+ 11+" "+tree.remove(11));
+//		 System.out.println("---------------------------------");
+//		 System.out.println("remove "+ 23+" "+tree.remove(23));
+//		 System.out.println("---------------------------------");
+//		 System.out.println("remove "+ 6+" "+tree.remove(6));
+//		 System.out.println("---------------------------------");
+//		 System.out.println("---------------------------------");
+//		 System.out.println("---------------------------------");
+//		 System.out.println("---------------------------------");
+//		 for(int j = 0; j < 30; j++){
+//			Integer c=snap.get(j);
+//			if(c!=null && c!=j){
+//				System.out.println("Error on snap get " + j);
+//			}else if(c==null){
+//				System.out.println("Error on snap get null " + j);
+//			}
+//			
+//			//System.out.println("GET " + i + " FROM SNAP = " + snap.get(50));	
+//		}
 		 //System.out.println("remove "+ +" "+tree.remove());
 		
 		
