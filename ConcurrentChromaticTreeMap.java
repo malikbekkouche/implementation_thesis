@@ -2611,33 +2611,33 @@ public int transformTreeToList(final Node node, List<K> list){
 							////System.out.println("qwerty "+node.value);
 							if(x==op.nodeList.size())
 								break;
-							
-							//////System.out.println(x+"dir : "+dir+" l "+l.key+"-"+l.value +" p "+node.key);
-							//////System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
-							char dir=(char)op.directionList.get(y);
-							Node l=(dir==LEFT) ? node.left : node.right;
 							Node n=op.nodeList.get(x);
-							
-
-							//final Comparable<? super K> k = comparable(l.key);
-							////System.out.println("bbbbb "+node.gen+node.lastGen+node.key+" "+l.gen+l.lastGen+l.key);
-							////System.out.println("null "+l);
-							/* if(l==null){
-
-						//System.out.println(node.key+" "+node.value+node.gen+node.lastGen+" "+op.nodeList.size()+op.directionList.size());
-						//System.out.println(x);
-						//System.out.println(op.nodeList.get(0).key+" "+op.nodeList.get(1).key+" "+op.nodeList.get(2).key);
-					} */
-
+							n.gen=node.gen;
+							n.lastGen=node.gen;
+							final Comparable<? super K> k = comparable(n.key);
+							char dir= (x==0) ? LEFT : (k.compareTo((K)node.key)>=0) ? RIGHT : LEFT;
+							Node l=(dir==LEFT) ? node.left : node.right;
 							if(l==null)
 								break;
+							
+							
+							/* if(l==null)
+								break; */
+							final Comparable<? super K> comp = comparable(l.key);
 							if( node.gen>l.lastGen){
-								////System.out.println("if "+node.gen+node.key+"-"+l.lastGen+l.key);
-
-								n.gen=node.gen;
-								n.lastGen=node.gen;
+								/* System.out.println("2 "+node.key+" - l "+l.key+" /"+n.key+n.lastGen+" "+dir);
+								if(l.right!=null)
+									System.out.println(l.right.key+" "+l.right.lastGen);
+								if(l.left!=null)
+									System.out.println(l.left.key+" "+l.left.lastGen);
+								
+								if(n.right!=null)
+									System.out.println("n "+n.right.key);
+								if(n.left!=null)
+									System.out.println("n "+n.left.key); */
+								
 								////System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
-
+								//System.out.println("extra "+node.gen+" "+ node.lastGen+" /"+l.gen+" "+l.lastGen +" n "+n.gen+" "+n.lastGen);
 								if(dir==LEFT){
 									/* node.left=n;
 							node=node.left; */
@@ -2658,9 +2658,7 @@ public int transformTreeToList(final Node node, List<K> list){
 							node=node.right; */
 									////System.out.println(Thread.currentThread()+"right "+node.key);
 									if(updateRight.compareAndSet(node,l,n)){
-						
 										node=node.right;
-
 									}
 									else{
 										////System.out.println("continue2 "+Thread.currentThread());
@@ -2669,14 +2667,49 @@ public int transformTreeToList(final Node node, List<K> list){
 										continue;
 									}
 								}
-								y++;
-							}else if(node.gen==l.gen && node.lastGen==l.lastGen){
-								////System.out.println("elseif ");
+								y++;x++;
+							}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)==0){
+								//System.out.println("3 "+node.key+" "+l.key+" " +n.key+" "+dir);
 								node=l;
-								y++;
-							}
-							x++;
-					
+								//y++;//x++;
+								}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
+									//System.out.println("doss ");
+									if(comp.compareTo((K)n.key)<=0){
+										//System.out.println("4 "+node.key+" "+l.key);
+										node=l;
+										l=l.right;
+									}else{
+										//System.out.println("5 "+node.key+" "+l.key);
+										node=l;
+										l=l.left;
+									}
+									
+									/* if(comp.compareTo((K)n.key)<0){
+										if(l.right.lastGen!=l.gen){
+											//System.out.println("4 "+node.key+" "+l.key+" "+n.key);
+											updateRight.compareAndSet(l,l.right,n);
+											//node=l;
+											
+										}
+									}else{
+										if(l.left.lastGen!=l.gen){
+											//System.out.println("5 "+node.key+l.key+" "+n.key);
+											updateLeft.compareAndSet(l,l.left,n);
+											//node=l;
+										}
+									} */
+									
+									/* if(x==op.nodeList.size()-3){
+										if(op.directionList.get(op.directionList.size()-1)==LEFT){
+											updateRight.compareAndSet(l,l.right,op.subtree);
+										}else{
+											updateLeft.compareAndSet(l,l.left,op.subtree);
+										}
+										break;
+									}  */
+									
+								}
+							
 						}
 					}
 					}
