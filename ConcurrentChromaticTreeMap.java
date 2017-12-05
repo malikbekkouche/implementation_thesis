@@ -2517,19 +2517,19 @@ public int transformTreeToList(final Node node, List<K> list){
 								break; */
 							final Comparable<? super K> comp = comparable(l.key);
 							if( node.gen>l.lastGen){
-								System.out.println("2 "+node.key+" - l "+l.key+" /"+n.key+" "+dir);
+								/* System.out.println("2 "+node.key+" - l "+l.key+" /"+n.key+n.lastGen+" "+dir);
 								if(l.right!=null)
-									System.out.println(l.right.key);
+									System.out.println(l.right.key+" "+l.right.lastGen);
 								if(l.left!=null)
-									System.out.println(l.left.key);
+									System.out.println(l.left.key+" "+l.left.lastGen);
 								
 								if(n.right!=null)
 									System.out.println("n "+n.right.key);
 								if(n.left!=null)
-									System.out.println("n "+n.left.key);
+									System.out.println("n "+n.left.key); */
 								
 								////System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
-								System.out.println("extra "+node.gen+" "+ node.lastGen+" "+l.lastGen +" n "+n.gen+" "+n.lastGen);
+								//System.out.println("extra "+node.gen+" "+ node.lastGen+" /"+l.gen+" "+l.lastGen +" n "+n.gen+" "+n.lastGen);
 								if(dir==LEFT){
 									/* node.left=n;
 							node=node.left; */
@@ -2561,17 +2561,17 @@ public int transformTreeToList(final Node node, List<K> list){
 								}
 								y++;x++;
 							}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)==0){
-								System.out.println("3 "+node.key +n.key);
+								//System.out.println("3 "+node.key+" "+l.key+" " +n.key+" "+dir);
 								node=l;
-								y++;x++;
+								//y++;//x++;
 								}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
-									System.out.println("doss ");
+									//System.out.println("doss ");
 									if(comp.compareTo((K)n.key)<=0){
-										System.out.println("4 "+node.key+" "+l.key);
+										//System.out.println("4 "+node.key+" "+l.key);
 										node=l;
 										l=l.right;
 									}else{
-										System.out.println("5 "+node.key+" "+l.key);
+										//System.out.println("5 "+node.key+" "+l.key);
 										node=l;
 										l=l.left;
 									}
