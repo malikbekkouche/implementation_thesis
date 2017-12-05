@@ -14,27 +14,19 @@ public class TestChromaticTree{
 		//LogicalOrderingAVL<Integer, String> map = new LogicalOrderingAVL<Integer, String>(Integer.MIN_VALUE, Integer.MAX_VALUE);
 		//SnapTreeMap<Integer, String> map = new SnapTreeMap<Integer, String>();
 		//StaticDictionary5<Integer, String> map = new StaticDictionary5<Integer, String>();
+		
 
-
+		//ConcurrentChromaticTreeMap<Integer, String> snap = map.snapshot();
 		int totalOperation = (int)Math.pow(2, 20);
 		int numOfThread = (int)Math.pow(2, 4);
 		int threadCount = 16;
 		_arrCounter = new AtomicIntegerArray(threadCount);
-		
 		testMap(threadCount, 1000, 1000, map);
 		int []arrCounter = new int[threadCount];
 		for(int i = 0; i < threadCount; i++){
 			arrCounter[i] = 0;
 		}
-		//		Mark7("TestChromaticTreeMap 1 thread",
-		//				i -> testMap(1, totalOperation/1, 500, map));
-		//		Mark7("TestChromaticTreeMap 2 threads",
-		//				i -> testMap(2, totalOperation/2, 500, map));
-		//		Mark7("TestChromaticTreeMap 4 thread",
-		//				i -> testMap(4, totalOperation/4, 500, map));
-		//		Mark7("TestChromaticTreeMap 8 thread",
-		//				i -> testMap(8, totalOperation/8, 19989, map));
-		//testMap(10, 100000, 500, map);//(threadCount, perThread, range, map)
+
 		List<Integer> lst = new LinkedList<Integer>();	
 		Map<Integer, String> map_ = new HashMap<Integer, String>();		
 		map.transformToList(lst);
@@ -58,6 +50,7 @@ public class TestChromaticTree{
 		assert(summ == sumOfArray);
 		for(int i = 0; i < threadCount; i++){
 			assert(arrCounter[i] == _arrCounter.get(i));
+
 		}
 		//				//System.out.println(map.put(2, "abc"));		
 		//				//System.out.println(map.put(7, "def"));		
@@ -74,14 +67,16 @@ public class TestChromaticTree{
 		Thread[] threads = new Thread[threadCount];
 		AtomicIntegerArray threadCounter = new AtomicIntegerArray(threadCount);
 		AtomicIntegerArray arrayCounter = new AtomicIntegerArray(threadCount);	
+
 		/* AtomicInteger sumOfPut = new AtomicInteger(0);
 		AtomicInteger sumOfGet = new AtomicInteger(0);
 		AtomicInteger sumOfRemove = new AtomicInteger(0); */
-		Random rand = new Random();
+
 		for(int t = 0; t < threadCount; t++){
-			final int myThread = t;			
+			final int myThread = t;		
+			Random rand = new Random();
 			threads[t] = new Thread(() ->{				
-				for(int i = 0; i < perThread; i++){//PUT
+				for(int i = 0; i < perThread; i++){//PUT					
 					Integer key = rand.nextInt(range);
 					String result = map.put(key, myThread + "_" + i);
 					//String result = map.putIfAbsent(key, myThread + "_" + i);
@@ -93,6 +88,7 @@ public class TestChromaticTree{
 						threadCounter.addAndGet(myThread, key);
 					}
 					arrayCounter.addAndGet(myThread, 1);
+
 					//sumOfPut.incrementAndGet();
 					////System.out.println("Thread " + myThread + "_" + i + " PUT " + key + " value " + result);
 					if(result == null){//this depend on every implementation
