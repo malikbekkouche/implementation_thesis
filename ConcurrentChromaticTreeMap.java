@@ -1049,7 +1049,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			dirList.add(dir);
 			
 			while(true){
-				System.out.println("inner");				
+				System.out.println("inner");
+				gp=root;
 				p=sentinel;
 				dir=LEFT;
 
@@ -1091,17 +1092,17 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, updateSnapshot);		
 				}else if(n.isLeaf() && updateSnapshot){
 					System.out.println("else");
-					for(int j=0;j<pathList.size()-1;j++){
-					System.out.println("print "+pathList.get(j+1).key);
+					for(int j=0;j<pathList.size();j++){
+					System.out.println("print "+pathList.get(j).key);
 					}
-					for(int j=0;j<pathList.size()-1;j++){
+					for(int j=pathList.size()-1;j>1;j--){
 						System.out.println("PATH LIST ");
-						if(pathList.get(j+1).gen!=gen)						
-						if(!GCAS_COPY(pathList.get(j),pathList.get(j+1),dirList.get(j),gen)){
-							System.out.println("jihihi "+pathList.get(j+1).key);
+						if(pathList.get(j).gen!=gen)						
+						if(!GCAS_COPY(pathList.get(j-1),pathList.get(j),dirList.get(j-1),gen)){
+							System.out.println("jihihi "+pathList.get(j).key);
 							j=0;
 						}else {
-							System.out.println("done "+pathList.get(j+1).key);
+							System.out.println("done "+pathList.get(j).key);
 						}						
 					}
 					
@@ -2528,7 +2529,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						n.gen=node.gen;
 						n.lastGen=node.gen;
 						final Comparable<? super K> k = comparable(n.key);
-						char dir= (x==0) ? LEFT : (k.compareTo((K)node.key)>=0) ? RIGHT : LEFT;
+						char dir= (node.key==null) ? LEFT : (k.compareTo((K)node.key)>=0) ? RIGHT : LEFT;
 						Node l=(dir==LEFT) ? node.left : node.right;
 						if(l==null)
 							break;
@@ -2551,23 +2552,23 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							 */
 							////System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
 							//System.out.println("extra "+node.gen+" "+ node.lastGen+" /"+l.gen+" "+l.lastGen +" n "+n.gen+" "+n.lastGen);
-							if(dir==LEFT){
+						if(dir==LEFT){
 								/* node.left=n;
-							node=node.left; 
-									////System.out.println(Thread.currentThread()+"left "+node.key);
-									if(updateLeft.compareAndSet(node,l,n)){
+							node=node.left; */
+								////System.out.println(Thread.currentThread()+"left "+node.key);
+								if(updateLeft.compareAndSet(node,l,n)){
 
-										node=node.left;
+									node=node.left;
 
-									}else{
-										////System.out.println("continue1 "+Thread.currentThread());
-										x=0;
-										y=0;
-										continue;
-									}
+								}else{
+									////System.out.println("continue1 "+Thread.currentThread());
+									x=0;
+									y=0;
+									continue;
 								}
-								else{
-									/* node.right=n;
+							}
+							else{
+								/* node.right=n;
 							node=node.right; */
 								////System.out.println(Thread.currentThread()+"right "+node.key);
 								if(updateRight.compareAndSet(node,l,n)){
