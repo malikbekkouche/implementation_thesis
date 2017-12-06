@@ -1024,7 +1024,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			int gen=root.gen;
 			char dir=LEFT;
 			////System.out.println("sentinelo "+root.left.gen);
-			Node sentinel=GCAS_READ(root,dir);
+			Node sentinel=GCAS_READ(root,dir);			
 
 			//////System.out.println("while");
 			//if(sentinel.gen==gen ){
@@ -1039,15 +1039,18 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					directionList.add(LEFT);
 				} */
 			////System.out.println("sentinel "+sentinel.gen);				
+
 			nodeList.add(new Node(sentinel.left));
 			pathList.add(root);
 			pathList.add((sentinel));
 			pathList.add((sentinel.left));				
 			dirList.add(LEFT);
 			dirList.add(dir);
-
+			
 			while(true){
 				System.out.println("inner");				
+				p=sentinel;
+
 				n=GCAS_READ(p,dir);
 				System.out.println(" n.gen = " + n.gen);
 
@@ -1073,12 +1076,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					}
 					else{		
 						n=GCAS_READ(n,dir);
-					}
-					nodeList.add(new Node(n));	
-					pathList.add(n);
-					dirList.add(dir);
-
-
+					}					
+						nodeList.add(new Node(n));	
+						pathList.add(n);
+						dirList.add(dir);						
+					
 				}
 				if((n.gen==gen  && n.isLeaf()) ){//live tree read here	
 					System.out.println("if");
@@ -1087,23 +1089,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					System.out.println("else");
 					for(int j=0;j<pathList.size()-1;j++){
 						System.out.println("PATH LIST ");
-						for(int k = 0; k < pathList.size()-1;k++){								
-							System.out.println(pathList.get(k).key + " " + dirList.get(k));
-
-						}
-
-						//if(pathList.get(j).gen!=gen)
+						//if(pathList.get(j).gen!=gen)						
 						if(!GCAS_COPY(pathList.get(j),pathList.get(j+1),dirList.get(j),gen)){
 							System.out.println("jihihi "+pathList.get(j+1).key);
 							j=0;
 						}else {
 							System.out.println("done "+pathList.get(j+1).key);
-						}
-						n = pathList.get(pathList.size()-1);
-						p = pathList.get(pathList.size()-2);
-						gp = pathList.get(pathList.size()-3);
-						ggp = pathList.get(pathList.size()-4);
-					}						
+						}						
+					}
+					
 				}else{
 					System.out.println("elsif");
 					updateSnapshot = true;	
