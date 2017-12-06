@@ -1009,9 +1009,10 @@ public int transformTreeToList(final Node node, List<K> list){
 		}
 	}
 	
-	public SearchRecord searchRemove(K key,boolean readOp){ // readOnly maybe
+	public SearchRecord searchRemove(K key){ // readOnly maybe
 		ArrayList<Node> nodeList  = new ArrayList<Node>();//used to store list of nodes from root to the target node
 		ArrayList<Node> pathList  = new ArrayList<Node>();
+		ArrayList<Character> dirList = new ArrayList<Character>();
 		boolean updateSnapshot = false;
 		while(true){
 			////System.out.println("while");
@@ -1026,7 +1027,7 @@ public int transformTreeToList(final Node node, List<K> list){
 			Node sentinel=GCAS_READ(root,dir);
 
 			//////System.out.println("while");
-			if(sentinel.gen==gen || readOp){
+			if(sentinel.gen==gen ){
 				if(sentinel.left==null)
 					return new SearchRecord(null,null,root,sentinel,gen);
 				//////System.out.println("in");
@@ -1040,6 +1041,7 @@ public int transformTreeToList(final Node node, List<K> list){
 				////System.out.println("sentinel "+sentinel.gen);
 				nodeList.add(new Node(sentinel.left));
 				pathList.add((sentinel.left));
+				dirList.add(dir);
 				while(true){
 					System.out.println("inner");
 					n=GCAS_READ(p,dir);
@@ -1047,15 +1049,15 @@ public int transformTreeToList(final Node node, List<K> list){
 					while(true){
 						System.out.println("interstelar");
 						if(n.isLeaf()){
-							////System.out.println("break");
+							System.out.println("break");
 							break;	
 						}							
 						
 							//on the snapshot we don't care about violation
-							if(!this.isReadOnly){
+							
 								if(n.weight>1 || (n.weight==0 && p.weight==0)) // was originally only l
 									violations++;
-							}
+							
 							ggp=gp;
 							gp=p;
 							p=n;
@@ -1069,26 +1071,27 @@ public int transformTreeToList(final Node node, List<K> list){
 							}
 								nodeList.add(new Node(n));	
 								pathList.add(n);
+								dirList.add(dir);
 						
 
 					}
-					if((n.gen==gen  && n.isLeaf())|| (readOp ) ){//live tree read here	
+					if((n.gen==gen  && n.isLeaf()) ){//live tree read here	
 							System.out.println("if");
-							return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, updateSnapshot);
-					}else if(!n.isLeaf()){	
-							System.out.println("elsif");
-							updateSnapshot = true;	
-					}else {
+							return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, updateSnapshot);		
+					}else if(n.isLeaf() && updateSnapshot){
 						System.out.println("else");
 						for(int j=0;j<pathList.size()-1;j++){
-							
-							if(pathList.get(j+1)==pathList.get(j).left)
-								dir=LEFT;
-							else 
-								dir=RIGHT;
-							if(pathList.get(j+1).gen!=gen)
-								GCAS_COPY(pathList.get(j),pathList.get(j+1),dir,gen);
+							if(pathList.get(j).gen!=gen)
+								if(!GCAS_COPY(pathList.get(j),pathList.get(j+1),dirList.get(j),gen)){
+									System.out.println("jihihi "+pathList.get(j+1).key);
+									j=0;
+								}else {
+									System.out.println("done "+pathList.get(j+1).key);
+								}
 						}
+					}else{
+						System.out.println("elsif");
+							updateSnapshot = true;	
 					}
 				}
 			}
@@ -2204,7 +2207,7 @@ public int transformTreeToList(final Node node, List<K> list){
 			notFoundElement=false;
 			while (op == null) {
 				////System.out.println("1");
-				searchRecord=search(key,false); // check loop (ifra method or outter)
+				searchRecord=searchRemove(key); // check loop (ifra method or outter)
 				// the key was not in the tree at the linearization point, so no value was removed
 				////System.out.println("2");
 				notFoundElement=false;
@@ -2517,8 +2520,8 @@ public int transformTreeToList(final Node node, List<K> list){
 								break; */
 							final Comparable<? super K> comp = comparable(l.key);
 							if( node.gen>l.lastGen){
-								/* System.out.println("2 "+node.key+" - l "+l.key+" /"+n.key+n.lastGen+" "+dir);
-								if(l.right!=null)
+								System.out.println("2 "+node.key+" - l "+l.key+" /"+n.key+n.lastGen+" "+dir);
+								/*if(l.right!=null)
 									System.out.println(l.right.key+" "+l.right.lastGen);
 								if(l.left!=null)
 									System.out.println(l.left.key+" "+l.left.lastGen);
@@ -2526,13 +2529,13 @@ public int transformTreeToList(final Node node, List<K> list){
 								if(n.right!=null)
 									System.out.println("n "+n.right.key);
 								if(n.left!=null)
-									System.out.println("n "+n.left.key); */
-								
+									System.out.println("n "+n.left.key); 
+								*/
 								////System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
 								//System.out.println("extra "+node.gen+" "+ node.lastGen+" /"+l.gen+" "+l.lastGen +" n "+n.gen+" "+n.lastGen);
 								if(dir==LEFT){
 									/* node.left=n;
-							node=node.left; */
+							node=node.left; 
 									////System.out.println(Thread.currentThread()+"left "+node.key);
 									if(updateLeft.compareAndSet(node,l,n)){
 										
@@ -2561,17 +2564,17 @@ public int transformTreeToList(final Node node, List<K> list){
 								}
 								y++;x++;
 							}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)==0){
-								//System.out.println("3 "+node.key+" "+l.key+" " +n.key+" "+dir);
+								System.out.println("3 "+node.key+" "+l.key+" " +n.key+" "+dir);
 								node=l;
 								//y++;//x++;
 								}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
-									//System.out.println("doss ");
+									System.out.println("doss ");
 									if(comp.compareTo((K)n.key)<=0){
-										//System.out.println("4 "+node.key+" "+l.key);
+										System.out.println("4 "+node.key+" "+l.key);
 										node=l;
 										l=l.right;
 									}else{
-										//System.out.println("5 "+node.key+" "+l.key);
+										System.out.println("5 "+node.key+" "+l.key);
 										node=l;
 										l=l.left;
 									}
@@ -2674,7 +2677,7 @@ public int transformTreeToList(final Node node, List<K> list){
 								//y++;//x++;
 								}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
 									//System.out.println("doss ");
-									if(comp.compareTo((K)n.key)<=0){
+									if(comp.compareTo((K)n.key)<0){
 										//System.out.println("4 "+node.key+" "+l.key);
 										node=l;
 										l=l.right;
