@@ -1023,6 +1023,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			Node root=RDCSS_ABORTABLE_READ();
 			int gen=root.gen;
 			char dir=LEFT;
+			boolean hasUpdated = false;
 			////System.out.println("sentinelo "+root.left.gen);
 			Node sentinel=GCAS_READ(root,dir);			
 
@@ -1046,11 +1047,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			pathList.add((sentinel.left));				
 			dirList.add(LEFT);
 			dirList.add(dir);
-			
+
 			while(true){
 				System.out.println("inner");				
 				p=sentinel;
-
+				dir = LEFT;
 				n=GCAS_READ(p,dir);
 				System.out.println(" n.gen = " + n.gen);
 
@@ -1077,16 +1078,18 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					else{		
 						n=GCAS_READ(n,dir);
 					}					
+					if(!hasUpdated){
 						nodeList.add(new Node(n));	
 						pathList.add(n);
-						dirList.add(dir);						
-					
+						dirList.add(dir);
+					}
 				}
 				if((n.gen==gen  && n.isLeaf()) ){//live tree read here	
 					System.out.println("if");
 					return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, updateSnapshot);		
 				}else if(n.isLeaf() && updateSnapshot){
 					System.out.println("else");
+					
 					for(int j=0;j<pathList.size()-1;j++){
 						System.out.println("PATH LIST ");
 						//if(pathList.get(j).gen!=gen)						
@@ -1097,7 +1100,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							System.out.println("done "+pathList.get(j+1).key);
 						}						
 					}
-					
+										
+					hasUpdated = true;
 				}else{
 					System.out.println("elsif");
 					updateSnapshot = true;	
