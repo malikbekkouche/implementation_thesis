@@ -1014,6 +1014,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		ArrayList<Node> pathList  = new ArrayList<Node>();
 		ArrayList<Character> dirList = new ArrayList<Character>();
 		boolean updateSnapshot = false;
+		
 		while(true){
 			////System.out.println("while");
 
@@ -1050,12 +1051,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			while(true){
 				System.out.println("inner");				
 				p=sentinel;
+				dir=LEFT;
 
 				n=GCAS_READ(p,dir);
 				System.out.println(" n.gen = " + n.gen);
 
 				while(true){
-					System.out.println("interstelar");
+					System.out.println("interstelar "+n.key+ " "+n.gen);
 					if(n.isLeaf()){
 						System.out.println("break");
 						break;	
@@ -1076,10 +1078,12 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					}
 					else{		
 						n=GCAS_READ(n,dir);
-					}					
-						nodeList.add(new Node(n));	
-						pathList.add(n);
-						dirList.add(dir);						
+					}			
+						if(!updateSnapshot){
+							nodeList.add(new Node(n));	
+							pathList.add(n);
+							dirList.add(dir);
+						}						
 					
 				}
 				if((n.gen==gen  && n.isLeaf()) ){//live tree read here	
@@ -1088,8 +1092,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}else if(n.isLeaf() && updateSnapshot){
 					System.out.println("else");
 					for(int j=0;j<pathList.size()-1;j++){
+					System.out.println("print "+pathList.get(j+1).key);
+					}
+					for(int j=0;j<pathList.size()-1;j++){
 						System.out.println("PATH LIST ");
-						//if(pathList.get(j).gen!=gen)						
+						if(pathList.get(j+1).gen!=gen)						
 						if(!GCAS_COPY(pathList.get(j),pathList.get(j+1),dirList.get(j),gen)){
 							System.out.println("jihihi "+pathList.get(j+1).key);
 							j=0;
