@@ -110,8 +110,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		d = allowedViolationsPerPath;
 		comparator = cmp;
 		dummy = new Operation();
-		Gen gen=new Gen();
-		root = new Node(null, null, 1, new Node(null, null, 1, null, null, dummy), null, dummy,gen.gen);
+		//Gen gen=new Gen();
+		root = new Node(null, null, 1, new Node(null, null, 1, null, null, dummy), null, dummy, 0);
+		System.out.println("GEN HERE LINE 115 = " + root.gen);
 		updateOp = AtomicReferenceFieldUpdater.newUpdater(Node.class, Operation.class, "op");
 		updateLeft = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "left");
 		updateRight = AtomicReferenceFieldUpdater.newUpdater(Node.class, Node.class, "right");
@@ -184,11 +185,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		}		
 		return checkOrderOfTree(node.left) && checkOrderOfTree(node.right);
 	}
-public final int transformToList(List<K> list){
+	public final int transformToList(List<K> list){
 		return  transformTreeToList(root, list);
 	}
 
-public int transformTreeToList(final Node node, List<K> list){
+	public int transformTreeToList(final Node node, List<K> list){
 		if (node == null) return 0;
 		if (node.left == null && node.key != null){
 			list.add((K) node.key);        	
@@ -209,20 +210,30 @@ public int transformTreeToList(final Node node, List<K> list){
 		while (l.left != null) {
 			l = (k.compareTo((K) l.key) < 0) ? l.left : l.right;					
 		} */
-		
+
 		if(this.isReadOnly){
-			Node l = root.left.left;
+			Node sentinel=GCAS_READ(root,LEFT);
+			Node l = sentinel.left;			
 			Comparable<?super K> comp = comparable(key);
+			//	System.out.println("BEGIN LOOP");
 			while(true){
+				//System.out.println(" l value = " + l.value);
 				if(l.isLeaf())
 					break;
-				if(comp.compareTo((K)l.key) < 0){
+				if(comp.compareTo((K)l.key) < 0){					
 					l = l.left;
-				}else
-					l = l.right;							
+					//System.out.println(" l GO LEFT");
+				}else{					
+					l = l.right;
+					//System.out.println(" l GO RIGHT");
+				}
 			}
-			return (V)l.value;			
+			//System.out.println("END LOOP");
+			//System.out.println("CALL GET IN SNAPSHOT");
+			return (V)l.value;						
 		}
+
+		//System.out.println("CALL AFTER SNAPSHOT GET");
 
 		SearchRecord searchRecord=search(key,true);
 		////////System.out.println("######### ");
@@ -901,7 +912,7 @@ public int transformTreeToList(final Node node, List<K> list){
 		else
 			return GCAS_COMMIT(in,m,dir);
 	}
-	
+
 
 	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
 		ArrayList<Node> nodeList  = new ArrayList<Node>();//used to store list of nodes from root to the target node
@@ -913,8 +924,10 @@ public int transformTreeToList(final Node node, List<K> list){
 			final Comparable<? super K> comp = comparable(key);
 			Node ggp=null,gp=null,p=null,n=null;
 			boolean retry;
-			Node root=RDCSS_ABORTABLE_READ();
+			//System.out.println("GEN BEFORE = " + root.gen);
+			Node root=RDCSS_ABORTABLE_READ();			
 			int gen=root.gen;
+			//System.out.println("GEN AFTER = " + gen);
 			char dir=LEFT;
 			////////System.out.println("sentinelo "+root.left.gen);
 			Node sentinel=GCAS_READ(root,dir);
@@ -971,7 +984,7 @@ public int transformTreeToList(final Node node, List<K> list){
 								////////System.out.println("snappy "+n.key);								
 								//if(n==null)
 
-									//System.out.println("nuuuuul n2");
+								//System.out.println("nuuuuul n2");
 								//////System.out.println("direction :"+dir+ " " +n.key);
 							}
 							else{
@@ -981,12 +994,12 @@ public int transformTreeToList(final Node node, List<K> list){
 								////////System.out.println("else"+n.key+readOp);
 								//if(n==null)
 
-									//System.out.println("nuuuuul n1");
+								//System.out.println("nuuuuul n1");
 								//////System.out.println("direction :"+dir+ " " +n.key);
 
 							}
-								nodeList.add(new Node(n));
-								directionList.add(dir);								
+							nodeList.add(new Node(n));
+							directionList.add(dir);								
 						}else{
 							break;
 						}
@@ -994,19 +1007,20 @@ public int transformTreeToList(final Node node, List<K> list){
 					}
 					//if(n==null)
 
-						//System.out.println("nuuuul "+n+" "+p.key+" "+gp.key+" "+ggp.key);
+					//System.out.println("nuuuul "+n+" "+p.key+" "+gp.key+" "+ggp.key);
 					if(n.gen==gen || (readOp )){//live tree read here	
 						////////System.out.println("return "+n.key);		
 
 						//for(int d=0;d<nodeList.size();d++)
 
-							////System.out.println(nodeList.get(d).key+" "+nodeList.get(d).value+" "+nodeList.get(d).gen+" "+nodeList.get(d).lastGen+" "+updateSnapshot);
-							return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, directionList, updateSnapshot);
+						////System.out.println(nodeList.get(d).key+" "+nodeList.get(d).value+" "+nodeList.get(d).gen+" "+nodeList.get(d).lastGen+" "+updateSnapshot);
+						return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, directionList, updateSnapshot);
 
 					}else{
 						if(!GCAS_COPY(p,n,dir,gen)){														
 							retry=true;//continue;//return RETRY; or continue maybe??
-							////////System.out.println("retry");
+							
+							//System.out.println("RETRY IN GCAS COPY between n.gen = " + n.gen + " and " + gen);
 						}else {					
 							////////System.out.println("abek abek");
 							updateSnapshot = true;
@@ -1025,16 +1039,15 @@ public int transformTreeToList(final Node node, List<K> list){
 				//updateSnapshot=true;
 				retry=true;//continue;//return retry;
 			}
-
 		}
 	}
-	
+
 	public SearchRecord searchRemove(K key){ // readOnly maybe
 		ArrayList<Node> nodeList  = new ArrayList<Node>();//used to store list of nodes from root to the target node
 		ArrayList<Node> pathList  = new ArrayList<Node>();
 		ArrayList<Character> dirList = new ArrayList<Character>();
 		boolean updateSnapshot = false;
-		
+
 		while(true){
 			////////System.out.println("while");
 
@@ -1101,12 +1114,12 @@ public int transformTreeToList(final Node node, List<K> list){
 					else{		
 						n=GCAS_READ(n,dir);
 					}			
-						if(!updateSnapshot){
-							nodeList.add(new Node(n));	
-							pathList.add(n);
-							dirList.add(dir);
-						}						
-					
+					if(!updateSnapshot){
+						nodeList.add(new Node(n));	
+						pathList.add(n);
+						dirList.add(dir);
+					}						
+
 				}
 				if((n.gen==gen  && n.isLeaf()) ){//live tree read here	
 					////System.out.println("if");
@@ -1115,17 +1128,17 @@ public int transformTreeToList(final Node node, List<K> list){
 					////System.out.println("else");
 
 					for(int j=0;j<pathList.size();j++){
-					////System.out.println("print "+pathList.get(j).key);
+						////System.out.println("print "+pathList.get(j).key);
 					}
 					for(int j=pathList.size()-1;j>1;j--){
 						////System.out.println("PATH LIST ");
 						if(pathList.get(j).gen!=gen)						
-						if(!GCAS_COPY(pathList.get(j-1),pathList.get(j),dirList.get(j-1),gen)){
-							////System.out.println("jihihi "+pathList.get(j).key);
-							j=0;
-						}else {
-							////System.out.println("done "+pathList.get(j).key);
-						}						
+							if(!GCAS_COPY(pathList.get(j-1),pathList.get(j),dirList.get(j-1),gen)){
+								////System.out.println("jihihi "+pathList.get(j).key);
+								j=0;
+							}else {
+								////System.out.println("done "+pathList.get(j).key);
+							}						
 					}										
 					hasUpdated = true;
 				}else{
@@ -1154,16 +1167,16 @@ public int transformTreeToList(final Node node, List<K> list){
 		if(op==null)
 
 			//System.out.println("op null ");
-		if(ops==null)
-			//System.out.println("ooops ");
-		for(int i=0;i<ops.length;i++){
-			if(!updateOp.compareAndSet(nodes[i],ops[i],op) && nodes[i].op != op){ // check order of cas
-				if(!op.allFrozen){
-					op.state=Operation.STATE_ABORTED;
-					return false;
+			if(ops==null)
+				//System.out.println("ooops ");
+				for(int i=0;i<ops.length;i++){
+					if(!updateOp.compareAndSet(nodes[i],ops[i],op) && nodes[i].op != op){ // check order of cas
+						if(!op.allFrozen){
+							op.state=Operation.STATE_ABORTED;
+							return false;
+						}
+					}
 				}
-			}
-		}
 		op.allFrozen=true;
 		boolean left;
 		if(nodes[0].left==nodes[1]){
@@ -1239,7 +1252,7 @@ public int transformTreeToList(final Node node, List<K> list){
 			}
 		}
 
-		
+
 		////System.out.println("after");
 		op.allFrozen=true;
 		boolean left;
@@ -1291,8 +1304,8 @@ public int transformTreeToList(final Node node, List<K> list){
 				}
 			}else if(step==Operation.STEP_COMMIT){
 
-				
-				
+
+
 				////System.out.println("commited");
 
 				////////System.out.println("should not "+op.updateSnapshot);
@@ -1339,7 +1352,7 @@ public int transformTreeToList(final Node node, List<K> list){
 							node=node.left; */
 									////////System.out.println(Thread.currentThread()+"left "+node.key);
 									if(updateLeft.compareAndSet(node,l,n)){
-										
+
 										node=node.left;
 
 									}else{
@@ -1354,7 +1367,7 @@ public int transformTreeToList(final Node node, List<K> list){
 							node=node.right; */
 									////////System.out.println(Thread.currentThread()+"right "+node.key);
 									if(updateRight.compareAndSet(node,l,n)){
-						
+
 										node=node.right;
 
 									}
@@ -1372,21 +1385,21 @@ public int transformTreeToList(final Node node, List<K> list){
 								y++;
 							}
 							x++;
-					
+
 						}
 					}
-					
+
 				}
 				for(int t=1;i<nodes.length;i++){
 					nodes[t].marked=true;
 				}
-				
+
 				op.state=Operation.STATE_COMMITTED;
 				//op.nodes=null;
 				//op.ops=null;
 
 
-				
+
 				return true; 
 			}
 		}
@@ -1401,6 +1414,7 @@ public int transformTreeToList(final Node node, List<K> list){
 	private Node RDCSS_READ(boolean abort){
 		Node r = root;
 		if(r.op instanceof Descriptor){
+			System.out.println("IN RDCSS_READ GEN = " + ((Node)RDCSS_COMPLETE(abort)).gen);
 			return (Node)RDCSS_COMPLETE(abort);
 		}
 		else 
@@ -1501,7 +1515,7 @@ public int transformTreeToList(final Node node, List<K> list){
 		}
 		//if(ops==null)
 
-			//System.out.println(" ops loop");
+		//System.out.println(" ops loop");
 		// Create copy of o, and create operation
 		Node node = new Node(n, gen);
 		Operation op = new Operation(nodes, ops, node);
@@ -1893,8 +1907,6 @@ public int transformTreeToList(final Node node, List<K> list){
 
 						//newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);//original before fix
 
-
-
 						Comparable<? super K> kk = comparable(gpp.key);
 
 						if(kk.compareTo((K)pp.key) < 0 ){
@@ -2263,7 +2275,6 @@ public int transformTreeToList(final Node node, List<K> list){
 				//return null;
 
 
-				
 				//////System.out.println(searchRecord.n.lastGen+" - "+searchRecord.startGen);
 
 				if(!notFoundElement)
@@ -2297,9 +2308,9 @@ public int transformTreeToList(final Node node, List<K> list){
 					if (searchRecord.violations >= d) fixToKey(k);
 				}
 
-				
+
 				// we deleted a key, so we return the removed value (saved in the old node)
-				 return  notFoundElement ? null : (V) searchRecord.n.value;
+				return  notFoundElement ? null : (V) searchRecord.n.value;
 			}
 			op = null;
 		}
@@ -2511,134 +2522,135 @@ public int transformTreeToList(final Node node, List<K> list){
 		// further, if committed, variables may have been nulled out to help the garbage collector.
 		// so, we return.
 		if(!op.notFoundElement){
-		if (op.state != Operation.STATE_INPROGRESS) return true;
+			if (op.state != Operation.STATE_INPROGRESS) return true;
 
-		// freeze sub-tree -- vlx
-		for (; i<ops.length; ++i) {
-			if (!updateOp.compareAndSet(nodes[i], ops[i], op) && nodes[i].op != op) { // if work was not done
-				if (op.allFrozen) {
-					return true;
-				} else {
-					op.state = Operation.STATE_ABORTED;
-					// help the garbage collector (must be AFTER we set state committed or aborted)
-					op.nodes = null;
-					op.ops = null;
-					op.subtree = null;
-					return false;
+			// freeze sub-tree -- vlx
+			for (; i<ops.length; ++i) {
+				if (!updateOp.compareAndSet(nodes[i], ops[i], op) && nodes[i].op != op) { // if work was not done
+					if (op.allFrozen) {
+						return true;
+					} else {
+						op.state = Operation.STATE_ABORTED;
+						// help the garbage collector (must be AFTER we set state committed or aborted)
+						op.nodes = null;
+						op.ops = null;
+						op.subtree = null;
+						return false;
+					}
 				}
 			}
-		}
-		op.allFrozen = true;
-		for (i=1; i<ops.length; ++i) nodes[i].marked = true; // finalize all but first node
+			op.allFrozen = true;
+			for (i=1; i<ops.length; ++i) nodes[i].marked = true; // finalize all but first node
 
-		// CAS in the new sub-tree (child-cas)
-		if (nodes[0].left == nodes[1]) {
-			updateLeft.compareAndSet(nodes[0], nodes[1], subtree);     // splice in new sub-tree (as a left child)
-		} else { // assert: nodes[0].right == nodes[1]
-			updateRight.compareAndSet(nodes[0], nodes[1], subtree);    // splice in new sub-tree (as a right child)
+			// CAS in the new sub-tree (child-cas)
+			if (nodes[0].left == nodes[1]) {
+				updateLeft.compareAndSet(nodes[0], nodes[1], subtree);     // splice in new sub-tree (as a left child)
+			} else { // assert: nodes[0].right == nodes[1]
+				updateRight.compareAndSet(nodes[0], nodes[1], subtree);    // splice in new sub-tree (as a right child)
+			}
+
+
 		}
-		
-		
-	}
 		if(op.updateSnapshot){ // only do this when a gcas has happened
 
-					////System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
-					////System.out.println("updating snapshot");
-					//System.out.println("0");
-					for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {
-						Node node=snapList.get(shots).left;
-						
-						if(op.deleteOp){
-							
-							//System.out.println("1");
-							int x=0,y=0;
-						while(true){ 
-							////System.out.println("qwerty "+node.value);
-							if(x==op.nodeList.size())
-								break;
-							Node n=op.nodeList.get(x);
-							n.gen=node.gen;
-							n.lastGen=node.gen;
-							final Comparable<? super K> k = comparable(n.key);
-							char dir= LEFT;
-							if(x!=0)
-								dir =(k.compareTo((K)node.key)>=0) ? RIGHT : LEFT;
-							Node l=(dir==LEFT) ? node.left : node.right;
-							if(l==null)
-								break;
-							
-							
-							/* if(l==null)
+			////System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
+			////System.out.println("updating snapshot");
+			//System.out.println("0");
+			for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {				
+				Node node=snapList.get(shots).left;
+
+				if(op.deleteOp){
+
+					//System.out.println("1");
+					int x=0,y=0;
+					while(true){ 
+						////System.out.println("qwerty "+node.value);
+						if(x==op.nodeList.size())
+							break;
+						Node n=op.nodeList.get(x);
+						n.gen=node.gen;
+						n.lastGen=node.gen;
+						final Comparable<? super K> k = comparable(n.key);
+						char dir= LEFT;
+						if(x!=0)
+							dir =(k.compareTo((K)node.key)>=0) ? RIGHT : LEFT;
+						Node l=(dir==LEFT) ? node.left : node.right;
+						if(l==null)
+							break;
+
+
+						/* if(l==null)
 								break; */
-							final Comparable<? super K> comp = comparable(l.key);
-							if( node.gen>l.lastGen){
-								/* System.out.println("2 "+node.key+" - l "+l.key+" /"+n.key+n.lastGen+" "+dir);
+						final Comparable<? super K> comp = comparable(l.key);
+						if( node.gen>l.lastGen){
+							/* System.out.println("2 "+node.key+" - l "+l.key+" /"+n.key+n.lastGen+" "+dir);
 								if(l.right!=null)
 									System.out.println(l.right.key+" "+l.right.lastGen);
 								if(l.left!=null)
 									System.out.println(l.left.key+" "+l.left.lastGen);
-								
+
 
 								if(n.right!=null)
 									////System.out.println("n "+n.right.key);
 								if(n.left!=null)
 
 									System.out.println("n "+n.left.key); */
-								
-								////System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
-								//System.out.println("extra "+node.gen+" "+ node.lastGen+" /"+l.gen+" "+l.lastGen +" n "+n.gen+" "+n.lastGen);
-								if(dir==LEFT){
-									/* node.left=n;
-							node=node.left; */
-									////System.out.println(Thread.currentThread()+"left "+node.key);
-									if(updateLeft.compareAndSet(node,l,n)){
-										
-										node=node.left;
 
-									}else{
-										////System.out.println("continue1 "+Thread.currentThread());
-										x=0;
-										y=0;
-										continue;
-									}
+							////System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
+							//System.out.println("extra "+node.gen+" "+ node.lastGen+" /"+l.gen+" "+l.lastGen +" n "+n.gen+" "+n.lastGen);
+							if(dir==LEFT){
+								/* node.left=n;
+							node=node.left; */
+								////System.out.println(Thread.currentThread()+"left "+node.key);
+								if(updateLeft.compareAndSet(node,l,n)){
+
+									node=node.left;
+
+								}else{
+									////System.out.println("continue1 "+Thread.currentThread());
+									x=0;
+									y=0;
+									continue;
+								}
+							}
+							else{
+								/* node.right=n;
+							node=node.right; */
+								////System.out.println(Thread.currentThread()+"right "+node.key);
+								if(updateRight.compareAndSet(node,l,n)){
+									node=node.right;
 								}
 								else{
-									/* node.right=n;
-							node=node.right; */
-									////System.out.println(Thread.currentThread()+"right "+node.key);
-									if(updateRight.compareAndSet(node,l,n)){
-										node=node.right;
-									}
-									else{
-										////System.out.println("continue2 "+Thread.currentThread());
-										x=0;
-										y=0;
-										continue;
-									}
+									////System.out.println("continue2 "+Thread.currentThread());
+									x=0;
+									y=0;
+									continue;
 								}
-								y++;x++;
-							}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)==0){
-								//System.out.println("3 "+node.key+" "+l.key+" " +n.key+" "+dir);
+							}
+							y++;x++;
+						}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)==0){
+							//System.out.println("3 "+node.key+" "+l.key+" " +n.key+" "+dir);
+							node=l;
+							x++;
+							//y++;//x++;
+						}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
+							//System.out.println("doss ");
+							if(comp.compareTo((K)n.key)<=0){
+								//System.out.println("4 "+node.key+" "+l.key);
 								node=l;
-								//y++;//x++;
-								}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
-									//System.out.println("doss ");
-									if(comp.compareTo((K)n.key)<=0){
-										//System.out.println("4 "+node.key+" "+l.key);
-										node=l;
-										l=l.right;
-									}else{
-										//System.out.println("5 "+node.key+" "+l.key);
-										node=l;
-										l=l.left;
-									}
-									
-									/* if(comp.compareTo((K)n.key)<0){
+								l=l.right;
+							}else{
+								//System.out.println("5 "+node.key+" "+l.key);
+								node=l;
+								l=l.left;
+							}
+
+							/* if(comp.compareTo((K)n.key)<0){
 										if(l.right.lastGen!=l.gen){
 											//////System.out.println("4 "+node.key+" "+l.key+" "+n.key);
 											updateRight.compareAndSet(l,l.right,n);
 											//node=l;
-											
+
 										}
 									}else{
 										if(l.left.lastGen!=l.gen){
@@ -2647,8 +2659,8 @@ public int transformTreeToList(final Node node, List<K> list){
 											//node=l;
 										}
 									} */
-									
-									/* if(x==op.nodeList.size()-3){
+
+							/* if(x==op.nodeList.size()-3){
 										if(op.directionList.get(op.directionList.size()-1)==LEFT){
 											updateRight.compareAndSet(l,l.right,op.subtree);
 										}else{
@@ -2656,102 +2668,102 @@ public int transformTreeToList(final Node node, List<K> list){
 										}
 										break;
 									}  */
-									
-								}
-							
+
 						}
-							
-						}
-						else {
-						int x=0,y=0;
-						while(true){ 
-							////System.out.println("qwerty "+node.value);
-							if(x==op.nodeList.size())
-								break;
-							Node n=op.nodeList.get(x);
-							n.gen=node.gen;
-							n.lastGen=node.gen;
-							final Comparable<? super K> k = comparable(n.key);
-							char dir=LEFT;
-							if(x!=0)
-								dir=(k.compareTo((K)node.key)>=0) ? RIGHT : LEFT;
-							Node l=(dir==LEFT) ? node.left : node.right;
-							if(l==null)
-								break;
-							
-							
-							/* if(l==null)
+
+					}
+
+				}
+				else {
+					int x=0,y=0;
+					while(true){ 
+						////System.out.println("qwerty "+node.value);
+						if(x==op.nodeList.size())
+							break;
+						Node n=op.nodeList.get(x);
+						n.gen=node.gen;
+						n.lastGen=node.gen;
+						final Comparable<? super K> k = comparable(n.key);
+						char dir=LEFT;
+						if(x!=0)
+							dir=(k.compareTo((K)node.key)>=0) ? RIGHT : LEFT;
+						Node l=(dir==LEFT) ? node.left : node.right;
+						if(l==null)
+							break;
+
+
+						/* if(l==null)
 								break; */
-							final Comparable<? super K> comp = comparable(l.key);
-							if( node.gen>l.lastGen){
-								/* System.out.println("2 "+node.key+" - l "+l.key+" /"+n.key+n.lastGen+" "+dir);
+						final Comparable<? super K> comp = comparable(l.key);
+						if( node.gen>l.lastGen){
+							/* System.out.println("2 "+node.key+" - l "+l.key+" /"+n.key+n.lastGen+" "+dir);
 
 								if(l.right!=null)
 									////System.out.println(l.right.key+" "+l.right.lastGen);
 								if(l.left!=null)
 
 									System.out.println(l.left.key+" "+l.left.lastGen);
-								
+
 
 								if(n.right!=null)
 									////System.out.println("n "+n.right.key);
 								if(n.left!=null)
 									System.out.println("n "+n.left.key); */
-								
-								////System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
-								//System.out.println("extra "+node.gen+" "+ node.lastGen+" /"+l.gen+" "+l.lastGen +" n "+n.gen+" "+n.lastGen);
-								if(dir==LEFT){
-									/* node.left=n;
-							node=node.left; */
-									////System.out.println(Thread.currentThread()+"left "+node.key);
-									if(updateLeft.compareAndSet(node,l,n)){
-										
-										node=node.left;
 
-									}else{
-										////System.out.println("continue1 "+Thread.currentThread());
-										x=0;
-										y=0;
-										continue;
-									}
+							////System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
+							//System.out.println("extra "+node.gen+" "+ node.lastGen+" /"+l.gen+" "+l.lastGen +" n "+n.gen+" "+n.lastGen);
+							if(dir==LEFT){
+								/* node.left=n;
+							node=node.left; */
+								////System.out.println(Thread.currentThread()+"left "+node.key);
+								if(updateLeft.compareAndSet(node,l,n)){
+
+									node=node.left;
+
+								}else{
+									////System.out.println("continue1 "+Thread.currentThread());
+									x=0;
+									y=0;
+									continue;
+								}
+							}
+							else{
+								/* node.right=n;
+							node=node.right; */
+								////System.out.println(Thread.currentThread()+"right "+node.key);
+								if(updateRight.compareAndSet(node,l,n)){
+									node=node.right;
 								}
 								else{
-									/* node.right=n;
-							node=node.right; */
-									////System.out.println(Thread.currentThread()+"right "+node.key);
-									if(updateRight.compareAndSet(node,l,n)){
-										node=node.right;
-									}
-									else{
-										////System.out.println("continue2 "+Thread.currentThread());
-										x=0;
-										y=0;
-										continue;
-									}
+									////System.out.println("continue2 "+Thread.currentThread());
+									x=0;
+									y=0;
+									continue;
 								}
-								y++;x++;
-							}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)==0){
-								//System.out.println("3 "+node.key+" "+l.key+" " +n.key+" "+dir);
+							}
+							y++;x++;
+						}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)==0){
+							//System.out.println("3 "+node.key+" "+l.key+" " +n.key+" "+dir);
+							node=l;
+							//y++;//x++;
+						}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
+							//System.out.println("doss ");
+							if(comp.compareTo((K)n.key)<=0){
+								//System.out.println("4 "+node.key+" "+l.key);
 								node=l;
-								//y++;//x++;
-								}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)!=0){
-									//System.out.println("doss ");
-									if(comp.compareTo((K)n.key)<=0){
-										//System.out.println("4 "+node.key+" "+l.key);
-										node=l;
-										l=l.right;
-									}else{
-										//System.out.println("5 "+node.key+" "+l.key);
-										node=l;
-										l=l.left;
-									}
-									
-									/* if(comp.compareTo((K)n.key)<0){
+								l=l.right;
+							}else{
+								//System.out.println("5 "+node.key+" "+l.key);
+								node=l;
+								l=l.left;
+							}
+
+							/* if(comp.compareTo((K)n.key)<0){
 										if(l.right.lastGen!=l.gen){
 											//////System.out.println("4 "+node.key+" "+l.key+" "+n.key);
 											updateRight.compareAndSet(l,l.right,n);
 											//node=l;
-											
+
 										}
 									}else{
 										if(l.left.lastGen!=l.gen){
@@ -2760,8 +2772,8 @@ public int transformTreeToList(final Node node, List<K> list){
 											//node=l;
 										}
 									} */
-									
-									/* if(x==op.nodeList.size()-3){
+
+							/* if(x==op.nodeList.size()-3){
 										if(op.directionList.get(op.directionList.size()-1)==LEFT){
 											updateRight.compareAndSet(l,l.right,op.subtree);
 										}else{
@@ -2769,14 +2781,14 @@ public int transformTreeToList(final Node node, List<K> list){
 										}
 										break;
 									}  */
-									
-								}
-							
+
 						}
+
 					}
-					}
-					
 				}
+			}
+
+		}
 		op.state = Operation.STATE_COMMITTED;
 
 		// help the garbage collector (must be AFTER we set state committed or aborted)
@@ -2824,8 +2836,8 @@ public int transformTreeToList(final Node node, List<K> list){
 			//////////System.out.println("createInsertOp 1665 " );
 		}
 
-		
-		
+
+
 
 		//////////System.out.println();
 		return new Operation( nodes, ops, newP);
@@ -3320,7 +3332,7 @@ public int transformTreeToList(final Node node, List<K> list){
 			this.directionList = directionList;
 			this.updateSnapshot = updateSnapshot;			
 		}
-		
+
 		public SearchRecord(Node ggp,Node gp,Node p,Node n,int gen,int viol, ArrayList nodeList, boolean updateSnapshot){
 			greatGrandParent=ggp;
 			grandParent=gp;
@@ -3705,17 +3717,17 @@ public int transformTreeToList(final Node node, List<K> list){
 		Node n=root;
 		printTree(n);
 	}
-	
+
 	public void printTree(Node n){
 		if(n.isLeaf()){
 
 			System.out.println("leaf "+n.key+" "+n.value);
-			
+
 		}else {
-		System.out.println("root "+n.key+" "+n.value);
-		printTree(n.left);
-		printTree(n.right);
+			System.out.println("root "+n.key+" "+n.value);
+			printTree(n.left);
+			printTree(n.right);
 		}
-		
+
 	}
 }
