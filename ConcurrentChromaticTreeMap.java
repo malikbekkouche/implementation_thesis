@@ -84,9 +84,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	public final Node root;
 	private final Operation dummy;
 	private final Comparator<? super K> comparator;
-	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Operation> updateOp;
-	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Node> updateLeft, updateRight;
-	private final AtomicReferenceFieldUpdater<ConcurrentChromaticTreeMap.Node, ConcurrentChromaticTreeMap.Node> updatePrev;
+	private final AtomicReferenceFieldUpdater<Node, Operation> updateOp;
+	private final AtomicReferenceFieldUpdater<Node, Node> updateLeft, updateRight;
+	private final AtomicReferenceFieldUpdater<Node, Node> updatePrev;
 
 	// added for gcas
 	private final char LEFT='L';
@@ -222,10 +222,16 @@ public class ConcurrentChromaticTreeMap<K,V> {
 					//System.out.println("finish");
 					break;
 				}
-				if(comp.compareTo((K)l.key) < 0){					
+				if(comp.compareTo((K)l.key) < 0){
+					Node ll=l.left;
+					if(ll==null)
+						System.out.println("nuuuul l");
 					l = l.left;
 					//System.out.println(" l GO LEFT");
-				}else{					
+				}else{
+					Node ll=l.right;
+					if(ll==null)
+						System.out.println("nuuuul r");
 					l = l.right;
 					//System.out.println(" l GO RIGHT");
 				}
@@ -1492,19 +1498,20 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return helpSCXX(op); // original took int also */	
 
 
-		Operation[] ops = new Operation[] { null, null};
+		Operation[] ops = new Operation[] { null};
 		Node[] nodes = new Node[] { null, n };
+
 
 		if(!weakLLX(p, 0, ops, nodes)) {
 			//////////System.out.println("false1");
 			return false;
 		}
 
-		if(!weakLLX(n, 1, ops, nodes)) {
+		//if(!weakLLX(n, 1, ops, nodes)) {
 			//////////System.out.println("false2");
 			//////////System.out.println(ops[1].state);
-			return false;
-		}  
+		//	return false;
+		//}
 
 		if(dir==LEFT){
 
@@ -1521,7 +1528,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		// Create copy of o, and create operation
 		Node node = new Node(n, gen);
 		Operation op = new Operation(nodes, ops, node);
-		op.gen=gen;
+		//op.gen=gen;
 
 		//n.op = op;
 
@@ -2605,6 +2612,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 									////System.out.println("continue1 "+Thread.currentThread());
 									x=0;
 									y=0;
+									node=snapList.get(shots).left;
 									continue;
 								}
 							}
@@ -2619,6 +2627,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 									////System.out.println("continue2 "+Thread.currentThread());
 									x=0;
 									y=0;
+									node=snapList.get(shots).left;
 									continue;
 								}
 							}
