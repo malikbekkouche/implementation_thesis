@@ -2542,7 +2542,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			op.allFrozen = true;
 			for (i=1; i<ops.length; ++i) nodes[i].marked = true; // finalize all but first node
 
-			// CAS in the new sub-tree (child-cas)
+			// CAS in the new sub-tree (child-cas) ORIGINAL UPDATE LIVE TREE HERE
 			if (nodes[0].left == nodes[1]) {
 				updateLeft.compareAndSet(nodes[0], nodes[1], subtree);     // splice in new sub-tree (as a left child)
 			} else { // assert: nodes[0].right == nodes[1]
@@ -2588,7 +2588,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 									System.out.println(l.right.key+" "+l.right.lastGen);
 								if(l.left!=null)
 									System.out.println(l.left.key+" "+l.left.lastGen);
-
 
 								if(n.right!=null)
 									////System.out.println("n "+n.right.key);
@@ -2789,6 +2788,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}
 
 		}
+
+		
 		op.state = Operation.STATE_COMMITTED;
 
 		// help the garbage collector (must be AFTER we set state committed or aborted)
