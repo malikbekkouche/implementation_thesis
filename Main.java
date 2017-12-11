@@ -92,7 +92,7 @@ class Main {
 					//System.out.println("removage "+x);
 					//System.out.println("remove "+x+" "+tree.remove(x));
 					//System.out.println("put "+tree.put(x,x+1));
-				int x=r.nextInt(100000);
+				int x=r.nextInt(10000);
 				tree.remove(x);
 					//System.out.println("remove "+x +" "+tree.remove(x));
 					//x=r.nextInt(1000);
