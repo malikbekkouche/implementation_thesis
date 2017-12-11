@@ -218,10 +218,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			//	System.out.println("BEGIN LOOP");
 			while(true){
 				//System.out.println(" l value = " + l.value);
-				if(l.isLeaf() && !l.op.allFrozen)
+				if(l.isLeaf()){
+					//System.out.println("finish");
 					break;
-				else if(l.isLeaf() && l.op.allFrozen)
-					l=sentinel.left;
+				}
 				if(comp.compareTo((K)l.key) < 0){					
 					l = l.left;
 					//System.out.println(" l GO LEFT");
@@ -2523,7 +2523,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		// if we see aborted or committed, no point in helping (already done).
 		// further, if committed, variables may have been nulled out to help the garbage collector.
 		// so, we return.
-		//if(!op.notFoundElement){
+		if(!op.notFoundElement){
 			if (op.state != Operation.STATE_INPROGRESS) return true;
 
 			// freeze sub-tree -- vlx
@@ -2544,15 +2544,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			op.allFrozen = true;
 			for (i=1; i<ops.length; ++i) nodes[i].marked = true; // finalize all but first node
 
-			// CAS in the new sub-tree (child-cas)
-			if (nodes[0].left == nodes[1]) {
-				updateLeft.compareAndSet(nodes[0], nodes[1], subtree);     // splice in new sub-tree (as a left child)
-			} else { // assert: nodes[0].right == nodes[1]
-				updateRight.compareAndSet(nodes[0], nodes[1], subtree);    // splice in new sub-tree (as a right child)
-			}
+			
 
 
-		//}
+		}
 		if(op.updateSnapshot){ // only do this when a gcas has happened
 
 			////System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
@@ -2791,11 +2786,14 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			}
 
 		}
+		
+			if(!op.notFoundElement){
 		// CAS in the new sub-tree (child-cas)
 			if (nodes[0].left == nodes[1]) {
 				updateLeft.compareAndSet(nodes[0], nodes[1], subtree);     // splice in new sub-tree (as a left child)
 			} else { // assert: nodes[0].right == nodes[1]
 				updateRight.compareAndSet(nodes[0], nodes[1], subtree);    // splice in new sub-tree (as a right child)
+			}
 			}
 		op.state = Operation.STATE_COMMITTED;
 
