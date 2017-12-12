@@ -3,7 +3,7 @@ class Main {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
 		//tree.put(5,7);
-		for(int j=0;j<100000;j++){
+		for(int j=0;j<10;j++){
 			//System.out.println("PUT "+j);
 			tree.put(j,j);
 		}
@@ -42,7 +42,7 @@ class Main {
 				if(s==1000)
 					System.out.println(s + " sssss");
 				//System.out.println("while");
-				for(int j=0;j<100000;j++){
+				for(int j=0;j<10;j++){
 					Integer x =snap.get(j);
 					
 					if(x==null)
@@ -92,7 +92,7 @@ class Main {
 					//System.out.println("removage "+x);
 					//System.out.println("remove "+x+" "+tree.remove(x));
 					//System.out.println("put "+tree.put(x,x+1));
-				int x=r.nextInt(10000);
+				int x=r.nextInt(10);
 				tree.remove(x);
 					//System.out.println("remove "+x +" "+tree.remove(x));
 					//x=r.nextInt(1000);
