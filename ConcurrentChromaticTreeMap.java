@@ -958,6 +958,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				directionList.add(LEFT);
 				while(true){
 					////////System.out.println("inner");
+
 					n=GCAS_READ(p,dir);
 
 					while(true){
@@ -1025,13 +1026,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, directionList, updateSnapshot);
 
 					}else{
-						if(!GCAS_COPY(p,n,dir,gen)){														
-							retry=true;//continue;//return RETRY; or continue maybe??
-							
-							//System.out.println("RETRY IN GCAS COPY between n.gen = " + n.gen + " and " + gen);
-						}else {					
-							////////System.out.println("abek abek");
+						System.out.println(n.key+"-"+n.gen +" "+p.key+"-"+p.gen+" "+Thread.currentThread());
+						if(GCAS_COPY(p,n,dir,gen)){
+							//retry=true;//continue;//return RETRY; or continue maybe??
 							updateSnapshot = true;
+							//System.out.println("RETRY IN GCAS COPY between n.gen = " + n.gen + " and " + gen);
 						}
 						//////////System.out.println("generation" +n.key+" "+n.gen+" "+p.gen);
 					}
@@ -1485,7 +1484,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	private boolean GCAS_COPY(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
-
+		//System.out.println("begin "+Thread.currentThread());
 		/* Operation op=createReplaceOp(p,n,n.gen);		
 		//check direction of parent node
 
@@ -1501,7 +1500,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		Operation[] ops = new Operation[] { null};
 		Node[] nodes = new Node[] { null, n };
 
-
+		System.out.println("1 "+Thread.currentThread());
 		if(!weakLLX(p, 0, ops, nodes)) {
 			//////////System.out.println("false1");
 			return false;
@@ -1523,7 +1522,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				return false;
 		}
 		//if(ops==null)
-
+		//System.out.println("2 "+Thread.currentThread());
 		//System.out.println(" ops loop");
 		// Create copy of o, and create operation
 		Node node = new Node(n, gen);
@@ -1531,14 +1530,15 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		//op.gen=gen;
 
 		//n.op = op;
-
+		//System.out.println("help "+Thread.currentThread());
 		if(helpSCX(op,0)) {
 			// Copy operation was committed, and traversal can continue
 			//////////System.out.println("true");
+		//	System.out.println("true "+Thread.currentThread());
 			return true;
 		} else {
 			// Copy operation failed, traversal will retry after reading the node again
-			//////////System.out.println("false");
+		//	System.out.println("false "+Thread.currentThread());
 			return false;
 		}
 	}
@@ -2492,7 +2492,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			helpSCX(r.op, 1);
 		}
 		//////////System.out.println("node "+state+" "+r.marked);
-		//////////System.out.println("null");
+		System.out.println("null");
 		return null;
 	}
 	// helper function to use the results of a weakLLX more conveniently
@@ -2551,7 +2551,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			op.allFrozen = true;
 			for (i=1; i<ops.length; ++i) nodes[i].marked = true; // finalize all but first node
 
-			
+
 
 
 		}
@@ -2804,6 +2804,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				updateRight.compareAndSet(nodes[0], nodes[1], subtree);    // splice in new sub-tree (as a right child)
 			}
 			}
+			//if(subtree.marked || subtree.left.marked || subtree.right.marked)
+			//	System.out.println("55");
 		op.state = Operation.STATE_COMMITTED;
 
 		// help the garbage collector (must be AFTER we set state committed or aborted)
