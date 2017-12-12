@@ -2549,7 +2549,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				}
 			}
 			op.allFrozen = true;
-			for (i=1; i<ops.length; ++i) nodes[i].marked = true; // finalize all but first node
+			//for (i=1; i<ops.length; ++i) nodes[i].marked = true; // finalize all but first node
 
 
 
