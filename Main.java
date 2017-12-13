@@ -72,14 +72,14 @@ class Main {
 		});
 		t2.start(); 
 
-		int threadCount=8;
+		int threadCount=2;
 		Thread[] t=new Thread[threadCount];
 		for(int j=0;j<threadCount;j++){
 			t[j]=new Thread(() -> {
 
 			Random r=new Random();
 			//while(true){
-				for(int v=0;v<10000;v++){
+				for(int v=0;v<1000;v++){
 				//System.out.println("remove");
 				//for(int k=0;k<10000;k++){
 				//int x=r.nextInt(100000);
@@ -105,8 +105,8 @@ class Main {
 						System.out.println("snap null error "+x); */
 					/*else if(c!=x)
 						System.out.println(c +" is not x thread1"); */
-					if(v==1000)
-						System.out.println("v "+v);
+					//if(v%1000==0 && v!=0)
+					//	System.out.println("v "+v);
 			}
 		});
 		}
