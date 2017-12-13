@@ -3,7 +3,7 @@ class Main {
 	public static void main(String[] args){
 		ConcurrentChromaticTreeMap<Integer,Integer> tree=new ConcurrentChromaticTreeMap();
 		//tree.put(5,7);
-		for(int j=0;j<100000;j++){
+		for(int j=0;j<10000;j++){
 			//System.out.println("PUT "+j);
 			tree.put(j,j);
 		}
@@ -42,7 +42,7 @@ class Main {
 				if(s==1000)
 					System.out.println(s + " sssss");
 				//System.out.println("while");
-				for(int j=0;j<100000;j++){
+				for(int j=0;j<10000;j++){
 					Integer x =snap.get(j);
 					
 					if(x==null)
@@ -51,23 +51,8 @@ class Main {
 						System.out.println(j +" is not x "+x+" s: "+s);
 					assert x!=null;
 					assert x==j;
-					//Integer y=tree.get(j);
-					/* if(y!=j+1)
-						System.out.println(y+" (tree) is different than "+(j+1)); */
 				}
-				//System.out.println("2");
-				/* for(int j=-500;j<0;j++)
-					assert snap.get(j)==null;
-				for(int j=1000;j<1500;j++)
-					assert snap.get(j)==null;
-				int i=r.nextInt();
-				Integer x=snap.get(i);
-				if(x!=null && (i!=3000 && i!=2 && i!=4 && i!=-4000))
-					System.out.println("mismatch on 0");
-				if(snap.get(10000)!=null)
-					System.out.println("mismatch 33"); */
-				//assert (tree.get(i)==null || tree.get(i)==2*i);
-				//System.out.println("check");
+
 			}
 		});
 		t2.start(); 
@@ -79,7 +64,7 @@ class Main {
 
 			Random r=new Random();
 			//while(true){
-				for(int v=0;v<100000;v++){
+				for(int v=0;v<10000;v++){
 				//System.out.println("remove");
 				//for(int k=0;k<10000;k++){
 				//int x=r.nextInt(100000);
@@ -92,8 +77,8 @@ class Main {
 					//System.out.println("removage "+x);
 					//System.out.println("remove "+x+" "+tree.remove(x));
 					//System.out.println("put "+tree.put(x,x+1));
-				int x=r.nextInt(100000);
-				tree.remove(x);
+				int x=r.nextInt(10000);
+				tree.put(x,x+1);
 					//System.out.println("remove "+x +" "+tree.remove(x));
 					//x=r.nextInt(1000);
 					//tree.put(x,x+1);
@@ -121,6 +106,22 @@ class Main {
 		}
 		//t2.join();
 		}catch(Exception e){}
+
+		Thread t3=new Thread(() -> {
+				//System.out.println("while");
+				for(int j=0;j<10000;j++){
+					Integer x =tree.get(j);
+
+					if(x==null)
+						System.out.println(j +" is null");
+					else if(x!=j+1)
+						System.out.println(j +" is not x "+x);
+					assert x!=null;
+					assert x==j+1;
+
+			}
+		});
+		t3.start();
 		System.out.println("-------------------------------");
 		System.out.println("-------------END---------------");
 		System.out.println("-------------------------------");
@@ -200,3 +201,4 @@ class Main {
 		//System.out.println(tree.search(8,true).n.value);
 	}
 }
+
