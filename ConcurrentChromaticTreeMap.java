@@ -958,12 +958,18 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				directionList.add(LEFT);
 				while(true){
 					////////System.out.println("inner");
-
-					n=GCAS_READ(p,dir);
+					if(updateSnapshot && directionList.size()>1){
+						p=(directionList.get(directionList.size()-2)==LEFT) ? gp.left : gp.right;//GCAS_READ(gp,directionList.get(directionList.size()-2));
+					//	n = (dir==LEFT) ? p.left : p.right;
+					}//else {
+					if(p==null || p.isLeaf())
+						break;
+					n = GCAS_READ(p, dir);
+					//}
 
 					while(true){
 
-						if(n.isLeaf()){
+						if(n==null || n.isLeaf()){
 							////////System.out.println("break");
 							break;	
 						}							
@@ -1026,7 +1032,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, directionList, updateSnapshot);
 
 					}else{
-						System.out.println(n.key+"-"+n.gen +" "+p.key+"-"+p.gen+" "+Thread.currentThread());
+						//System.out.println(n.key+"-"+n.gen +" "+p.key+"-"+p.gen+" "+Thread.currentThread());
 						if(GCAS_COPY(p,n,dir,gen)){
 							//retry=true;//continue;//return RETRY; or continue maybe??
 							updateSnapshot = true;
@@ -1500,8 +1506,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		Operation[] ops = new Operation[] { null};
 		Node[] nodes = new Node[] { null, n };
 
-		System.out.println("1 "+Thread.currentThread());
-		if(!weakLLX(p, 0, ops, nodes)) {
+		//System.out.println("1 "+Thread.currentThread());
+		if(!weakLLXGCAS(p, 0, ops, nodes)) {
 			//////////System.out.println("false1");
 			return false;
 		}
@@ -2492,7 +2498,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			helpSCX(r.op, 1);
 		}
 		//////////System.out.println("node "+state+" "+r.marked);
-		System.out.println("null");
+		//System.out.println("null "+r.marked);
 		return null;
 	}
 	// helper function to use the results of a weakLLX more conveniently
@@ -2501,6 +2507,29 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		nodes[i] = r;
 		//////////System.out.println("here "+ops[i].state+ " "+r.marked);
 		return true;
+	}
+
+	private boolean weakLLXGCAS(final Node r, final int i, final Operation[] ops, final Node[] nodes) {
+		if ((ops[i] = weakLLXGCAS(r)) == null) return false;
+		nodes[i] = r;
+		//////////System.out.println("here "+ops[i].state+ " "+r.marked);
+		return true;
+	}
+
+	private Operation weakLLXGCAS(final Node r) {
+		final Operation rinfo = r.op;
+		final int state = rinfo.state;
+		if (state == Operation.STATE_ABORTED || (state == Operation.STATE_COMMITTED )) {//!r.marked
+			return rinfo;
+		}
+		if (rinfo.state == Operation.STATE_INPROGRESS) {
+			helpSCX(rinfo, 1);
+		} else if (r.op.state == Operation.STATE_INPROGRESS) {
+			helpSCX(r.op, 1);
+		}
+		//////////System.out.println("node "+state+" "+r.marked);
+		//System.out.println("null "+r.marked);
+		return null;
 	}
 
 	private boolean weakLLX(final Node r, final int i, final ArrayList<Operation> ops, final ArrayList<Node> nodes) {
