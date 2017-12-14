@@ -95,7 +95,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	private volatile int generation;
 	private volatile int maxSnapId =-1;
 	public boolean isReadOnly=false;
-	public ArrayList<Node> snapList;
+	public volatile ArrayList<Node> snapList;
 
 	public ConcurrentChromaticTreeMap() {
 		this(DEFAULT_d, null); 
@@ -213,31 +213,50 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		if(this.isReadOnly){
 			Node sentinel=GCAS_READ(root,LEFT);
-			Node l = sentinel.left;			
+			Node l = sentinel.left;
+			ArrayList<Node> list=new ArrayList<>();
+			ArrayList<Character> listChar=new ArrayList<>();
+			char ch=LEFT;
 			Comparable<?super K> comp = comparable(key);
 			//	System.out.println("BEGIN LOOP");
 			while(true){
+
 				//System.out.println(" l value = " + l.value);
 				if(l.isLeaf()){
 					//System.out.println("finish");
 					break;
 				}
+
 				if(comp.compareTo((K)l.key) < 0){
 					Node ll=l.left;
 					if(ll==null)
 						System.out.println("nuuuul l");
 					l = l.left;
+					ch=LEFT;
+					listChar.add(LEFT);
 					//System.out.println(" l GO LEFT");
 				}else{
 					Node ll=l.right;
 					if(ll==null)
 						System.out.println("nuuuul r");
 					l = l.right;
+					ch=RIGHT;
+					listChar.add(RIGHT);
 					//System.out.println(" l GO RIGHT");
 				}
+				list.add(l);
+
 			}
+			list.add(l);
+			listChar.add(ch);
 			//System.out.println("END LOOP");
-			//System.out.println("CALL GET IN SNAPSHOT");
+			//System.out.println("CALL GET IN SNAPSHOT "+key+" "+l.value);
+			if(comp.compareTo((K)l.value)!=0) {
+				for (Node n : list)
+					System.out.println(n.key + " path "+n.gen);
+				for(char c : listChar)
+					System.out.println(c + " path");
+			}
 			return (V)l.value;						
 		}
 
@@ -922,10 +941,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 
-	public SearchRecord search(K key,boolean readOp){ // readOnly maybe
+	public  SearchRecord search(K key,boolean readOp){ // readOnly maybe
 		ArrayList<Node> nodeList  = new ArrayList<Node>();//used to store list of nodes from root to the target node
 		ArrayList<Character> directionList = new ArrayList();
 		boolean updateSnapshot = false;
+		boolean copyFail=false;
 		while(true){
 			////////System.out.println("while");
 
@@ -937,6 +957,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			int gen=root.gen;
 			//System.out.println("GEN AFTER = " + gen);
 			char dir=LEFT;
+			char prevDir=LEFT;
 			////////System.out.println("sentinelo "+root.left.gen);
 			Node sentinel=GCAS_READ(root,dir);
 
@@ -958,18 +979,21 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				directionList.add(LEFT);
 				while(true){
 					////////System.out.println("inner");
-					if(updateSnapshot && directionList.size()>1){
-						p=(directionList.get(directionList.size()-2)==LEFT) ? gp.left : gp.right;//GCAS_READ(gp,directionList.get(directionList.size()-2));
-					//	n = (dir==LEFT) ? p.left : p.right;
+					if(copyFail ){
+						p=(prevDir==LEFT) ? gp.left : gp.right;//GCAS_READ(gp,directionList.get(directionList.size()-2));
+//						System.out.println("copy fail "+p.key);
+//					//	n = (dir==LEFT) ? p.left : p.right;
 					}//else {
-					if(p==null || p.isLeaf())
+					if(p==null || p.isLeaf()) {
+//						//updateSnapshot=false;
 						break;
+					}
 					n = GCAS_READ(p, dir);
 					//}
 
 					while(true){
-
-						if(n==null || n.isLeaf()){
+					copyFail=false;
+						if(n==null|| n.isLeaf()){
 							////////System.out.println("break");
 							break;	
 						}							
@@ -982,6 +1006,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							ggp=gp;
 							gp=p;
 							p=n;
+							prevDir=dir;
 							//////////System.out.println("search node "+key+": "+n.key+"*"+n.gen);
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
 
@@ -1037,6 +1062,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							//retry=true;//continue;//return RETRY; or continue maybe??
 							updateSnapshot = true;
 							//System.out.println("RETRY IN GCAS COPY between n.gen = " + n.gen + " and " + gen);
+						}else{
+							copyFail=true;
 						}
 						//////////System.out.println("generation" +n.key+" "+n.gen+" "+p.gen);
 					}
