@@ -947,52 +947,35 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		boolean updateSnapshot = false;
 		boolean copyFail=false;
 		while(true){
-			////////System.out.println("while");
-
 			final Comparable<? super K> comp = comparable(key);
 			Node ggp=null,gp=null,p=null,n=null;
 			boolean retry;
-			//System.out.println("GEN BEFORE = " + root.gen);
-			Node root=RDCSS_ABORTABLE_READ();			
+			Node root=RDCSS_ABORTABLE_READ();
 			int gen=root.gen;
-			//System.out.println("GEN AFTER = " + gen);
 			char dir=LEFT;
 			char prevDir=LEFT;
-			////////System.out.println("sentinelo "+root.left.gen);
 			Node sentinel=GCAS_READ(root,dir);
 
-			//////////System.out.println("while");
 			if(sentinel.gen==gen || readOp){
 				if(sentinel.left==null)
 					return new SearchRecord(null,null,root,sentinel,gen);
-				//////////System.out.println("in");
 				gp=root;
 				p=sentinel;
 				int violations=0;
-				/* if(nodeList.size()==0){
-					nodeList.add(new Node(sentinel));
-					directionList.add(LEFT);
-				} */
-				////////System.out.println("sentinel "+sentinel.gen);
 				nodeList.add(new Node(sentinel.left));
 
-				directionList.add(LEFT);
 				while(true){
-					////////System.out.println("inner");
 					if(copyFail ){
-						p=(prevDir==LEFT) ? gp.left : gp.right;//GCAS_READ(gp,directionList.get(directionList.size()-2));
-//						System.out.println("copy fail "+p.key);
-//					//	n = (dir==LEFT) ? p.left : p.right;
-					}//else {
+//						System.out.println("copy fail");
+						return search(key,false);
+					}
 					if(p==null || p.isLeaf()) {
-//						//updateSnapshot=false;
 						break;
 					}
 					n = GCAS_READ(p, dir);
-					//}
 
 					while(true){
-					copyFail=false;
+
 						if(n==null|| n.isLeaf()){
 							////////System.out.println("break");
 							break;	
@@ -1006,78 +989,33 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							ggp=gp;
 							gp=p;
 							p=n;
-							prevDir=dir;
-							//////////System.out.println("search node "+key+": "+n.key+"*"+n.gen);
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
-
-							//add to list of nodes
-
-							//////////System.out.println("searching n "+dir+n.key +" "+n.gen);
-							//////////System.out.println("node key = " + n.key + " - dir = " + dir);
-							//used if there is an extra pointer of a node
-							//////////System.out.println("node "+n.key+" "+dir);
-							if(this.isReadOnly){//lack of case Snapshot get the element
-								//								nodeList.add(n);
-								//								directionList.add(dir);	
-								////////System.out.println("if");
-								n = (dir == LEFT) ? n.left : n.right;
-								////////System.out.println("snappy "+n.key);								
-								//if(n==null)
-
-								//System.out.println("nuuuuul n2");
-								//////System.out.println("direction :"+dir+ " " +n.key);
-							}
-							else{
-								//								nodeList.add(n);
-								//								directionList.add(dir);	
+//							if(this.isReadOnly){//lack of case Snapshot get the element
+//								n = (dir == LEFT) ? n.left : n.right;
+//							}
+//							else{
 								n=GCAS_READ(n,dir);
-								////////System.out.println("else"+n.key+readOp);
-								//if(n==null)
-
-								//System.out.println("nuuuuul n1");
-								//////System.out.println("direction :"+dir+ " " +n.key);
-
-							}
+//							}
 							nodeList.add(new Node(n));
-							directionList.add(dir);								
 						}else{
 							break;
 						}
 
 					}
-					//if(n==null)
-
-					//System.out.println("nuuuul "+n+" "+p.key+" "+gp.key+" "+ggp.key);
-					if(n.gen==gen || (readOp )){//live tree read here	
-						////////System.out.println("return "+n.key);		
-
-						//for(int d=0;d<nodeList.size();d++)
-
-						////System.out.println(nodeList.get(d).key+" "+nodeList.get(d).value+" "+nodeList.get(d).gen+" "+nodeList.get(d).lastGen+" "+updateSnapshot);
-						return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, directionList, updateSnapshot);
-
+					if(n.gen==gen || (readOp )){//live tree read here
+						return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, updateSnapshot);
 					}else{
-						//System.out.println(n.key+"-"+n.gen +" "+p.key+"-"+p.gen+" "+Thread.currentThread());
 						if(GCAS_COPY(p,n,dir,gen)){
-							//retry=true;//continue;//return RETRY; or continue maybe??
+							copyFail=false;
 							updateSnapshot = true;
-							//System.out.println("RETRY IN GCAS COPY between n.gen = " + n.gen + " and " + gen);
 						}else{
 							copyFail=true;
 						}
-						//////////System.out.println("generation" +n.key+" "+n.gen+" "+p.gen);
 					}
 				}
 			}
 			else{
-				//////////System.out.println("generation else"+" : root"+root.gen+root.marked+" sentinel " +sentinel.gen+sentinel.marked+ " left "+sentinel.left.key+" "+sentinel.left.gen+" "+sentinel.left.marked);
-				//nodeList.add(new Node(sentinel));
-				//directionList.add(LEFT);
-				////////System.out.println("gcas sentinel");
 				GCAS_COPY(root,sentinel,dir,gen);
-				////////System.out.println("update else 2");
-				//updateSnapshot=true;
-				retry=true;//continue;//return retry;
 			}
 		}
 	}
@@ -1196,254 +1134,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 
-	private boolean newHelpSCXX(Operation op){
-		final AtomicIntegerFieldUpdater<Operation> updateStep = 
-				AtomicIntegerFieldUpdater.newUpdater(Operation.class, "step");//need to be checked also		
-		Node[] nodes=op.nodes;
-		Operation[] ops=op.ops;
-		Node subtree=op.subtree;
-		int gen=op.gen;
-		AtomicReferenceFieldUpdater genericUpdater;
-		if(op==null)
 
-			//System.out.println("op null ");
-			if(ops==null)
-				//System.out.println("ooops ");
-				for(int i=0;i<ops.length;i++){
-					if(!updateOp.compareAndSet(nodes[i],ops[i],op) && nodes[i].op != op){ // check order of cas
-						if(!op.allFrozen){
-							op.state=Operation.STATE_ABORTED;
-							return false;
-						}
-					}
-				}
-		op.allFrozen=true;
-		boolean left;
-		if(nodes[0].left==nodes[1]){
-			genericUpdater=updateLeft;
-			left=true;
-		}else{
-			genericUpdater=updateRight;
-			left=false;
-		}
-
-		while(true){
-			if(op.state!=Operation.STATE_INPROGRESS){
-				return op.state==Operation.STATE_COMMITTED ? true : false ;
-			}
-			int step=op.step;
-			if(step==Operation.STEP_SUBTREE){
-				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
-						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
-					updateStep.compareAndSet(op,step,Operation.STEP_GENERATION);
-					////////////System.out.println("op "+op.step );
-				}else{
-					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
-				}
-			}else if(step==Operation.STEP_GENERATION){
-				Node root=RDCSS_ABORTABLE_READ();
-				if(root.gen==nodes[1].gen){
-					updateStep.compareAndSet(op,step,Operation.STEP_COMMIT);
-					////////////System.out.println("commit");
-				}else{
-					/* updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
-					//////////System.out.println("ab"); */
-					AtomicIntegerFieldUpdater<Node> up=AtomicIntegerFieldUpdater.newUpdater(Node.class, "gen");
-					Node sentinel=nodes[1];
-					/* if(up.compareAndSet(sentinel,nodes[1].gen,root.gen))
-						////////System.out.println("updated gen "+nodes[1].key+" "+nodes[1].gen);
-					else  */
-					if(!up.compareAndSet(sentinel,nodes[1].gen,root.gen))
-						updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
-				}
-			}else if(step==Operation.STEP_ABORT){
-				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
-					op.state=Operation.STATE_ABORTED;
-					////////////System.out.println("aborted");
-					return false;
-				}
-			}else if(step==Operation.STEP_COMMIT){
-				/* for(int i=1;i<nodes.length;i++){
-					nodes[i].marked=true;
-				} */
-				op.state=Operation.STATE_COMMITTED;
-				//////////System.out.println("final gen for node "+nodes[1].gen+" "+nodes[1].key);
-				//////////System.out.println("commited");
-				return true;
-			}
-		}
-	}
-
-	private boolean helpSCXX(Operation op, int i){
-		final AtomicIntegerFieldUpdater<Operation> updateStep = 
-				AtomicIntegerFieldUpdater.newUpdater(Operation.class, "step");//need to be checked also		
-		Node[] nodes=op.nodes;
-		Operation[] ops=op.ops;
-		Node subtree=op.subtree;
-		int gen=op.gen;
-		AtomicReferenceFieldUpdater genericUpdater;
-		////////System.out.println("before");
-		for(;i<ops.length;i++){
-			if(!updateOp.compareAndSet(nodes[i],ops[i],op) && nodes[i].op != op){ // check order of cas
-				if(!op.allFrozen){
-					op.state=Operation.STATE_ABORTED;
-					return false;
-				}
-			}
-		}
-
-
-		////System.out.println("after");
-		op.allFrozen=true;
-		boolean left;
-		if(nodes[0].left==nodes[1]){
-			genericUpdater=updateLeft;
-			left=true;
-		}else{
-			genericUpdater=updateRight;
-			left=false;
-		}
-
-		while(true){
-			////////System.out.println("some");
-			if(op.state!=Operation.STATE_INPROGRESS){
-				return op.state==Operation.STATE_COMMITTED ? true : false ;
-			}
-			int step=op.step;
-			////////System.out.println("where");
-			if(step==Operation.STEP_SUBTREE){
-				//////////System.out.println("syb");
-				//if(left)
-				//////////System.out.println("left : "+nodes[0].left.key+"-"+nodes[0].left.value+nodes[0].left.extra+"*"+nodes[1].key+"-"+nodes[1].value+nodes[1].extra);
-				//else
-				//////////System.out.println("right "+ nodes[0].right.key+"-"+nodes[0].right.value+nodes[0].right.extra+"*"+nodes[1].key+"-"+nodes[1].value+nodes[1].extra);
-				if(genericUpdater.compareAndSet(nodes[0],nodes[1],subtree) ||
-						(left ? (nodes[0].left==nodes[1]) : (nodes[0].right==nodes[1]) )){
-					updateStep.compareAndSet(op,step,Operation.STEP_GENERATION);
-					////////System.out.println("SUBTREE " );
-				}else{
-					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
-					////////System.out.println("b");
-				}
-			}else if(step==Operation.STEP_GENERATION){
-				Node root=RDCSS_ABORTABLE_READ();
-				if(root.gen==nodes[0].gen){
-					updateStep.compareAndSet(op,step,Operation.STEP_COMMIT);
-					////////System.out.println("GENERATION");
-				}else{
-					updateStep.compareAndSet(op,step,Operation.STEP_ABORT);
-					////////System.out.println("ab");
-					////////System.out.println("gen "+root.gen+nodes[0].gen);
-				}
-			}else if(step==Operation.STEP_ABORT){
-				////////System.out.println("u");
-				if(genericUpdater.compareAndSet(nodes[0],subtree,nodes[1])){
-					op.state=Operation.STATE_ABORTED;
-					////////System.out.println("aborted");
-					return false;
-				}
-			}else if(step==Operation.STEP_COMMIT){
-
-
-
-				////System.out.println("commited");
-
-				////////System.out.println("should not "+op.updateSnapshot);
-				if(op.updateSnapshot){ // only do this when a gcas has happened
-					////////System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
-					////////System.out.println("updating snapshot");
-					for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {
-						Node node=snapList.get(shots).left;
-						////////System.out.println("snap root *************** =  "+node.gen);
-
-						//for(int x=0;x<op.directionList.size() ;x++){
-						int x=0,y=0;
-						while(true){
-							////////System.out.println("qwerty "+node.value);
-							if(x==op.nodeList.size())
-								break;
-							char dir=(char)op.directionList.get(y);
-							Node l=(dir==LEFT) ? node.left : node.right;
-							//////////System.out.println(x+"dir : "+dir+" l "+l.key+"-"+l.value +" p "+node.key);
-							//////////System.out.println("before "+node.gen+"-"+l.lastGen+" "+l.key+" "+l.value);
-							Node n=op.nodeList.get(x);
-
-							//final Comparable<? super K> k = comparable(l.key);
-							////////System.out.println("bbbbb "+node.gen+node.lastGen+node.key+" "+l.gen+l.lastGen+l.key);
-							////////System.out.println("null "+l);
-							/* if(l==null){
-
-						//////System.out.println(node.key+" "+node.value+node.gen+node.lastGen+" "+op.nodeList.size()+op.directionList.size());
-						//////System.out.println(x);
-						//////System.out.println(op.nodeList.get(0).key+" "+op.nodeList.get(1).key+" "+op.nodeList.get(2).key);
-					} */
-
-							if(l==null)
-								break;
-							if( node.gen>l.lastGen){
-								////////System.out.println("if "+node.gen+node.key+"-"+l.lastGen+l.key);
-
-								n.gen=node.gen;
-								n.lastGen=node.gen;
-								////////System.out.println("after "+n.lastGen+"/"+n.key+"/"+n.value+"-"+l.lastGen+"/"+l.key+"/"+l.value);
-
-								if(dir==LEFT){
-									/* node.left=n;
-							node=node.left; */
-									////////System.out.println(Thread.currentThread()+"left "+node.key);
-									if(updateLeft.compareAndSet(node,l,n)){
-
-										node=node.left;
-
-									}else{
-										////////System.out.println("continue1 "+Thread.currentThread());
-										x=0;
-										y=0;
-										continue;
-									}
-								}
-								else{
-									/* node.right=n;
-							node=node.right; */
-									////////System.out.println(Thread.currentThread()+"right "+node.key);
-									if(updateRight.compareAndSet(node,l,n)){
-
-										node=node.right;
-
-									}
-									else{
-										////////System.out.println("continue2 "+Thread.currentThread());
-										x=0;
-										y=0;
-										continue;
-									}
-								}
-								y++;
-							}else if(node.gen==l.gen && node.lastGen==l.lastGen){
-								////////System.out.println("elseif ");
-								node=l;
-								y++;
-							}
-							x++;
-
-						}
-					}
-
-				}
-				for(int t=1;i<nodes.length;i++){
-					nodes[t].marked=true;
-				}
-
-				op.state=Operation.STATE_COMMITTED;
-				//op.nodes=null;
-				//op.ops=null;
-
-
-
-				return true; 
-			}
-		}
-	}
 
 
 
@@ -1534,7 +1225,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		Node[] nodes = new Node[] { null, n };
 
 		//System.out.println("1 "+Thread.currentThread());
-		if(!weakLLXGCAS(p, 0, ops, nodes)) {
+		if(!weakLLX(p, 0, ops, nodes)) {
 			//////////System.out.println("false1");
 			return false;
 		}
@@ -1719,516 +1410,8 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		//////////System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
 		return new Operation(nodes, ops, subtree);
 	}
-	/*
 
-	private Operation createReplaceOpReal(final Node gp,final Node p, final Node l,K key, V value , final int gen) {
-		int newGen=gen;//maybe wrong
-		final Operation[] ops = new Operation[]{null, null, null};
-		final Node[] nodes = new Node[]{null, null, null};
-		final Comparable<? super K> k = comparable(key);
 
-
-
-
-		ArrayList<Node> nodeList=new ArrayList();
-		ArrayList<Character> dirList=new ArrayList();
-		ArrayList<Operation> opsArray=new ArrayList();
-		ArrayList<Node> nodesArray=new ArrayList();
-		////////System.out.println("1");
-
-		// remember weakLLX
-		Node n= root.left;
-		nodeList.add(n);
-		n=n.left;
-		char dir;
-		while(!n.isLeaf()){ // create list of nodes on the path + the directions taken
-			dir = (k.compareTo((K)n.key)<0) ? LEFT : RIGHT ;
-			dirList.add(dir);
-			nodeList.add(n);
-			if(dir==LEFT){
-				////////System.out.println("dir "+dir+" * " +n.key+ " "+n.gen);
-				n=n.left;
-
-			}
-			else{
-				////////System.out.println("dir "+dir+" * " +n.key+ " "+n.gen);
-				n=n.right;
-			}
-		}
-		nodeList.add(n);
-		dirList.add(0,LEFT);
-		////////System.out.println("2");
-		int i=nodeList.size()-1;
-		int j=dirList.size()-1;
-		for(Node v : nodeList)
-			////////System.out.println("noden "+v.key+v.value);
-		// node to put in extra
-		Node oldNode=nodeList.get(i);
-		// node to put in live tree
-		Node holder=nodeList.get(i);
-		Node updatedNode = new Node(holder.key,value,holder.weight,holder.left,holder.right,holder.op,holder.gen);
-		////////System.out.println("nodee "+oldNode.key);
-
-		//if (!weakLLX(nodeList.get(i), 0, opsArray, nodesArray)) return null;
-
-		Node extraTree=null;
-
-		//build live tree
-		i--;
-		// weak llx on sibling and parent
-		if (!weakLLX(nodeList.get(i), 0, opsArray, nodesArray)) return null;
-		////////System.out.println("llx "+nodeList.get(i).gen +" "+nodeList.get(i).key);
-		Node node= dirList.get(j)==LEFT ? nodeList.get(i).right : nodeList.get(i).left;
-		if (!weakLLX(node, 1, opsArray, nodesArray)) return null;
-		////////System.out.println("llx "+node.gen +" "+node.key);
-		// maybe also check the sibling
-		Node parent;
-		while(true){
-			////////System.out.println("node kg"+nodeList.get(i).key+" "+nodeList.get(i).gen);
-			parent=nodeList.get(i); // make copy so the live tree is not changed
-			char direction=dirList.get(j);
-			if(direction==RIGHT){
-				parent.right=updatedNode;// make sure the constructor copies every atribute
-			}else{
-				parent.left=updatedNode;
-			}
-			i--;
-			j--;
-			//weak llx on grand parent
-			if (!weakLLX(nodeList.get(i), 0, opsArray, nodesArray)) return null;
-			////////System.out.println("llx "+nodeList.get(i).key +" "+nodeList.get(i).gen);
-			if(parent.extra!=null)
-				extraTree=createExtraSubtree(parent.extra,oldNode);
-			else{
-				////////System.out.println("break");
-				break;}
-			updatedNode=parent;
-		}
-
-		if(extraTree==null){
-			////////System.out.println("null ");
-			parent.extra=oldNode;
-		}else{
-			parent.extra=extraTree;
-		}
-		////////System.out.println("extra "+parent.extra.key+parent.extra.value);
-		////////System.out.println("parent "+parent.key+" "+parent.gen+" "+parent.left.key+parent.left.value+parent.right.key);
-		Node[] nodesArr = new Node[nodesArray.size()];
-		nodesArr = nodesArray.toArray(new Node[0]);
-
-		Operation[] opsArr = new Operation[opsArray.size()];
-		opsArr = opsArray.toArray(new Operation[0]);
-
-		for(int x=0;x<nodesArr.length;x++)
-			////////System.out.println("nodex "+nodesArr[x].key+nodesArr[x].value);
-
-		return new Operation(nodesArr, opsArr, parent);
-
-	}
-
-	private Node createExtraSubtree(Node extra, Node newExtra){
-		final Comparable<? super K> k = comparable(newExtra.key);
-		Node n=extra;// make a copy so we still have reference to the root
-		char dir;
-		while(!n.isLeaf()){
-			dir = (k.compareTo((K)n.key)<0) ? LEFT : RIGHT ;
-			n = (dir==LEFT) ? n.left : n.right ;
-		}
-		if(k.compareTo((K)n.key)<0){
-			n.left=newExtra;
-			n.right=n;
-			return extra;
-		}else {
-			Node newRoot=newExtra;
-			while(!newRoot.isLeaf())
-				newRoot=newRoot.left;
-			Node r=newRoot;
-			r.left=extra;
-			r.right=newExtra;
-			return r;
-		}
-	}
-	 */
-
-	private Operation createReplaceOpSnapLoop(final Node gp,final Node p, final Node l,K key, V value , final int gen) {// same as old version except
-		/* final Operation[] ops = new Operation[]{null}; // it puts the same node with diff gen
-		final Node[] nodes = new Node[]{null, l};
-		int newGen=gen;//maybe wrong
-
-		if (!weakLLX(p, 0, ops, nodes)) return null;
-
-		if (l != p.left && l != p.right) return null; */
-		int newGen=gen;//maybe wrong
-		final Operation[] ops = new Operation[]{null, null, null};
-		final Node[] nodes = new Node[]{null, null, null};
-
-		ArrayList<Operation> opsArray;
-		ArrayList<Node> nodesArray;
-
-		Node newP=null;
-		Node subtree=null;
-		Node parentExtra=null;
-		//make non final copies
-		Node ll=l,pp=p,gpp=gp;
-		//////////System.out.println("1");
-
-
-		if (!weakLLX(gp, 0, ops, nodes)) return null;
-		if (!weakLLX(p, 1, ops, nodes)) return null;
-
-		//////////System.out.println("2");
-
-
-		if (p != gp.left && p != gp.right) return null;
-		final boolean left = (l == p.left);
-		if (!left && l != p.right) return null;
-
-		// Read fields for the sibling of l into ops[2], nodes[2] = s
-		if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
-		final Node s = nodes[2];
-		//////////System.out.println("3");
-		int index=3;
-		opsArray=new ArrayList<>(Arrays.asList(ops));
-		nodesArray=new ArrayList<>(Arrays.asList(nodes));
-
-
-		char dir = (p.left==l) ? LEFT : RIGHT;
-		Node newChild = new Node(ll);
-		newChild.lastGen=newGen-1;
-		newChild.gen=newGen;
-
-		if(pp.extra==null){
-			// Build new sub-tree
-			//////////System.out.println("p: "+p.key+p.value);
-			final Node updated=new Node(key,value,ll.weight,ll.left,ll.right,ll.op,ll.gen);
-			updated.lastGen=newGen;//new child has updated lastGen			
-			if(dir==LEFT)
-				subtree = new Node(pp.key,pp.value,pp.weight,updated,pp.right,pp.op,pp.gen);//make sure to use the correct constructor
-			else
-				subtree = new Node(pp.key,pp.value,pp.weight,pp.left,updated,pp.op,pp.gen);//make sure to use the correct constructor						
-			subtree.parent = pp.parent;
-
-			//put extra
-			subtree.extra=newChild;
-			subtree.extraDir=dir;
-			////////System.out.println("if");
-			//////////System.out.println(dir+" "+subtree.extra.key);
-		}else{			
-			while(pp.extra!=null){
-
-				final Comparable<? super K> k = comparable(ll.key);
-
-				//////////System.out.println("while");
-				//if(pp.extra.left!=null && pp.extra.right!=null)
-				//////////System.out.println("LR/updating to "+key+"*"+value+" / extra :"+pp.extra.left.key+pp.extra.right.key+" p: "+pp.key+pp.value);	
-				//else
-				//////////System.out.println("updating to "+key+"*"+value+" / extra :"+pp.extra.key+"-"+pp.extra.value+" p: "+pp.key+pp.value);
-				if(ll.extra!=null){
-					////////System.out.println("tifo");
-					if(k.compareTo((K)pp.extra.key)<0){
-
-						//parentExtra=new Node(subtree.extra.key,subtree.extra.value,subtree.weight,subtree.extra,pp.extra,subtree.extra.op);
-						/* Node parentRight=new Node(pp.extra);
-						Node parentLeft=new Node(pp.left);
-						parentExtra.right=parentRight;
-						parentExtra.left=parentLeft; */
-						//create updated live tree
-						Node newSubtree=pp.right;
-						while(!newSubtree.isLeaf()){
-							newSubtree=newSubtree.left;
-						}
-						//////////System.out.println("new "+newSubtree.key);
-						parentExtra=new Node(newSubtree.key,newSubtree.value,newSubtree.weight,subtree.extra,pp.extra,subtree.extra.op);
-
-						Node updated=new Node(pp.key,pp.value,pp.weight,pp.left,pp.right,pp.op,pp.gen);
-
-
-						////////System.out.println("1updated "+updated.key+"/"+updated.left.key+updated.left.value+"/"+updated.right.key+updated.right.value);
-						////////System.out.println("debug "+subtree.extra.key+"/"+subtree.extra.left.key+"/"+subtree.extra.right.key);
-						////////System.out.println("debug2 "+parentExtra.key+"/"+parentExtra.left.key+"/"+parentExtra.right.key);
-
-						//newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);//original before fix
-
-						Comparable<? super K> kk = comparable(gpp.key);
-
-						if(kk.compareTo((K)pp.key) < 0 ){
-							newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);	
-						}else{
-							newP=new Node(gpp.key,gpp.value,gpp.weight,updated,gpp.right,gpp.op,gpp.gen);
-						}											
-						//////////System.out.println("NewP.key = " + newP.key + " newP.left = " + newP.left.key + " newP.right = " + newP.right.key);
-
-						if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
-						//////////System.out.println("ifo");
-					}else{
-						//////////System.out.println("ll "+ll.key+" pp "+pp.key);
-						Node newSubtree=pp;
-						while(!newSubtree.isLeaf()){
-							newSubtree=newSubtree.left;
-						}
-						////////System.out.println("new "+newSubtree.key);
-						parentExtra=new Node(newSubtree.key,newSubtree.value,newSubtree.weight,pp.extra,subtree.extra,subtree.extra.op);
-
-						/* Node parentRight=new Node(pp.extra);
-						Node parentLeft=new Node(pp.left);
-						parentExtra.right=parentRight;
-						parentExtra.left=parentLeft; */
-						//create updated live tree
-						Node updated=new Node(pp.key,pp.value,pp.weight,pp.left,pp.right,pp.op,pp.gen);
-						newP=new Node(gpp.key,gpp.value,gpp.weight,gpp.left,updated,gpp.op,gpp.gen);
-
-						////////System.out.println("2updated "+updated.key+updated.value+"/"+updated.left.key+updated.left.value+"/"+updated.right.key+updated.right.key);
-
-						if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
-
-						/* ////////System.out.println("newP "+newP.key+" parentExtra "+parentExtra.key +"left "+parentExtra.left.key
-								+" leftleft "+parentExtra.left.left.key+" leftleftleft "+parentExtra.left.left.left.key );
-
-						////////System.out.println("newP "+newP.key+" parentExtra "+parentExtra.key +"right "+parentExtra.right.key
-								+" rightright "+parentExtra.right.right.key+" rightleft "+parentExtra .right.left.key );*/
-					}
-				}else { 
-
-					// built bottom up
-
-					//new is less than old extra
-					if(k.compareTo((K)pp.extra.key)<0){
-						//create extra subtree
-						parentExtra=new Node(pp.extra);
-						Node parentRight=new Node(pp.extra);
-						Node parentLeft=new Node(pp.left);
-						parentExtra.right=parentRight;
-						parentExtra.left=parentLeft;
-						//create updated live tree
-						Node updated=new Node(key,value,ll.weight,ll.left,ll.right,ll.op,ll.gen);
-						newP=new Node(pp.key,pp.value,pp.weight,updated,pp.right,pp.op,pp.gen);
-						////////System.out.println("else1 "+key +value);
-						//////////System.out.println("3updated "+updated.key+updated.value+"/"+updated.left.key+updated.left.value+"/"+updated.right.key+updated.right.key);
-
-					}else{
-						parentExtra=new Node(pp.right);
-						Node parentRight=new Node(pp.right);
-						Node parentLeft=new Node(pp.extra);
-						parentExtra.right=parentRight;
-						parentExtra.left=parentLeft;
-
-						//update the live tree
-						Node updated=new Node(key,value,ll.weight,ll.left,ll.right,ll.op,ll.gen);
-						newP=new Node(pp.key,pp.value,pp.weight,pp.left,updated,pp.op,pp.gen);
-						////////System.out.println("else2");
-						//////////System.out.println("4updated "+updated.key+updated.value+"/"+updated.left.key+updated.left.value+"/"+updated.right.key+updated.right.key);
-					}
-				}
-				//create normal subtree
-				//pp.extra=null;
-				//nodesArray.add(0,null);
-				//opsArray.add(0,null);
-
-				ll=pp;
-				pp=gpp;
-				gpp=gpp.parent;				
-
-
-				//////////System.out.println("parent "+gpp.key+gpp.value);
-
-
-				if (!weakLLX(gpp, 0, opsArray, nodesArray)) return null;
-				//if (!weakLLX(p, 1, ops, nodes)) return null;
-
-				dir = (ll==pp.left) ? LEFT : RIGHT;
-
-				if(dir==LEFT){
-					////////System.out.println("d");
-					subtree=new Node(pp.key,pp.value,pp.weight,newP,pp.right,pp.op,pp.gen);
-				}
-				else{
-					////////System.out.println("f");
-					subtree=new Node(pp.key,pp.value,pp.weight,pp.left,newP,pp.op,pp.gen);
-				}
-
-				//////////System.out.println("################## " + subtree.key + " L = " + subtree.left.key + " R = " + subtree.right.key);
-
-
-				//////////System.out.println(parentExtra.key  + " ***** "+ parentExtra.left.key + " ***** " +parentExtra.right.key);
-				subtree.extra=parentExtra;
-				subtree.extraDir=dir;
-				subtree.parent = pp.parent;
-
-				////////System.out.println("pp parent " + pp.parent.key);
-				////////System.out.println(pp.parent.key + " - " + subtree.key);
-
-				//				Comparable<?super K> ku = comparable((K)subtree.key);
-				//				if(ku.compareTo((K)pp.parent.key) < 0){
-				//					pp.parent.left = subtree;
-				//				}else
-				//					pp.parent.right = subtree;
-
-
-				////////System.out.println("subtree loop: "+subtree.key+"/"+subtree.value+"/"+subtree.left.key+"/"+subtree.right.key+"/");
-
-				if(subtree.extra.left!=null && subtree.extra.right!=null){
-					////////System.out.println("subtree extra if: "+subtree.key+"/"+subtree.value+"/"+subtree.extra.key+"/"+subtree.extra.left.key+
-					//subtree.extra.left.value+"/"
-					//+subtree.extra.right.key+subtree.extra.right.value);
-				}
-				//////////System.out.println("subtree extra: "+subtree.extra.key+"/"+subtree.extra.value+"/"+subtree.extra+"/"+subtree.extra+"/");
-
-			}
-		}
-		//////////System.out.println("subtree "+subtree.key+" "+subtree.left.key+subtree.left.value+" "+subtree.right.key+" "+subtree.extra.key+subtree.extra.value);
-
-		//////////System.out.println("sub "+subtree.key+"-"+subtree.value+"-"+subtree.gen+"-"+subtree.lastGen+" / extra"+subtree.extra.key+"-"+subtree.extra.value+"-"+subtree.extra.gen+"-"+subtree.extra.lastGen);
-		Node[] nodesArr = new Node[nodesArray.size()];
-		nodesArr = nodesArray.toArray(new Node[0]);
-
-		Operation[] opsArr = new Operation[opsArray.size()];
-		opsArr = opsArray.toArray(new Operation[0]);
-
-		return new Operation(nodesArr, opsArr, subtree);
-	}
-
-	/* 
-
-
-	private Operation createReplaceOp(final Node p, final Node l, final K key, final V value,int startGen,int leafGen) {
-
-		Operation[] ops = new Operation[]{null};// added a null/ was final
-		Node[] nodes = new Node[]{null, l}; // added p/ was final
-
-		Node parent =p;
-		Node pChild=l;
-		if(startGen!=leafGen){
-
-
-			final ArrayList<Operation> opps=new ArrayList();
-			final ArrayList<Node> noddes=new ArrayList();
-			noddes.add(l);
-
-			while(parent.extra!=null){
-				char dir = (parent.left==pChild) ? LEFT : RIGHT;
-				final Node child=new Node(key,value,pChild.weight,null,null,dummy,startGen);//add generation
-				if(dir==LEFT){
-					final Node subtree = new Node(key, value, parent.weight, parent.extra,child, parent.op,startGen);//maybe dummy and gen
-				}else{
-					final Node subtree = new Node(key, value, parent.weight, child,parent.extra, parent.op,startGen);//maybe dummy and gen
-				}
-				noddes.add(parent);
-				opps.add(parent.op);
-				pChild=parent;
-				parent=parent.parent;
-
-			}
-
-			final Node subtree = new Node(parent.key, parent.value, parent.weight, parent.left, parent.right, dummy);// maybe parent.op
-			char dir = (parent.left==pChild) ? LEFT : RIGHT;
-			int weight=pChild.weight;
-			subtree.extra=new Node(key,value,weight,null,null,dummy,startGen);
-			subtree.extraDir=dir;
-
-			ops=new Operation[opps.size()];
-			ops=opps.toArray(ops);
-
-			nodes=new Node[noddes.size()];
-			nodes=noddes.toArray(nodes);
-
-		}else{
-			// Build new sub-tree
-			final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
-			//add parent pointer
-			subtree.parent = p;
-		}
-
-		if (!weakLLX(parent, 0, ops, nodes)) return null;
-
-		if (pChild != parent.left && pChild != parent.right) return null;
-
-		// Build new sub-tree
-		//final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
-
-		return new Operation(nodes, ops, subtree);
-
-	} */
-
-	/* 
-
-	private Operation createReplaceOp(SearchRecord searchRecord, final K key, final V value) {
-		Operation[] ops = new Operation[]{null};// added a null/ was final
-		Node[] nodes = new Node[]{null, l}; // added p/ was final
-
-		Node parent = searchRecord.parent;
-		Node pChild=searchRecord.n;
-		if(searchRecord.copy){// copy is true when extra pointer is needed
-
-
-		final ArrayList<Operation> opps=new ArrayList();
-		final ArrayList<Node> noddes=new ArrayList();
-		noddes.add(l);
-
-		if(parent.extra==null){
-			char dir = (parent.left==pChild) ? LEFT : RIGHT;
-			final Node child=new Node(pChild.key,pChild.value,pChild.weight,null,null,dummy,pChild.gen);//add generation
-			final Node subtree = new Node(parent.key, parent.value, parent.weight, parent.left,parent.right, parent.op,parent.gen);//maybe dummy and gen
-			subtree.extra=child;
-			subtree.dir=dir;
-			/* noddes.add(parent);
-			opps.add(parent.op);
-			pChild=parent;
-			parent=parent.parent; 
-
-		}else{
-			while(parent.extra!=null){
-				char dir = parent.dir;
-
-				final Node child=new Node(pChild.key,pChild.value,pChild.weight,null,null,dummy,pChild.gen);//add generation
-				final Node subtree = new Node(parent.key, parent.value, parent.weight, parent.left,parent.right, parent.op,parent.gen);//maybe dummy and gen
-				subtree.extra=child;
-				subtree.dir=dir;
-				/* noddes.add(parent);
-			opps.add(parent.op);
-			pChild=parent;
-			parent=parent.parent; 
-
-			}else{
-				while(parent.extra!=null){
-					char dir = parent.dir;
-					final Node child=new Node(pChild.key,pChild.value,pChild.weight,null,null,dummy,pChild.gen);//add generation
-					final Node subtree = new Node(parent.key, parent.value, parent.weight, parent.left,parent.right, parent.op,parent.gen);//maybe dummy and gen
-					subtree.extra=child;
-					subtree.dir=dir;
-				}
-			}
-
-			final Node subtree = new Node(parent.key, parent.value, parent.weight, parent.left, parent.right, dummy);// maybe parent.op
-			char dir = (parent.left==pChild) ? LEFT : RIGHT;
-			int weight=pChild.weight;
-			subtree.extra=new Node(key,value,weight,null,null,dummy,startGen);
-			subtree.extraDir=dir;
-
-			ops=new Operation[opps.size()];
-			ops=opps.toArray(ops);
-
-			nodes=new Node[noddes.size()];
-			nodes=noddes.toArray(nodes);
-
-		}else{
-			// Build new sub-tree
-			final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
-			//add parent pointer
-			subtree.parent = p;
-		}
-
-		if (!weakLLX(parent, 0, ops, nodes)) return null;
-
-		if (pChild != parent.left && pChild != parent.right) return null;
-
-		// Build new sub-tree
-		//final Node subtree = new Node(key, value, l.weight, l.left, l.right, dummy);
-
-		return new Operation(nodes, ops, subtree);
-
-	} 
-
-	 */
 	private V newDoPut(final K key, final V value, final boolean onlyIfAbsent) { // update fixToKey
 		//////////System.out.println("beg");
 		final Comparable<? super K> k = comparable(key);
@@ -2306,44 +1489,22 @@ public class ConcurrentChromaticTreeMap<K,V> {
 			notFoundElement=false;
 			while (op == null) {
 
-				////System.out.println("1");
-				searchRecord=search(key,false); // check loop (ifra method or outter)
-				//searchRecord=searchRemove(key); // check loop (ifra method or outter)
-				// the key was not in the tree at the linearization point, so no value was removed
-				////////System.out.println("2");
+				searchRecord=search(key,false);
 				notFoundElement=false;
 				if (searchRecord.grandParent == null || k.compareTo((K) searchRecord.n.key) != 0) 
-					notFoundElement=true;
-				//return null;
+					return null;
 
 
-				//////System.out.println(searchRecord.n.lastGen+" - "+searchRecord.startGen);
-
-				if(!notFoundElement)
 					op = createDeleteOp(searchRecord.grandParent, searchRecord.parent, searchRecord.n);
-				else{
-					op=new Operation();
-					op.notFoundElement=notFoundElement;
-				}
-				//////////System.out.println("normal");
-				////////System.out.println("3");
+
 				if(op!=null){
 					op.nodeList = searchRecord.nodeList;
 					op.directionList = searchRecord.directionList;
 					op.updateSnapshot = searchRecord.updateSnapshot;
 					op.deleteOp=true;
-					/* if(found)
-						op.updateSnapshot = searchRecord.updateSnapshot;
-					else
-						op.updateSnapshot = false; */
-					//////////System.out.println(op.updateSnapshot+" rrrrrrrrrrrrr");
-					op.lastGen=searchRecord.n.lastGen;
 				}
 			}
-			//////System.out.println("update live tree "+!op.notFoundElement+" update snapshot "+op.updateSnapshot);
 			if (helpSCX(op,0)) {
-				////////System.out.println("4");
-				// clean up violations if necessary
 				if (d == 0) {
 					if (searchRecord.parent.weight > 0 && searchRecord.n.weight > 0 && !isSentinel(searchRecord.parent)) fixToKey(k);
 				} else {
@@ -2536,44 +1697,9 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return true;
 	}
 
-	private boolean weakLLXGCAS(final Node r, final int i, final Operation[] ops, final Node[] nodes) {
-		if ((ops[i] = weakLLXGCAS(r)) == null) return false;
-		nodes[i] = r;
-		//////////System.out.println("here "+ops[i].state+ " "+r.marked);
-		return true;
-	}
 
-	private Operation weakLLXGCAS(final Node r) {
-		final Operation rinfo = r.op;
-		final int state = rinfo.state;
-		if (state == Operation.STATE_ABORTED || (state == Operation.STATE_COMMITTED )) {//!r.marked
-			return rinfo;
-		}
-		if (rinfo.state == Operation.STATE_INPROGRESS) {
-			helpSCX(rinfo, 1);
-		} else if (r.op.state == Operation.STATE_INPROGRESS) {
-			helpSCX(r.op, 1);
-		}
-		//////////System.out.println("node "+state+" "+r.marked);
-		//System.out.println("null "+r.marked);
-		return null;
-	}
 
-	private boolean weakLLX(final Node r, final int i, final ArrayList<Operation> ops, final ArrayList<Node> nodes) {
-		ops.add(i,weakLLX(r));
-		if ((ops.get(i)) == null) return false;
-		nodes.add(i,r);
-		//////////System.out.println("here "+ops[i].state+ " "+r.marked);
-		return true;
-	}
 
-	private boolean weakLLX(final Node r, final ArrayList<Operation> ops, final ArrayList<Node> nodes) {
-		ops.add(weakLLX(r));
-		if ((ops.get(ops.size()-1)) == null) return false; // check -1
-		nodes.add(r);
-		//////////System.out.println("here "+ops[i].state+ " "+r.marked);
-		return true;
-	}
 
 	// this function is essentially an SCX without the creation of V, R, fld, new
 	// (which are stored in an operation object).
@@ -2612,19 +1738,13 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		}
 		if(op.updateSnapshot){ // only do this when a gcas has happened
-
-			////System.out.println("lastGen =  "+op.lastGen+" "+maxSnapId);
-			////System.out.println("updating snapshot");
-			//System.out.println("0");
-			for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {				
+		// update snapshot with path
+			for(int shots=op.lastGen+1; shots <= maxSnapId ; shots++ ) {
 				Node node=snapList.get(shots).left;
 
-				//if(op.deleteOp){
 
-					//System.out.println("1");
-					int x=0,y=0;
+					int x=0;
 					while(true){ 
-						////System.out.println("qwerty "+node.value);
 						if(x==op.nodeList.size())
 							break;
 						Node n=op.nodeList.get(x);
@@ -2638,9 +1758,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						if(l==null)
 							break;
 
-
-						/* if(l==null)
-								break; */
 						final Comparable<? super K> comp = comparable(l.key);
 						if( node.gen>l.lastGen){ // if l is in the live tree
 
@@ -2649,7 +1766,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 									node=node.left;
 								}else{ // if cas fails retry for the begining
 									x=0;
-									y=0;
 									node=snapList.get(shots).left;
 									continue;
 								}
@@ -2660,12 +1776,11 @@ public class ConcurrentChromaticTreeMap<K,V> {
 								}
 								else{
 									x=0;
-									y=0;
 									node=snapList.get(shots).left;
 									continue;
 								}
 							}
-							y++;x++;
+							x++;
 						}else if(node.gen==l.gen && node.lastGen==l.lastGen && comp.compareTo((K)n.key)==0){
 							// if node has already been copied to the snapshot
 							node=l;
@@ -2690,7 +1805,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 
 		}
 		
-			if(!op.notFoundElement){
+			if(!op.notFoundElement){ // update the live tree
 		// CAS in the new sub-tree (child-cas)
 			if (nodes[0].left == nodes[1]) {
 				updateLeft.compareAndSet(nodes[0], nodes[1], subtree);     // splice in new sub-tree (as a left child)
@@ -2754,145 +1869,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		return new Operation( nodes, ops, newP);
 	}
 
-	private Operation createDeleteOpSnap(final Node gp, final Node p, final Node l,int gen) {
-		final Operation[] ops = new Operation[]{null, null, null};
-		final Node[] nodes = new Node[]{null, null, null};
 
-		if (!weakLLX(gp, 0, ops, nodes)) return null;
-		if (!weakLLX(p, 1, ops, nodes)) return null;
-
-		if (p != gp.left && p != gp.right) return null;
-		final boolean left = (l == p.left);
-		if (!left && l != p.right) return null;
-
-		// Read fields for the sibling of l into ops[2], nodes[2] = s
-		if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
-		final Node s = nodes[2];
-
-		// Now, if the op. succeeds, all structure is guaranteed to be just as we verified
-
-		// Compute weight for the new node (to replace to deleted leaf l and parent p)
-		final int newWeight = (isSentinel(p) ? 1 : p.weight + s.weight); // weights of parent + sibling of deleted leaf
-
-		// Build new sub-tree
-		final Node newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
-		newP.gen=gen;
-
-
-		newP.parent = gp;
-
-		//create extra
-		Node extra=new Node(l);
-		extra.gen=gen;
-		extra.lastGen=gen-1;
-		newP.extra=extra;
-		Comparable<K> k = (Comparable<K>) comparable(l.key);
-		if(k.compareTo((K)newP.key) >= 0){
-			newP.extraDir = RIGHT;
-		}else{
-			newP.extraDir = LEFT;
-		}
-
-		//newP.extraDir = ???
-		//		////////System.out.println("deletion baby "+newP.extra.key+" "+newP.extra.lastGen+" "+newP.extra.gen);
-		//		////////System.out.println("all :"+newP.key
-		//				+" "+newP.left+
-		//				" "+newP.right+" "+
-		//				newP.extra.key);
-
-
-
-		return new Operation(nodes, ops, newP);
-	}
-
-	private Operation createDeleteOpSnapLoop(final Node gp, final Node p, final Node l,int gen) {
-		final Operation[] ops = new Operation[]{null, null, null};
-		final Node[] nodes = new Node[]{null, null, null};
-
-		if (!weakLLX(gp, 0, ops, nodes)) return null;
-		if (!weakLLX(p, 1, ops, nodes)) return null;
-
-		if (p != gp.left && p != gp.right) return null;
-		final boolean left = (l == p.left);
-		if (!left && l != p.right) return null;
-
-		//traverse the tree to get the list of node from root to the target node l
-
-		Node temp = root.left.left;
-		ArrayList listDirection = new ArrayList();//list of direction from root to target node l
-		ArrayList<Node> listNodes = new ArrayList<Node>();//list of node from root to l
-		Comparable<?super K> comp = comparable(l.key);
-		while(temp!=null){
-			char dir= (comp.compareTo((K)temp.key)<0) ? LEFT : RIGHT;
-			listNodes.add(temp);
-			if(dir == LEFT)
-				temp = temp.left;
-			else
-				temp = temp.right;
-			listDirection.add(dir);						
-		}
-		int indexListDirection = listDirection.size() - 1;
-		int indexListNodes = listNodes.size() - 1;
-
-		if (!weakLLX(left ? p.right : p.left, 2, ops, nodes)) return null;
-
-		//if node's parent extra pointer is null
-		final Node s = nodes[2];
-
-		// Compute weight for the new node (to replace to deleted leaf l and parent p)
-		final int newWeight = (isSentinel(p) ? 1 : p.weight + s.weight); // weights of parent + sibling of deleted leaf
-
-		final Node newP;
-		if(l.extra == null && p.extra == null){// ***if the node l does not have extra pointer and so does its parent						
-			// Build new sub-tree
-			newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy, s.gen);
-			newP.lastGen = s.gen;
-			final Node newExtraChild = new Node(l.key, l.value, l.weight, l.left, l.right, dummy, l.gen);//need to be checked newExtraChild.left and newExtraChild.right
-			newExtraChild.lastGen = l.lastGen;
-			newP.extra = newExtraChild;
-			newP.extraDir = left ? LEFT:RIGHT;		
-
-			return new Operation(nodes, ops, newP);	
-
-		}else if (l.extra != null && s.extra == null){// ***if the node l has extra pointer and its parent does not
-			if(p.extra == null){
-				newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
-				final Node newExtraChild;
-				if(l.extraDir == LEFT){
-					newExtraChild = new Node(l.key, l.value, l.weight, l.extra, l, dummy, l.gen);
-					newExtraChild.lastGen = l.lastGen;
-				}else{
-					newExtraChild = new Node(l.extra.key, l.extra.value, l.extra.weight, l, l.extra.right, dummy, l.extra.gen);
-					newExtraChild.lastGen = l.extra.lastGen;
-				}
-				newP.extra = newExtraChild;
-				newP.extraDir = left ? LEFT: RIGHT;				
-				return new Operation(nodes, ops, newP);
-			}
-
-		}else if (l.extra != null && s.extra != null){// ***if the node l has extra pointer and so does its sibling
-			newP = new Node(s.key, s.value, newWeight, s.left, s.right, dummy);
-			final Node lExtra;
-			if(l.extraDir == LEFT){
-				lExtra = new Node(l.key, l.value, l.weight, l.extra, l , dummy);
-			}else{
-				lExtra = new Node(l.extra.key, l.extra.value, l.weight, l, l.extra.right , dummy);
-			}
-			final Node newExtraChild;
-			if(left){
-				newExtraChild = new Node(p.key, p.value, newWeight, lExtra, s.extra, dummy);//should be checked		
-			}else{
-				newExtraChild = new Node(p.key, p.value, newWeight, s.extra, lExtra, dummy);//should be checked
-			}
-			newExtraChild.lastGen = p.lastGen;
-			newP.extra = newExtraChild;
-			newP.extraDir = (left) ? LEFT: RIGHT;
-			return new Operation(nodes, ops, newP);
-
-		}
-		return null;
-
-	}
 
 
 	// Just like insert, except this replaces any existing value.
