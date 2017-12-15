@@ -51,8 +51,8 @@ class Main {
 				for(int v=0;v<10000;v++){
 				int x=r.nextInt(10000);
 				tree.remove(x);
-				x=r.nextInt(10000);
-				tree.put(x,x+1);
+				//x=r.nextInt(10000);
+				//tree.put(x,x+1);
 			}
 		});
 		}

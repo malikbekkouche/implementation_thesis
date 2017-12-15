@@ -986,7 +986,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 							p=n;
 							dir= (comp.compareTo((K)n.key)<0) ? LEFT : RIGHT;
 							n=GCAS_READ(n,dir);
-							nodeList.add(new Node(n));
+
 						}else{
 							break;
 						}
@@ -998,6 +998,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						if(GCAS_COPY(p,n,dir,gen)){
 							copyFail=false;
 							updateSnapshot = true;
+							nodeList.add(new Node(n));
 						}else{
 							copyFail=true;
 						}
@@ -1198,10 +1199,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 	}
 
 	private boolean GCAS_COPY(Node p,Node n,char dir,int gen){ // returns true if node updated with new gen
-		if(dir == LEFT){
-			return (p.left == n);
-		}else if(dir == RIGHT){
-			return (p.right == n);
+		if(dir == LEFT && p.left!=n){
+			return false;
+		}else if(dir == RIGHT && p.right !=n){
+			return false;
 		}
 
 		Operation[] ops = new Operation[] { null};
@@ -1360,14 +1361,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(op!=null){
 					op.nodeList = searchRecord.nodeList;
 					op.updateSnapshot = searchRecord.updateSnapshot;
-					/* if(found)
-						op.updateSnapshot = searchRecord.updateSnapshot;
-					else
-						op.updateSnapshot = false; */
-					//////////System.out.println(op.updateSnapshot+" rrrrrrrrrrrrr");
 					op.lastGen=searchRecord.n.lastGen;
-					op.deleteOp=false;
-					op.notFoundElement=false;
 				}
 			}
 			if (helpSCX(op,0)) {
@@ -1412,7 +1406,6 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				if(op!=null){
 					op.nodeList = searchRecord.nodeList;
 					op.updateSnapshot = searchRecord.updateSnapshot;
-					op.deleteOp=true;
 				}
 			}
 			if (helpSCX(op,0)) {
@@ -1818,7 +1811,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		//add parent pointer
 		subtree.parent = p;
 
-		return new Operation(nodes, ops, subtree, gen);
+		return new Operation(nodes, ops, subtree);
 	}
 
 	private Operation createDeleteOp(final Node gp, final Node p, final Node l) {
@@ -2164,45 +2157,29 @@ public class ConcurrentChromaticTreeMap<K,V> {
 		final static int STATE_INPROGRESS = 0;
 		final static int STATE_ABORTED = 1;
 		final static int STATE_COMMITTED = 2;
-		// added steps
-		final static int STEP_SUBTREE=0;
-		final static int STEP_GENERATION=1;
-		final static int STEP_COMMIT=2;
-		final static int STEP_ABORT=3;
-
 
 		volatile Node subtree;
 		volatile Node[] nodes;
 		volatile Operation[] ops;
 		volatile int state;
-		volatile int step;
 
-		volatile int gen;
-		volatile int lastGen;
 		volatile boolean allFrozen;
 
 		ArrayList<Node> nodeList;
-		ArrayList<Character> directionList;
 		boolean updateSnapshot;
-		boolean deleteOp;
-		boolean notFoundElement;
+		volatile int lastGen;
 
 		public Operation() {            // create an inactive operation (a no-op) [[ we do this to avoid the overhead of inheritance ]]
 			nodes = null; ops = null; subtree = null;
 			this.state = STATE_ABORTED;   // cheap trick to piggy-back on a pre-existing check for active operations
 		}
 
-		public Operation(final Node[] nodes, final Operation[] ops, final Node subtree, final int gen) {
-			this.nodes = nodes;
-			this.ops = ops;
-			this.subtree = subtree;
-			this.gen = gen;
-		}
+
 
 		public Operation(final Node[] nodes, final Operation[] ops, final Node subtree) {
 			this.nodes = nodes;
 			this.ops = ops;
-			this.subtree = subtree;			
+			this.subtree = subtree;
 		}
 
 		public Operation(int state) {     // added by me
