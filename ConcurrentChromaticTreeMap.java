@@ -965,9 +965,7 @@ public class ConcurrentChromaticTreeMap<K,V> {
 				nodeList.add(new Node(sentinel.left));
 
 				while(true){
-					if(copyFail ){
-						return search(key,false);
-					}
+
 					if(p==null || p.isLeaf()) {
 						break;
 					}
@@ -996,11 +994,10 @@ public class ConcurrentChromaticTreeMap<K,V> {
 						return new SearchRecord(ggp,gp,p,n,gen,violations, nodeList, updateSnapshot);
 					}else{
 						if(GCAS_COPY(p,n,dir,gen)){
-							copyFail=false;
 							updateSnapshot = true;
 							nodeList.add(new Node(n));
 						}else{
-							copyFail=true;
+							return search(key,readOp);
 						}
 					}
 				}
